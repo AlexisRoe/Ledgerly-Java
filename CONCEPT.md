@@ -9,9 +9,9 @@ Ledgerly is a REST backend where small teams record expenses and attach receipt 
 What a user can do:
 
 - Register, verify an email address, log in, refresh a session, log out. Belong to one or more teams with a role: OWNER, APPROVER or MEMBER (a ladder: each role includes the ones below it). Join a team by accepting an invitation; leave it again.
-- Ubiquitous language lives in [`GLOSSARY.md`](GLOSSARY.md), significant decisions in [`docs/adr/`](docs/adr/). Where this document and the glossary disagree, the glossary wins.
+- Ubiquitous language lives in [`GLOSSARY.md`](GLOSSARY.md), significant decisions in [`docs/adr/`](docs/adr/), and the build order in [`docs/implementation-plan.md`](docs/implementation-plan.md). Where this document and the glossary disagree, the glossary wins.
 - Create expenses (amount, currency, category, date, merchant, note) and attach receipts (PDF, JPEG, PNG).
-- Browse and filter expenses page by page, sorted by date or amount.
+- Browse and filter expenses page by page, sorted by date or amount, or export them as CSV.
 - Create up to 100 expenses in one request, or import a CSV of thousands of rows as a background job with a status endpoint.
 - Move an expense through a workflow: DRAFT → SUBMITTED → APPROVED → REIMBURSED. A submitted expense can be withdrawn back to DRAFT by its claimant or REJECTED (with a reason) by an approver; a rejected expense can be reopened as a DRAFT. APPROVED cannot be undone, REIMBURSED is final.
 - Read an audit trail of who did what, when.
@@ -72,7 +72,7 @@ The left column is one call inside the highlighted expenses module; the right sh
 Three rules keep the boundaries honest:
 
 1. A module exposes only its top-level package; everything under `internal` is private. A Spring Modulith verification test fails the build on any violation.
-2. Writes across modules happen through events, never direct calls. Reads may use another module's facade, for example expenses asking teams whether a user is an APPROVER.
+2. Never touch another module's tables, repositories or `internal` classes. Another module may send a command through a facade (imports asking expenses to create drafts) or read through one (expenses asking teams whether a user is an APPROVER); everything else reacts to events ([ADR 0003](docs/adr/0003-commands-through-facades-not-only-events.md)). Dependencies never form a cycle: when two modules need each other, the lower one owns an interface and the higher one implements it, as expenses does with `ReceiptChecks` ([ADR 0002](docs/adr/0002-expenses-asks-receipts-through-an-interface-it-owns.md)).
 3. Events are stored in Modulith's event publication registry (a transactional outbox), so a crash after commit never loses them.
 
 Inside each module, four layers (shown for expenses):
@@ -127,12 +127,13 @@ Expense rules worth encoding in the domain:
 | Endpoint (all under `/api/v1`) | Purpose | Pattern it teaches |
 | --- | --- | --- |
 | `POST /auth/register`, `/auth/verify`, `/auth/login`, `/auth/refresh`, `/auth/logout` | Account and session lifecycle | Refresh token in an HttpOnly, Secure, SameSite=Strict cookie; access token in the body; verification link delivered as a logged event |
-| `GET /me` | Current user, team roles, pending invitations | Reading the security context |
+| `GET /me` | Current user, team roles, pending invitations (served by the teams module) | Reading the security context |
 | `POST /teams` | Create a team; the creator becomes its OWNER | Role-based method security |
 | `POST /teams/{teamId}/invitations`, `DELETE …/invitations/{id}` | Invite or revoke, OWNER only | Identical response whether or not the email is registered |
 | `POST /invitations/{id}:accept`, `:decline` | Invitee answers; accepting needs a verified email | Expiry with an injected `Clock` |
 | `PATCH`, `DELETE /teams/{teamId}/members/{userId}`, `POST /teams/{teamId}:leave` | Change role, remove, leave | Last OWNER can never leave or be demoted |
 | `GET /teams/{teamId}/expenses` | Filtered, sorted, paged list | Offset paging: `page`, `size` (max 100), `sort` from an allowlist; filters status, category, claimant, currency, incurred-on range; sort by amount only with a currency filter |
+| `GET /teams/{teamId}/expenses.csv` | Export the filtered list, up to 10,000 rows | Streaming responses; cells starting with `=`, `+`, `-`, `@` neutralised |
 | `POST /teams/{teamId}/expenses` | Create one expense | `Idempotency-Key` header, 201 + `Location` |
 | `GET`, `PATCH`, `DELETE /teams/{teamId}/expenses/{id}` | Read, edit and delete (DRAFT only) | `ETag` / `If-Match` for lost-update protection, 412 on mismatch |
 | `POST /teams/{teamId}/expenses:batch` | Create up to 100 at once | Per-item results; `atomic=true` switches to all-or-nothing |
@@ -241,13 +242,14 @@ One Git repository, one Maven project, one `compose.yaml`: starting the app from
 | Bruno or IntelliJ's HTTP client | Request collections committed to the repo |
 
 ```text
-ledgerly/
+teach-me-java-backend/          the Maven project lives at the repository root
 ├── .github/workflows/ci.yml     build, tests, spec lint, gitleaks, Trivy
 ├── .mvn/, mvnw, mvnw.cmd        Maven wrapper: no global Maven needed
 ├── api/openapi.yaml             the contract, edited before any code
 ├── compose.yaml                 local dependencies
 ├── docs/
 │   ├── adr/                     one short decision record per significant choice
+│   ├── implementation-plan.md   build order, step by step
 │   └── learning-log.md          what you learned each session, questions open
 ├── http/                        request collections per module
 ├── src/main/java/com/ledgerly/
@@ -258,6 +260,7 @@ ledgerly/
 │   ├── application-local.yaml   human-readable logs, Swagger UI on
 │   └── db/migration/            Flyway scripts V1__, V2__ …
 ├── src/test/java/com/ledgerly/  unit, slice, integration, architecture tests
+├── CONCEPT.md, GLOSSARY.md      this document and the ubiquitous language
 ├── .env.example                 every variable documented, no real values
 ├── .editorconfig, .gitignore, .pre-commit-config.yaml
 ├── pom.xml
@@ -284,15 +287,15 @@ Twelve milestones, roughly 18 to 22 weeks at 6 to 8 hours a week; each pairs a J
 | # | Milestone (rough weeks) | Java you learn | Spring you learn | Done when | Status |
 | --- | --- | --- | --- | --- | --- |
 | 0 | Plain-Java core (2) | Classes, interfaces, records, enums, `equals`/`hashCode`, immutability, `BigDecimal`, `java.time`, collections, exceptions, JShell, JUnit + AssertJ | None | `Money` (currency-safe, minor-unit scale) and the full expense state machine (all six transitions, self-dealing rule) work, fully unit-tested, no framework | Not started |
-| 1 | First Boot app (1) | Packages and visibility, annotations, what reflection is, records as config | Starters, auto-configuration, dependency injection, profiles, `@ConfigurationProperties`, Actuator, structured logs | App starts, health is UP, JSON logs show in Grafana | Not started |
+| 1 | First Boot app (1) | Packages and visibility, annotations, what reflection is, records as config | Starters, auto-configuration, dependency injection, profiles, `@ConfigurationProperties`, Actuator, structured logs, Modulith verification test | App starts, health is UP, JSON logs show in Grafana, module boundaries checked in the build | Not started |
 | 2 | Persist expenses (2) | `Optional`, lambdas, streams, entity identity vs value equality | Spring Data JPA, Flyway, transactions, Testcontainers | Expenses saved and read in an integration test against real Postgres | Not started |
 | 3 | Contract, validation, errors (2) | Sealed hierarchies, pattern-matching `switch`, nested records | OpenAPI generator, Bean Validation, `ProblemDetail`, `@RestControllerAdvice`, `RestTestClient` | Every endpoint in the spec, every error a Problem Details response | Not started |
-| 4 | Paging and filtering (1) | Generics and wildcards, functional interfaces, `Comparator`, Base64 | `Pageable`, sort allowlists, specifications, keyset queries with `JdbcClient` | Both paging styles tested, page size capped | Not started |
+| 4 | Paging and filtering (1) | Generics and wildcards, functional interfaces, `Comparator`, Base64 | `Pageable`, sort allowlists, specifications, keyset queries with `JdbcClient` | Offset paging on expenses and the cursor helpers (tested against expenses, wired to the audit trail in 9) work; page size capped | Not started |
 | 5 | Authentication (2) | `Instant`, `Duration`, injecting a `Clock`, `SecureRandom`, key pairs | Security filter chain, password encoders, JWT issuing and resource server, cookies, CSRF reasoning | Login, refresh rotation with reuse detection, logout, all tested | Not started |
 | 6 | Teams and authorization (1–2) | `EnumSet`, enums with behaviour, method references | Method security, `@PreAuthorize`, custom authorization managers | Invitations, role ladder and last-OWNER rule work; cross-team and wrong-role tests return 404 and 403 | Not started |
 | 7 | Receipt upload (2) | `InputStream`, try-with-resources, NIO `Path` and `Files`, `MessageDigest` | Multipart handling, size limits, ports and adapters for storage, application events | Upload, scan, quarantine and download-link flows tested | Not started |
-| 8 | Batch work (2) | Threads, `ExecutorService`, virtual threads, `CompletableFuture`, scoped values, thread safety | Batch endpoint design, Spring Batch jobs, `@Async`, `@Retryable` | 100-item batch and 10,000-row CSV import both work and report per-row errors | Not started |
-| 9 | Events and audit (1) | Observer pattern, sealed event types | Spring Modulith, event publication registry, `@TransactionalEventListener` | Modulith verification passes; audit trail shows every change | Not started |
+| 8 | Batch work (2) | Threads, `ExecutorService`, virtual threads, `CompletableFuture`, scoped values, thread safety | Batch endpoint design, Spring Batch jobs, `@Async`, `@Retryable` | 100-item batch and 10,000-row CSV import both work and report per-row errors; CSV export neutralises formulas | Not started |
+| 9 | Events and audit (1) | Observer pattern, sealed event types | Spring Modulith event publication registry, `@ApplicationModuleListener` replacing plain `@TransactionalEventListener` | Modulith verification passes; audit trail shows every change | Not started |
 | 10 | Hardening and observability (1–2) | Heap, garbage collection, JFR, `jcmd` | Rate limiting, security headers, CORS, custom metrics, tracing | OWASP table in section 5 has a passing test per row | Not started |
 | 11 | Ship it (1–2) | Build lifecycle, AOT cache and CDS for startup | Buildpacks image, CI pipeline, Keycloak OIDC swap, upgrade to Boot 4.2 | Green CI, container runs as non-root, login via Keycloak works | Not started |
 
