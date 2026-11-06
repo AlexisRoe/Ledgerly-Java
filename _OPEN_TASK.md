@@ -26,6 +26,8 @@ Create Bruno files for api testing, including local setup, test cases
 
 If not already happening, seed the database with a base set of data, so that testing can happen immeadabtly
 
+**Status: DONE, verified.** `DevDataSeeder` (profile `local & !test`) creates 4 users, the team "Acme Travel" with OWNER/APPROVER/MEMBER, a pending invitation and 9 expenses in every status. Idempotent: restart adds nothing. Verified by `DevDataSeederTest` (3 tests) and by logging in as each user against the running container. Documented in `docs/deployment.md` ("Demo data"). It was not there before: only test seeders existed.
+
 ## Task 6
 
 Implementing lintern, prettier, test pipelines and implement automatic running checks on push to main via PR to Github

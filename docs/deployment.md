@@ -63,3 +63,19 @@ Start with the `keycloak` profile (`SPRING_PROFILES_ACTIVE=prod,keycloak`) and s
   `alice-password`, `bob@example.com` / `bob-password`; development only).
 - The realm needs an audience mapper for `ledgerly-api` (the export has one), and the `basic` client scope so that
   tokens carry `sub`.
+
+## Demo data
+
+With the `local` profile (never in tests, never with `prod`) an empty database is filled at start-up with a small team,
+so the API can be tried at once. `make up` or `make run` is enough; nothing is added a second time on restart, and
+`make reset` followed by `make up` starts again from scratch.
+
+| User | Role in team "Acme Travel" (`00000000-0000-7000-8000-00000000a001`) |
+| --- | --- |
+| `alice@example.com` | OWNER |
+| `bob@example.com` | APPROVER |
+| `carol@example.com` | MEMBER (has expenses in every status, one of them rejected with a reason) |
+| `dave@example.com` | not a member, email not verified, has a pending invitation |
+
+The password of all four is `correct-horse-battery`. With the `keycloak` profile no users are created: the identity
+provider owns the accounts (see the Keycloak section above).
