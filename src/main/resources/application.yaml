@@ -1,4 +1,6 @@
 spring:
+  lifecycle:
+    timeout-per-shutdown-phase: 30s
   application:
     name: ledgerly
   jackson:
@@ -30,6 +32,8 @@ spring:
       ddl-auto: validate
 
 server:
+  # On SIGTERM stop taking new requests and let running ones (and an import chunk) finish.
+  shutdown: graceful
   tomcat:
     # After rejecting an oversized upload the server reads (and discards) up to this much so the client can
     # still receive the 413. Anything larger just has its connection closed.

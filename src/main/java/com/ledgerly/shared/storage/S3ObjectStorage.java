@@ -2,7 +2,6 @@ package com.ledgerly.shared.storage;
 
 import io.micrometer.observation.Observation;
 import io.micrometer.observation.ObservationRegistry;
-import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import java.io.IOException;
 import java.io.InputStream;
@@ -12,7 +11,9 @@ import java.time.Duration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.annotation.Profile;
+import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
@@ -74,7 +75,12 @@ public class S3ObjectStorage implements ObjectStorage {
                 .build();
     }
 
-    @PostConstruct
+    /**
+     * Creates the bucket if it is missing. Runs once the application is up, not while it starts: an object store that
+     * is slow or down must not delay start-up (the AWS client retries for seconds). {@link #put} also creates the
+     * bucket on demand, so an upload never depends on this having run.
+     */
+    @EventListener(ApplicationReadyEvent.class)
     public void ensureBucket() {
         try {
             s3.headBucket(HeadBucketRequest.builder().bucket(bucket).build());
@@ -96,6 +102,15 @@ public class S3ObjectStorage implements ObjectStorage {
 
     @Override
     public void put(String key, Path file, String contentType) throws IOException {
+        try {
+            putObject(key, file, contentType);
+        } catch (NoSuchBucketException e) {
+            s3.createBucket(CreateBucketRequest.builder().bucket(bucket).build());
+            putObject(key, file, contentType);
+        }
+    }
+
+    private void putObject(String key, Path file, String contentType) {
         observe(
                 "put",
                 () -> s3.putObject(

@@ -309,6 +309,29 @@
       <plugin>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-maven-plugin</artifactId>
+        <configuration>
+          <image>
+            <name>ledgerly:${project.version}</name>
+            <env>
+              <!-- Paketo builds on a JRE 25 and runs as a non-root user. -->
+              <BP_JVM_VERSION>25</BP_JVM_VERSION>
+              <!-- A training run at build time stores a class-data-sharing archive in the image: faster start. -->
+              <BP_JVM_CDS_ENABLED>true</BP_JVM_CDS_ENABLED>
+            </env>
+          </image>
+        </configuration>
+        <executions>
+          <execution>
+            <goals>
+              <goal>build-info</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <!-- Configured by spring-boot-starter-parent: writes a CycloneDX SBOM into the jar (META-INF/sbom). -->
+        <groupId>org.cyclonedx</groupId>
+        <artifactId>cyclonedx-maven-plugin</artifactId>
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>

@@ -1,0 +1,2 @@
+org.springframework.boot.EnvironmentPostProcessor=com.ledgerly.shared.config.ProductionEnvironmentCheck
+org.springframework.boot.diagnostics.FailureAnalyzer=com.ledgerly.shared.config.ProductionConfigurationFailureAnalyzer
