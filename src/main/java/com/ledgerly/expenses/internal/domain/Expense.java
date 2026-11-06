@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A single amount spent on behalf of a team. It has an identity (its id) and changes over time, so it
@@ -29,7 +30,7 @@ public final class Expense {
     private Category category;
     private LocalDate incurredOn;
     private String merchant;
-    private String note;
+    private @Nullable String note;
     private ExpenseStatus status;
     private final List<Rejection> rejections = new ArrayList<>();
 
@@ -41,7 +42,7 @@ public final class Expense {
             Category category,
             LocalDate incurredOn,
             String merchant,
-            String note) {
+            @Nullable String note) {
         this.id = id;
         this.teamId = teamId;
         this.claimantId = claimantId;
@@ -60,7 +61,7 @@ public final class Expense {
             Category category,
             LocalDate incurredOn,
             String merchant,
-            String note,
+            @Nullable String note,
             Clock clock) {
         Objects.requireNonNull(teamId, "teamId");
         Objects.requireNonNull(claimantId, "claimantId");
@@ -100,7 +101,7 @@ public final class Expense {
         status = ExpenseStatus.APPROVED;
     }
 
-    public void reject(Actor actor, String reason) {
+    public void reject(Actor actor, @Nullable String reason) {
         requireDecider(actor, Role.APPROVER, Action.REJECT);
         requireStatus(ExpenseStatus.SUBMITTED, Action.REJECT);
         if (reason == null || reason.isBlank()) {
@@ -134,7 +135,7 @@ public final class Expense {
             Category category,
             LocalDate incurredOn,
             String merchant,
-            String note,
+            @Nullable String note,
             Clock clock) {
         if (!actor.id().equals(claimantId)) {
             throw new NotAllowed("Only the claimant may edit an expense");
@@ -197,7 +198,7 @@ public final class Expense {
         return merchant;
     }
 
-    public String note() {
+    public @Nullable String note() {
         return note;
     }
 
@@ -236,7 +237,7 @@ public final class Expense {
         }
     }
 
-    private static String validMerchant(String merchant) {
+    private static String validMerchant(@Nullable String merchant) {
         if (merchant == null || merchant.isBlank()) {
             throw new RuleViolated("Merchant is required");
         }
@@ -247,7 +248,7 @@ public final class Expense {
         return trimmed;
     }
 
-    private static String validNote(String note) {
+    private static @Nullable String validNote(@Nullable String note) {
         if (note == null) {
             return null;
         }

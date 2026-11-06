@@ -1,0 +1,13 @@
+repos:
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.28.0
+    hooks:
+      - id: gitleaks
+  - repo: local
+    hooks:
+      - id: spotless
+        name: spotless
+        entry: ./mvnw -q spotless:apply
+        language: system
+        types: [java]
+        pass_filenames: false

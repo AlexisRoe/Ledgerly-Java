@@ -1,0 +1,5 @@
+# Human-readable console logs in local development.
+logging:
+  structured:
+    format:
+      console: ""

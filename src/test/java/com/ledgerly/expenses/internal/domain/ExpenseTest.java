@@ -271,8 +271,8 @@ class ExpenseTest {
 
         @Test
         void rejectReasonIsCapped() {
-            assertThatThrownBy(() -> inStatus(ExpenseStatus.SUBMITTED)
-                            .reject(APPROVER, "r".repeat(Expense.MAX_REASON + 1)))
+            assertThatThrownBy(() ->
+                            inStatus(ExpenseStatus.SUBMITTED).reject(APPROVER, "r".repeat(Expense.MAX_REASON + 1)))
                     .isInstanceOf(RuleViolated.class);
         }
 
@@ -283,9 +283,7 @@ class ExpenseTest {
             e.reopen(CLAIMANT);
             e.submit(CLAIMANT, READY);
             e.reject(OWNER, "second");
-            assertThat(e.rejections())
-                    .extracting(Rejection::reason)
-                    .containsExactly("first", "second");
+            assertThat(e.rejections()).extracting(Rejection::reason).containsExactly("first", "second");
             assertThat(e.rejections().getLast().rejectedBy()).isEqualTo(OWNER.id());
         }
 
@@ -314,14 +312,20 @@ class ExpenseTest {
         @Test
         void editValidatesLikeCreation() {
             assertThatThrownBy(() -> draft().edit(
-                            CLAIMANT, Money.of("20", "EUR"), Category.TRAVEL, TODAY.plusDays(1), "Bahn", null, CLOCK))
+                                    CLAIMANT,
+                                    Money.of("20", "EUR"),
+                                    Category.TRAVEL,
+                                    TODAY.plusDays(1),
+                                    "Bahn",
+                                    null,
+                                    CLOCK))
                     .isInstanceOf(RuleViolated.class);
         }
 
         @Test
         void editByNonClaimantIsRefused() {
-            assertThatThrownBy(() -> draft().edit(
-                            OWNER, Money.of("20", "EUR"), Category.TRAVEL, TODAY, "Bahn", null, CLOCK))
+            assertThatThrownBy(() ->
+                            draft().edit(OWNER, Money.of("20", "EUR"), Category.TRAVEL, TODAY, "Bahn", null, CLOCK))
                     .isInstanceOf(NotAllowed.class);
         }
 
@@ -330,8 +334,8 @@ class ExpenseTest {
                 value = ExpenseStatus.class,
                 names = {"SUBMITTED", "APPROVED", "REJECTED", "REIMBURSED"})
         void editOutsideDraftIsRefused(ExpenseStatus status) {
-            assertThatThrownBy(() -> inStatus(status).edit(
-                            CLAIMANT, Money.of("20", "EUR"), Category.TRAVEL, TODAY, "Bahn", null, CLOCK))
+            assertThatThrownBy(() -> inStatus(status)
+                            .edit(CLAIMANT, Money.of("20", "EUR"), Category.TRAVEL, TODAY, "Bahn", null, CLOCK))
                     .isInstanceOf(RuleViolated.class);
         }
 
@@ -344,7 +348,9 @@ class ExpenseTest {
             assertThat(d.canDelete(OWNER)).isFalse();
             for (ExpenseStatus s : NON_DRAFT) {
                 Expense e = inStatus(s);
-                assertThat(e.canAddOrRemoveReceipts(CLAIMANT)).as("receipts in %s", s).isFalse();
+                assertThat(e.canAddOrRemoveReceipts(CLAIMANT))
+                        .as("receipts in %s", s)
+                        .isFalse();
                 assertThat(e.canDelete(CLAIMANT)).as("delete in %s", s).isFalse();
             }
         }

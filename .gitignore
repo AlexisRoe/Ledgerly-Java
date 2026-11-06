@@ -25,3 +25,6 @@ replay_pid*
 
 # Build
 target/
+
+# Local secrets
+.env

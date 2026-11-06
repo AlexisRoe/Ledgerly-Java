@@ -13,8 +13,7 @@ class MoneyTest {
 
     @Test
     void rejectsNulls() {
-        assertThatThrownBy(() -> new Money(null, Currency.getInstance("EUR")))
-                .isInstanceOf(NullPointerException.class);
+        assertThatThrownBy(() -> new Money(null, Currency.getInstance("EUR"))).isInstanceOf(NullPointerException.class);
         assertThatThrownBy(() -> new Money(BigDecimal.ONE, null)).isInstanceOf(NullPointerException.class);
     }
 
