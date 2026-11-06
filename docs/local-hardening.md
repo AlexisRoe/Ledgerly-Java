@@ -35,10 +35,9 @@ does this as one "build tooling" change).
 
 Third-party actions are pinned to a commit SHA with the tag as a comment (a tag can be moved; a commit cannot);
 checkouts do not leave the token in `.git/config` (`persist-credentials: false`); the token is read-only.
-**Open point:** `aquasecurity/trivy-action` had tags re-published in 2026 and has a published advisory about script
-injection in its composite action. The pin is `v0.28.0` at commit `915b19b…` (authored October 2024, signed). I could not
-verify from here that this is a clean version: check the advisory and the action's releases before the first run, or
-replace the action with the Trivy CLI.
+`aquasecurity/trivy-action` is pinned to `v0.36.0` (commit `ed142fd…`). Advisory GHSA-9p44-j4g5-cfx5 (script injection
+in the composite action) affects 0.31.0 to 0.34.0 and is patched from 0.34.1. That version pins its own
+`setup-trivy` by commit as well. The earlier pin `v0.28.0` failed because the `setup-trivy` tag it used no longer exists.
 
 ## Secrets
 
