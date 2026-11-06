@@ -4,6 +4,8 @@ IMPORTANT: To be done, after system is fully implemented
 
 Make the hole application running in docker
 
+**Status: DONE, verified.** `compose.yaml` has an `app` service (compose profile `app`, image `ledgerly:0.0.1-SNAPSHOT`, `local` profile, Postgres health check). Started with `docker compose --profile app up`: readiness 200, Swagger UI 200. ClamAV is pinned to `linux/amd64` because it has no arm64 image.
+
 ## Task 2
 
 Create a MAKE file with all commands needed to run, stop, debug, lint, test the application
@@ -22,7 +24,7 @@ If not already happening, seed the database with a base set of data, so that tes
 
 ## Task 6
 
-Implementing industry-level lintern and prettier and implement automatic running checks on push to Github
+Implementing lintern, prettier, test pipelines and implement automatic running checks on push to main via PR to Github
 
 ## Task 7 
 

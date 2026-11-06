@@ -14,6 +14,11 @@ services:
       POSTGRES_PASSWORD: ledgerly
     ports:
       - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ledgerly -d ledgerly"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
 
   seaweedfs:
     image: chrislusf/seaweedfs:latest
@@ -23,6 +28,7 @@ services:
 
   clamav:
     image: clamav/clamav:stable
+    platform: linux/amd64   # no arm64 image is published; Apple Silicon runs it under emulation
     ports:
       - "3310:3310"   # clamd; the first start downloads signatures and takes a few minutes
 
@@ -39,3 +45,30 @@ services:
       - ./keycloak/ledgerly-realm.json:/opt/keycloak/data/import/ledgerly-realm.json:ro
     ports:
       - "8180:8080"   # admin console: http://localhost:8180 (admin/admin)
+
+  # The application itself, for `make up` (compose profile "app"). Build the image first (`make image`).
+  # It runs with the `local` profile: a throw-away token key, human-readable logs, Swagger UI and the demo data
+  # (see Seeding in docs/deployment.md). Not for production: use the `prod` profile and real secrets there.
+  app:
+    image: ledgerly:0.0.1-SNAPSHOT
+    profiles: ["app"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+      seaweedfs:
+        condition: service_started
+      clamav:
+        condition: service_started
+    environment:
+      SPRING_PROFILES_ACTIVE: local
+      # The image has no Docker CLI, so Spring Boot's compose support must stay off.
+      SPRING_DOCKER_COMPOSE_ENABLED: "false"
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/ledgerly
+      SPRING_DATASOURCE_USERNAME: ledgerly
+      SPRING_DATASOURCE_PASSWORD: ledgerly
+      LEDGERLY_STORAGE_S3_ENDPOINT: http://seaweedfs:8333
+      LEDGERLY_RECEIPTS_CLAMAV_HOST: clamav
+      MANAGEMENT_OPENTELEMETRY_TRACING_EXPORT_OTLP_ENDPOINT: http://lgtm:4318/v1/traces
+    ports:
+      - "8080:8080"   # API and Swagger UI: http://localhost:8080/swagger-ui/index.html
+      - "8081:8081"   # actuator (local only: do not publish this in production)
