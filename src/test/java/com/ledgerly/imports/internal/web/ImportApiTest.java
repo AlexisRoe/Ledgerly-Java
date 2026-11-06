@@ -122,6 +122,12 @@ class ImportApiTest {
     @Autowired
     CapturedImportEvents events;
 
+    @Autowired
+    org.springframework.context.ApplicationEventPublisher publisher;
+
+    @Autowired
+    org.springframework.transaction.support.TransactionTemplate transactions;
+
     RestTestClient client;
     TestUsers users;
     UUID team;
@@ -552,5 +558,26 @@ class ImportApiTest {
         Set<Integer> lines = new HashSet<>();
         done.body().get("errors").forEach(e -> lines.add(e.get("line").asInt()));
         assertThat(lines).containsExactly(7);
+    }
+
+    // --- the event registry (M9)
+    // ------------------------------------------------------------------------------------------
+
+    @Test
+    void deliveringTheQueuedEventAgainDoesNotRunACompletedImportTwice() {
+        Resp queued = upload(importer, csv(goodRow(1), goodRow(2), goodRow(3)));
+        Resp done = awaitFinished(importer, queued.id());
+        assertThat(done.body().get("importedRows").asInt()).isEqualTo(3);
+
+        // What the registry does after a restart for an event it still has on record.
+        transactions.executeWithoutResult(status -> publisher.publishEvent(
+                new com.ledgerly.imports.internal.application.ImportQueued(UUID.fromString(queued.id()))));
+
+        // Give the (asynchronous) listener time to run, then check nothing was imported again.
+        await().pollDelay(Duration.ofSeconds(1)).atMost(Duration.ofSeconds(10)).untilAsserted(() -> {
+            assertThat(expenseCount()).isEqualTo(3);
+            assertThat(get(importer, team, queued.id()).body().get("status").asString())
+                    .isEqualTo("COMPLETED");
+        });
     }
 }

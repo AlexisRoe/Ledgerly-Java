@@ -1,0 +1,5 @@
+# Loaded on top of application.yaml in the test profile.
+ledgerly:
+  events:
+    # Tests decide themselves when an incomplete event is delivered again.
+    resubmit-enabled: false

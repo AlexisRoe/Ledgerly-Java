@@ -1,0 +1,33 @@
+[%autowidth.stretch, cols="h,a"]
+|===
+|Base package
+|`com.ledgerly.audit`
+|Bean references
+|* `c.l.s.config.LedgerlyLimits` (in Shared)
+|Events listened to
+|* `c.l.e.events.ExpenseEvent.Submitted` (async) 
+* `c.l.t.events.TeamEvent.TeamCreated` (async) 
+* `c.l.r.events.ReceiptEvent.Quarantined` (async) 
+* `c.l.t.events.TeamEvent.MemberInvited` (async) 
+* `c.l.t.events.TeamEvent.MemberLeft` (async) 
+* `c.l.i.events.RefreshTokenReuseDetected` (async) 
+* `c.l.e.events.ExpenseEvent.Created` (async) 
+* `c.l.t.events.TeamEvent.InvitationRevoked` (async) 
+* `c.l.e.events.ExpenseEvent.Edited` (async) 
+* `c.l.i.events.UserRegistered` (async) 
+* `c.l.i.events.UserVerified` (async) 
+* `c.l.t.events.TeamEvent.MemberRoleChanged` (async) 
+* `c.l.e.events.ExpenseEvent.Deleted` (async) 
+* `c.l.i.events.ImportCompleted` (async) 
+* `c.l.e.events.ExpenseEvent.Reopened` (async) 
+* `c.l.t.events.TeamEvent.InvitationAccepted` (async) 
+* `c.l.t.events.TeamEvent.InvitationDeclined` (async) 
+* `c.l.r.events.ReceiptEvent.Uploaded` (async) 
+* `c.l.e.events.ExpenseEvent.Rejected` (async) 
+* `c.l.e.events.ExpenseEvent.Withdrawn` (async) 
+* `c.l.r.events.ReceiptEvent.Accepted` (async) 
+* `c.l.e.events.ExpenseEvent.Reimbursed` (async) 
+* `c.l.r.events.ReceiptEvent.Deleted` (async) 
+* `c.l.t.events.TeamEvent.MemberRemoved` (async) 
+* `c.l.e.events.ExpenseEvent.Approved` (async) 
+|===

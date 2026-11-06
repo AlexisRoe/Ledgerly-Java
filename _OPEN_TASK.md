@@ -27,3 +27,7 @@ Implementing industry-level lintern and prettier and implement automatic running
 ## Task 7 
 
 About testing, see if you can make testing better. Tests should never test java or library methods, just custom code. It should test expected data flows, edge-cases and what methods should not do or allow
+
+## Task 8
+
+If not already existing, does a /docs endpoint exists for the OpenApiSpecs?

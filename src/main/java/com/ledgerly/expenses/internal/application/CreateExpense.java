@@ -1,6 +1,7 @@
 package com.ledgerly.expenses.internal.application;
 
 import com.ledgerly.expenses.Category;
+import com.ledgerly.expenses.events.ExpenseEvent;
 import com.ledgerly.expenses.internal.domain.Expense;
 import com.ledgerly.expenses.internal.infrastructure.ExpenseRepository;
 import com.ledgerly.shared.error.Conflict;
@@ -18,6 +19,7 @@ import java.time.Clock;
 import java.time.LocalDate;
 import java.util.HexFormat;
 import org.jspecify.annotations.Nullable;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -40,12 +42,19 @@ public class CreateExpense {
     private final ExpenseRepository expenses;
     private final ExpenseAccess access;
     private final IdempotencyStore idempotency;
+    private final ApplicationEventPublisher events;
     private final Clock clock;
 
-    CreateExpense(ExpenseRepository expenses, ExpenseAccess access, IdempotencyStore idempotency, Clock clock) {
+    CreateExpense(
+            ExpenseRepository expenses,
+            ExpenseAccess access,
+            IdempotencyStore idempotency,
+            ApplicationEventPublisher events,
+            Clock clock) {
         this.expenses = expenses;
         this.access = access;
         this.idempotency = idempotency;
+        this.events = events;
         this.clock = clock;
     }
 
@@ -62,6 +71,7 @@ public class CreateExpense {
         Expense expense = Expense.draft(
                 c.teamId(), c.claimantId(), c.money(), c.category(), c.incurredOn(), c.merchant(), c.note(), clock);
         ExpenseView view = ExpenseView.of(expenses.save(expense));
+        events.publishEvent(new ExpenseEvent.Created(c.teamId(), view.id(), c.claimantId(), clock.instant()));
         if (idempotencyKey != null) {
             try {
                 idempotency.save(

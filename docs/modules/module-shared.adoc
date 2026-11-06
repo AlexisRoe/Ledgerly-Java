@@ -1,0 +1,20 @@
+[%autowidth.stretch, cols="h,a"]
+|===
+|Base package
+|`com.ledgerly.shared`
+|Spring components
+|_Configuration properties_
+
+* `c.l.s.config.LedgerlyLimits`
+* `c.l.s.storage.StorageProperties`
+
+_Others_
+
+* `c.l.s.error.ProblemExceptionHandler`
+* `c.l.s.error.ProblemFactory`
+* `c.l.s.idempotency.IdempotencyStore`
+* `c.l.s.security.CurrentUser` (via `c.l.s.security.JwtCurrentUser`)
+* `c.l.s.security.ProblemSecurityHandler`
+* `c.l.s.storage.ObjectStorage` (via `c.l.s.storage.S3ObjectStorage`)
+* `c.l.s.web.JsonBodyLimitFilter`
+|===

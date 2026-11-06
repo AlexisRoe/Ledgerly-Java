@@ -23,6 +23,8 @@ tags:
     description: Receipt files attached to draft expenses.
   - name: imports
     description: CSV imports that create many draft expenses at once.
+  - name: audit
+    description: The append-only audit trail of a team.
 security:
   - bearerAuth: []
 
@@ -572,6 +574,35 @@ paths:
         "404": { $ref: "#/components/responses/NotFound" }
         "500": { $ref: "#/components/responses/InternalError" }
 
+  /teams/{teamId}/audit-events:
+    get:
+      tags: [audit]
+      operationId: listAuditEvents
+      summary: The team's audit trail, newest first (OWNER only)
+      description: >
+        Cursor (keyset) paging, because the trail only ever grows: the response carries `nextCursor`; pass it back as
+        `after` to get the next page. Cursors are opaque tokens; a made-up one is a 400. Events are written
+        asynchronously from the domain events, so an action shows up here a moment after it happened.
+      parameters:
+        - $ref: "#/components/parameters/TeamId"
+        - name: limit
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 100, default: 50 }
+        - name: after
+          in: query
+          schema: { type: string, maxLength: 200 }
+      responses:
+        "200":
+          description: One page of audit events
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AuditEventPage" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "500": { $ref: "#/components/responses/InternalError" }
+
   /teams/{teamId}/imports:
     post:
       tags: [imports]
@@ -1019,6 +1050,28 @@ components:
           type: array
           items: { $ref: "#/components/schemas/ImportRowError" }
         errorsTruncated: { type: boolean }
+    AuditEvent:
+      type: object
+      required: [id, eventType, occurredAt, details]
+      properties:
+        id: { type: string, format: uuid }
+        eventType: { type: string, examples: [EXPENSE_SUBMITTED] }
+        occurredAt: { type: string, format: date-time }
+        actorId: { type: string, format: uuid, description: The user who did it; absent when the system did. }
+        subjectType: { type: string, examples: [EXPENSE] }
+        subjectId: { type: string, format: uuid }
+        details:
+          type: object
+          description: Ids and field names only; never names, emails or amounts.
+          additionalProperties: true
+    AuditEventPage:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/AuditEvent" }
+        nextCursor: { type: string, description: Absent on the last page. }
     ScanStatus:
       type: string
       enum: [PENDING_SCAN, ACCEPTED, QUARANTINED]

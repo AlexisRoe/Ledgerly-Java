@@ -1,0 +1,33 @@
+@startuml
+title <size:24>Teams</size>
+
+set separator none
+top to bottom direction
+
+<style>
+  root {
+    BackgroundColor: #ffffff
+    FontColor: #444444
+  }
+</style>
+
+!include <C4/C4>
+!include <C4/C4_Context>
+!include <C4/C4_Component>
+
+System_Boundary("LedgerlyApplication_boundary", "LedgerlyApplication", $tags="") {
+  Container_Boundary("LedgerlyApplication.LedgerlyApplication_boundary", "LedgerlyApplication", $tags="") {
+    Component(LedgerlyApplication.LedgerlyApplication.Shared, "Shared", $techn="Module", $descr="", $tags="", $link="")
+    Component(LedgerlyApplication.LedgerlyApplication.Identity, "Identity", $techn="Module", $descr="", $tags="", $link="")
+    Component(LedgerlyApplication.LedgerlyApplication.Teams, "Teams", $techn="Module", $descr="", $tags="", $link="")
+  }
+
+}
+
+Rel(LedgerlyApplication.LedgerlyApplication.Teams, LedgerlyApplication.LedgerlyApplication.Identity, "uses", $techn="", $tags="", $link="")
+Rel(LedgerlyApplication.LedgerlyApplication.Teams, LedgerlyApplication.LedgerlyApplication.Shared, "uses", $techn="", $tags="", $link="")
+Rel(LedgerlyApplication.LedgerlyApplication.Identity, LedgerlyApplication.LedgerlyApplication.Shared, "depends on", $techn="", $tags="", $link="")
+
+SHOW_LEGEND(true)
+hide stereotypes
+@enduml

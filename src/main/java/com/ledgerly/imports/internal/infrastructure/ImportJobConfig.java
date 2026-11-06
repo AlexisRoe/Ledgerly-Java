@@ -27,8 +27,6 @@ import org.springframework.batch.infrastructure.item.file.transform.DelimitedLin
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.core.task.SimpleAsyncTaskExecutor;
-import org.springframework.core.task.TaskExecutor;
 import org.springframework.transaction.PlatformTransactionManager;
 
 /**
@@ -44,14 +42,6 @@ class ImportJobConfig {
     static final String PARAM_TEAM_ID = "teamId";
     static final String PARAM_USER_ID = "userId";
     static final String PARAM_STORAGE_KEY = "storageKey";
-
-    /** Virtual threads: an import mostly waits (object store, database), which is what they are good at. */
-    @Bean
-    TaskExecutor importExecutor() {
-        SimpleAsyncTaskExecutor executor = new SimpleAsyncTaskExecutor("import-");
-        executor.setVirtualThreads(true);
-        return executor;
-    }
 
     @Bean
     Job importExpensesJob(JobRepository repository, Step importStep, ImportJobListener listener) {

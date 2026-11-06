@@ -21,9 +21,11 @@ import org.springframework.transaction.event.TransactionalEventListener;
 import org.springframework.transaction.support.TransactionTemplate;
 
 /**
- * Scans a freshly stored receipt. Runs after the upload commits, on another thread. If the application stops
- * between the commit and the scan, or the scanner stays unreachable, the receipt remains PENDING_SCAN: nothing
- * re-triggers it yet (the event publication registry of M9 fixes that).
+ * Scans a freshly stored receipt. Runs after the upload commits, on another thread, as a tracked event listener:
+ * Spring Modulith stores a publication for it in the same transaction as the upload and completes it when this
+ * method returns normally. If the application stops before the scan, or the scanner cannot be reached, the method
+ * does not complete, the publication stays open, and the event is delivered again at the next start-up (or when
+ * incomplete publications are resubmitted). The receipt stays PENDING_SCAN in the meantime.
  */
 @Component
 public class ScanReceipt {
@@ -58,7 +60,13 @@ public class ScanReceipt {
         scan(event.receiptId());
     }
 
-    /** Public so a future recovery job (or a test) can scan a receipt that is still pending. */
+    /**
+     * Scans one receipt if it is still pending; does nothing otherwise, so delivering the same event twice is
+     * harmless.
+     *
+     * @throws IllegalStateException when the file or the scanner cannot be reached: the caller (the event
+     *     registry) must see the failure, because swallowing it would mark the event as handled
+     */
     public void scan(UUID receiptId) {
         Optional<Receipt> found = tx.execute(s -> receipts.findById(receiptId));
         if (found == null || found.isEmpty() || found.get().scanStatus() != ScanStatus.PENDING_SCAN) {
@@ -73,7 +81,7 @@ public class ScanReceipt {
                     "Scan of receipt {} failed ({}); it stays PENDING_SCAN",
                     receiptId,
                     e.getClass().getSimpleName());
-            return;
+            throw new IllegalStateException("Scan of receipt " + receiptId + " failed", e);
         }
         switch (result) {
             case MalwareScanner.Result.Clean clean -> markAccepted(receipt);
@@ -92,7 +100,10 @@ public class ScanReceipt {
 
     private void quarantine(Receipt scanned, String signature) {
         String quarantineKey = "quarantine/" + UUID.randomUUID();
-        storage.move(scanned.storageKey(), quarantineKey);
+        String originalKey = scanned.storageKey();
+        // The row changes first. If moving the object then fails, the receipt is already QUARANTINED (never
+        // served) and a re-delivered event finds nothing left to do; at worst a stray object stays under its
+        // old key, unreachable from the API.
         tx.executeWithoutResult(s -> {
             Receipt receipt = receipts.findById(scanned.id()).orElseThrow();
             receipt.quarantine(quarantineKey);
@@ -100,5 +111,6 @@ public class ScanReceipt {
                     new TeamId(receipt.teamId()), new ExpenseId(receipt.expenseId()), receipt.id(), clock.instant()));
         });
         log.warn("Receipt {} quarantined: scanner reported {}", scanned.id(), signature);
+        storage.move(originalKey, quarantineKey);
     }
 }

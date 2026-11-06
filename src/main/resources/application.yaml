@@ -9,6 +9,14 @@ spring:
       # The app also counts bytes itself (ledgerly.limits.max-upload-size); these cap the request at the door.
       max-file-size: 10MB
       max-request-size: 11MB
+  modulith:
+    events:
+      # Events whose listener had not finished when the application stopped are delivered again at start-up.
+      republish-outstanding-events-on-restart: true
+  threads:
+    virtual:
+      # @Async listeners (the Modulith ones) run on virtual threads: they mostly wait on the database.
+      enabled: true
   batch:
     job:
       # Jobs are started by the application (an import upload), never at start-up.

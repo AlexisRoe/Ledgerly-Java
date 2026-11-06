@@ -1,6 +1,6 @@
 package com.ledgerly.expenses.internal.application;
 
-import com.ledgerly.expenses.events.ExpenseDeleted;
+import com.ledgerly.expenses.events.ExpenseEvent;
 import com.ledgerly.expenses.internal.domain.Actor;
 import com.ledgerly.expenses.internal.domain.Expense;
 import com.ledgerly.expenses.internal.infrastructure.ExpenseRepository;
@@ -37,6 +37,6 @@ public class DeleteExpense {
         }
         e.requireDeletableBy(actor);
         expenses.delete(e);
-        events.publishEvent(new ExpenseDeleted(e.teamId(), e.id(), caller, clock.instant()));
+        events.publishEvent(new ExpenseEvent.Deleted(e.teamId(), e.id(), caller, clock.instant()));
     }
 }

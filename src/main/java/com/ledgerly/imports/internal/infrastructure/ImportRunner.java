@@ -11,16 +11,17 @@ import org.springframework.batch.core.job.parameters.JobParameters;
 import org.springframework.batch.core.job.parameters.JobParametersBuilder;
 import org.springframework.batch.core.launch.JobOperator;
 import org.springframework.batch.core.repository.JobRepository;
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.core.task.TaskExecutor;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 
 /**
- * Starts import jobs, once the row that describes them has committed, on a virtual thread. If the application
- * stops between the commit and the start, the import stays QUEUED (the event publication registry of M9 fixes
- * that); if a job fails halfway it can be {@link #restart restarted}.
+ * Starts import jobs once the row that describes them has committed. A tracked event listener: Spring Modulith
+ * keeps the {@link ImportQueued} event until this method returns, so an import that was queued but never started
+ * because the application stopped is started at the next start-up. The job runs to its end on this (virtual)
+ * thread, not inside a listener transaction, so every chunk still commits on its own. A job that fails halfway
+ * can be {@link #restart restarted}.
  */
 @Component
 public class ImportRunner {
@@ -31,31 +32,41 @@ public class ImportRunner {
     private final Job job;
     private final JobRepository repository;
     private final ImportJobs jobs;
-    private final TaskExecutor executor;
     private final Clock clock;
 
-    ImportRunner(
-            JobOperator operator,
-            Job importExpensesJob,
-            JobRepository repository,
-            ImportJobs jobs,
-            @Qualifier("importExecutor") TaskExecutor executor,
-            Clock clock) {
+    ImportRunner(JobOperator operator, Job importExpensesJob, JobRepository repository, ImportJobs jobs, Clock clock) {
         this.operator = operator;
         this.job = importExpensesJob;
         this.repository = repository;
         this.jobs = jobs;
-        this.executor = executor;
         this.clock = clock;
     }
 
+    @Async
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     void on(ImportQueued event) {
-        executor.execute(() -> run(event.importId()));
+        run(event.importId());
     }
 
-    /** Runs the job to its end on the calling thread. Never throws: a failed launch is recorded as FAILED. */
+    /**
+     * Runs the job to its end on the calling thread. Never throws: a failed launch is recorded as FAILED. Safe to
+     * call again for the same import: one that is already finished or running is left alone.
+     */
     void run(UUID importId) {
+        var row = jobs.find(importId);
+        if (row.isEmpty()) {
+            return;
+        }
+        switch (row.get().status()) {
+            case "QUEUED" -> start(importId);
+            case "FAILED" -> restart(importId);
+            default ->
+                log.info(
+                        "Import {} is {}; nothing to start", importId, row.get().status());
+        }
+    }
+
+    private void start(UUID importId) {
         try {
             operator.start(job, parameters(importId));
         } catch (Exception e) {

@@ -1,0 +1,31 @@
+== LedgerlyApplication
+plantuml::components.puml[,,format=svg]
+
+== Shared
+plantuml::module-shared.puml[,,format=svg]
+include::module-shared.adoc[]
+
+== Identity
+plantuml::module-identity.puml[,,format=svg]
+include::module-identity.adoc[]
+
+== Teams
+plantuml::module-teams.puml[,,format=svg]
+include::module-teams.adoc[]
+
+== Expenses
+plantuml::module-expenses.puml[,,format=svg]
+include::module-expenses.adoc[]
+
+== Imports
+plantuml::module-imports.puml[,,format=svg]
+include::module-imports.adoc[]
+
+== Receipts
+plantuml::module-receipts.puml[,,format=svg]
+include::module-receipts.adoc[]
+
+== Audit
+plantuml::module-audit.puml[,,format=svg]
+include::module-audit.adoc[]
+

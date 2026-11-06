@@ -1,0 +1,9 @@
+[%autowidth.stretch, cols="h,a"]
+|===
+|Base package
+|`com.ledgerly.identity`
+|Spring components
+|_Services_
+
+* `c.l.i.IdentityFacade` (via `c.l.i.internal.application.IdentityFacadeImpl`)
+|===
