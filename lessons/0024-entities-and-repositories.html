@@ -1,0 +1,57 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Lesson 24: Entities, repositories and migrations</title>
+<meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="../assets/style.css"></head><body>
+<h1>Lesson 24: Entities, repositories and migrations</h1>
+<p class="meta"><a href="index.html">&larr; All lessons</a> &middot; About 14 minutes. Builds on <a href="0023-services-and-transactions.html">Lesson 23</a>.</p>
+<h2>The one idea</h2>
+<p>An <strong>entity</strong> is a class mapped to a table; a <strong>repository</strong> is an interface Spring turns into database code. The entity needs <code>@Entity</code>, an identifier (<code>@Id</code> or <code>@EmbeddedId</code>), and "a non-<code>private</code> no-argument constructor" (<a href="https://docs.hibernate.org/orm/current/introduction/html_single/">Hibernate</a>). <code>@Version</code> adds optimistic locking.</p>
+<pre><code>@Entity @Table(name = "expenses")
+public class Expense {
+    @EmbeddedId private ExpenseId id;          // primary key (a record)
+    @Embedded private Money money;             // Lesson 8: amount + currency columns
+    @Enumerated(EnumType.STRING) private ExpenseStatus status;
+    @Version private long version;             // changes on every update
+
+    /** For JPA only. */
+    protected Expense() {}                     // the required no-arg constructor
+}</code></pre>
+<p>That is why <a href="$R/expenses/internal/domain/Expense.java"><code>Expense</code></a> has an empty <code>protected</code> constructor next to its <code>private</code> one and its <code>draft</code> factory (Lesson 7).</p>
+<h2>Repositories</h2>
+<p>A repository "must extend <code>Repository</code> and be typed to the domain class and an ID type"; you declare methods and Spring supplies the implementation (<a href="https://docs.spring.io/spring-data/jpa/reference/repositories/definition.html">Spring Data: repositories</a>). <strong>Derived queries</strong> build the query from the method name: <code>findBy</code> + properties joined with <code>And</code>/<code>Or</code> (<a href="https://docs.spring.io/spring-data/jpa/reference/repositories/query-methods-details.html">Spring Data: query methods</a>). Single results come back as <code>Optional</code> (Lesson 14); paging takes a <code>Pageable</code>.</p>
+<pre><code>public interface ExpenseRepository extends Repository&lt;Expense, ExpenseId&gt; {
+    Optional&lt;Expense&gt; findByTeamIdAndId(TeamId teamId, ExpenseId id);  // where team_id = ? and id = ?
+    Expense save(Expense expense);                                     // persist or merge
+    void delete(Expense expense);
+    Page&lt;Expense&gt; findAll(Specification&lt;Expense&gt; spec, Pageable pageable);
+}</code></pre>
+<p><code>save</code> "persists or merges" depending on whether the entity is new (<a href="https://docs.spring.io/spring-data/jpa/reference/jpa/entity-persistence.html">Spring Data: persisting entities</a>). The repo's own comment explains <code>extends Repository</code> instead of <code>JpaRepository</code>: with no inherited <code>findById</code>, a query that is not scoped to a team cannot be written. Security by construction.</p>
+<h2>The database side: Flyway</h2>
+<p>Tables are created by versioned scripts in <code>src/main/resources/db/migration</code>, named <code>V&lt;VERSION&gt;__&lt;NAME&gt;.sql</code>, which Flyway runs at startup (<a href="https://docs.spring.io/spring-boot/how-to/data-initialization.html">Spring Boot: Flyway</a>). <a href="../src/main/resources/db/migration/V1__expenses.sql"><code>V1__expenses.sql</code></a> defines <code>expenses</code>. The config sets <code>ddl-auto: validate</code>, so Hibernate checks at startup that entity and tables match; a mismatch stops the app. Changing an entity field therefore means a new migration (Lesson 28).</p>
+<h2>Check yourself</h2>
+<div class="quiz" data-answer="d"><p>What must you write to implement a Spring Data repository interface?</p>
+<button data-k="a" data-why="Spring supplies all of them.">Only the save method by hand</button>
+<button data-k="b" data-why="No implementation class is needed.">Each method inside a separate class</button>
+<button data-k="c" data-why="Derived names need no SQL.">A SQL string for every method</button>
+<button data-k="d" data-why="Spring Data creates it at run time.">Nothing; Spring generates the implementation</button>
+<div class="fb"></div></div>
+<div class="quiz" data-answer="b"><p>What does <code>findByTeamIdAndId(teamId, id)</code> require?</p>
+<button data-k="a" data-why="And means both conditions.">Either teamId or id may match</button>
+<button data-k="b" data-why="And joins the two properties.">Both teamId and id must match</button>
+<button data-k="c" data-why="Both properties are used.">Only the id column is compared</button>
+<button data-k="d" data-why="The name drives the query.">Neither; names are only comments</button>
+<div class="fb"></div></div>
+<div class="quiz" data-answer="c"><p>Why does <code>ExpenseRepository</code> extend <code>Repository</code> and not <code>JpaRepository</code>?</p>
+<button data-k="a" data-why="Speed is not the reason.">It makes queries run much faster</button>
+<button data-k="b" data-why="Entities need no such thing.">It is required by every entity</button>
+<button data-k="c" data-why="So no unscoped findById exists.">Only the declared methods get exposed</button>
+<button data-k="d" data-why="Unrelated to Flyway.">It disables the database migration</button>
+<div class="fb"></div></div>
+<div class="quiz" data-answer="d"><p>Why does <code>Expense</code> contain <code>protected Expense() {}</code>?</p>
+<button data-k="a" data-why="Expense is a class, not a record.">Records need an empty constructor</button>
+<button data-k="b" data-why="Spring allows them.">Spring forbids constructor parameters</button>
+<button data-k="c" data-why="Not true in general.">Every class needs one anyway</button>
+<button data-k="d" data-why="An entity requires a non-private no-arg constructor.">Hibernate needs a no-argument constructor</button>
+<div class="fb"></div></div>
+<h2>Next</h2><p><a href="0025-validation-and-errors.html">Lesson 25: Validation and errors</a>.</p>
+<p><strong>Read:</strong> <a href="https://docs.spring.io/spring-data/jpa/reference/repositories/query-methods-details.html">Spring Data JPA: Query Methods</a>.</p>
+<p class="note">Questions? Ask me what <code>Specification</code> in <code>findAll</code> is for.</p>
+<script src="../assets/quiz.js"></script></body></html>

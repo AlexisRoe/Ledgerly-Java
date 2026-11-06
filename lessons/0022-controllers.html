@@ -1,0 +1,70 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Lesson 22: Controllers</title>
+<meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="../assets/style.css"></head><body>
+<h1>Lesson 22: Controllers</h1>
+<p class="meta"><a href="index.html">&larr; All lessons</a> &middot; About 14 minutes. Builds on <a href="0021-spring-boot-anatomy.html">Lesson 21</a>.</p>
+<h2>The one idea</h2>
+<p>A controller maps HTTP requests to Java methods. <code>@RestController</code> is <code>@Controller</code> plus <code>@ResponseBody</code>: return values are written to the response body (<a href="https://docs.spring.io/spring-framework/reference/web/webmvc/mvc-controller/ann.html">Spring: controllers</a>).</p>
+<pre><code>@RestController
+@RequestMapping(path = "/pets", produces = "application/json")
+public class PetController {
+    @GetMapping("/{petId}")
+    public Pet getPet(@PathVariable Long petId) { ... }
+
+    @PostMapping(path = "/{ownerId}/pets", consumes = "application/json")
+    @ResponseStatus(HttpStatus.CREATED)
+    public void addPet(@PathVariable Long ownerId, @RequestBody Pet pet) { ... }
+}</code></pre>
+<ul>
+<li><code>@RequestMapping</code> sets what the class shares; <code>@GetMapping</code>, <code>@PostMapping</code>, <code>@PutMapping</code>, <code>@DeleteMapping</code>, <code>@PatchMapping</code> map one HTTP method (<a href="https://docs.spring.io/spring-framework/reference/web/webmvc/mvc-controller/ann-requestmapping.html">Spring: request mapping</a>). <code>{petId}</code> captures a path segment.</li>
+<li>Arguments: <code>@PathVariable</code> (URI template variable), <code>@RequestParam</code> (query parameter), <code>@RequestBody</code> (the body, converted to the declared type), <code>@RequestHeader</code> (<a href="https://docs.spring.io/spring-framework/reference/web/webmvc/mvc-controller/ann-methods/arguments.html">Spring: arguments</a>).</li>
+<li>Return <code>ResponseEntity&lt;T&gt;</code> when you control status, headers and body (<a href="https://docs.spring.io/spring-framework/reference/web/webmvc/mvc-controller/ann-methods/return-types.html">Spring: return values</a>).</li>
+</ul>
+<h2>The Ledgerly twist: contract first</h2>
+<p>You will not find <code>@PostMapping</code> on <a href="$R/expenses/internal/web/ExpensesController.java"><code>ExpensesController</code></a>. The API is described in <a href="../api/openapi.yaml"><code>api/openapi.yaml</code></a>; the build (openapi-generator, see <code>pom.xml</code>) generates an interface <code>ExpensesApi</code> into <code>target/generated-sources/</code> with all the mapping and validation annotations. The controller <code>implements</code> it (Lesson 11) and <code>@Override</code>s each method:</p>
+<pre><code>// generated: ExpensesApi (do not edit)
+@RequestMapping(method = RequestMethod.POST, value = "/teams/{teamId}/expenses",
+    produces = { "application/json", "application/problem+json" },
+    consumes = { "application/json" })
+ResponseEntity&lt;ExpenseResponse&gt; createExpense(
+    @PathVariable("teamId") UUID teamId,
+    @Valid @RequestBody CreateExpenseRequest createExpenseRequest, ...);
+
+// written by hand: ExpensesController
+@RestController @RequestMapping("/api/v1")
+class ExpensesController implements ExpensesApi {
+    @Override
+    public ResponseEntity&lt;ExpenseResponse&gt; createExpense(UUID teamId, CreateExpenseRequest request, @Nullable String idempotencyKey) {
+        var command = new CreateExpense.Command(new TeamId(teamId), currentUser.id(), ...);
+        var result = create.execute(command, idempotencyKey);
+        return ResponseEntity.created(location).eTag(etag(view)).body(ExpenseMapper.toResponse(view));
+    }</code></pre>
+<p>The method does three things: turn the request into a <code>Command</code>, call one use case, turn the answer into a response with <code>201 Created</code>, a <code>Location</code> and an <code>ETag</code>. To <strong>add an endpoint</strong>: edit the contract, build, then implement the new method.</p>
+<h2>Check yourself</h2>
+<div class="quiz" data-answer="c"><p><code>@RestController</code> is meta-annotated with which pair?</p>
+<button data-k="a" data-why="Not these two.">@Component and @Transactional</button>
+<button data-k="b" data-why="Not these two.">@Service and @RequestMapping</button>
+<button data-k="c" data-why="Spring docs: it writes return values to the body.">@Controller and @ResponseBody</button>
+<button data-k="d" data-why="Not these two.">@Repository and @ResponseStatus</button>
+<div class="fb"></div></div>
+<div class="quiz" data-answer="b"><p>Which annotation reads <code>{teamId}</code> from <code>/teams/{teamId}/expenses</code>?</p>
+<button data-k="a" data-why="That reads query parameters.">@RequestParam</button>
+<button data-k="b" data-why="It binds URI template variables.">@PathVariable</button>
+<button data-k="c" data-why="That reads the request body.">@RequestBody</button>
+<button data-k="d" data-why="That reads headers.">@RequestHeader</button>
+<div class="fb"></div></div>
+<div class="quiz" data-answer="d"><p>Where do the mapping annotations of <code>createExpense</code> live in Ledgerly?</p>
+<button data-k="a" data-why="The controller only implements the interface.">Directly on the ExpensesController class</button>
+<button data-k="b" data-why="Entities have no web annotations.">Inside the Expense domain entity</button>
+<button data-k="c" data-why="YAML does not hold mappings.">In application.yaml configuration file</button>
+<button data-k="d" data-why="Generated from api/openapi.yaml at build time.">In the generated ExpensesApi interface</button>
+<div class="fb"></div></div>
+<div class="quiz" data-answer="b"><p>To add a new endpoint in Ledgerly, what comes first?</p>
+<button data-k="a" data-why="It cannot override a method that does not exist yet.">Write the controller method first</button>
+<button data-k="b" data-why="The contract generates the interface you implement.">Edit the openapi.yaml contract first</button>
+<button data-k="c" data-why="Needed only if storage changes.">Create a database migration first</button>
+<button data-k="d" data-why="Tests come after the behaviour.">Add a test seeder class first</button>
+<div class="fb"></div></div>
+<h2>Next</h2><p><a href="0023-services-and-transactions.html">Lesson 23: Services and transactions</a>.</p>
+<p><strong>Read:</strong> <a href="https://docs.spring.io/spring-framework/reference/web/webmvc/mvc-controller/ann-requestmapping.html">Spring Framework: Mapping Requests</a>.</p>
+<p class="note">Questions? Ask me to find the generated file with you (run <code>./mvnw -DskipTests package</code> once, then open <code>target/generated-sources</code>).</p>
+<script src="../assets/quiz.js"></script></body></html>

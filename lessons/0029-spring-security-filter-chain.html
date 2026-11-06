@@ -1,0 +1,65 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Lesson 29: Spring Security, the filter chain</title>
+<meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="../assets/style.css"></head><body>
+<h1>Lesson 29: Spring Security, the filter chain</h1>
+<p class="meta"><a href="index.html">&larr; All lessons</a> &middot; About 14 minutes. Builds on <a href="0028-capstone-add-a-field.html">Lesson 28</a>.</p>
+<h2>The one idea</h2>
+<p>Spring Security is a chain of servlet filters in front of your controllers. A <code>SecurityFilterChain</code> bean defines the filters for a set of requests, and "only the first <code>SecurityFilterChain</code> that matches is invoked", so chains are ordered from most specific to least (<a href="https://docs.spring.io/spring-security/reference/servlet/architecture.html">Spring Security: architecture</a>). Inside a chain, <code>authorizeHttpRequests</code> lists rules and "applies only the first match"; <code>anyRequest()</code> goes last (<a href="https://docs.spring.io/spring-security/reference/servlet/authorization/authorize-http-requests.html">authorize requests</a>).</p>
+<h2>Read real code</h2>
+<p><a href="$R/identity/internal/web/SecurityConfig.java"><code>SecurityConfig</code></a>, whose class comment says "Deny by default":</p>
+<pre><code>@Bean @Order(1)
+SecurityFilterChain actuatorSecurity(HttpSecurity http) {          // only actuator requests
+    http.securityMatcher(EndpointRequest.toAnyEndpoint())
+        .authorizeHttpRequests(a -&gt; a.requestMatchers(EndpointRequest.to("health", "info", "prometheus")).permitAll()
+                                     .anyRequest().denyAll());
+    return http.build();
+}
+
+@Bean @Order(2)
+SecurityFilterChain apiSecurity(HttpSecurity http, ...) {           // everything else
+    http.csrf(AbstractHttpConfigurer::disable)
+        .sessionManagement(s -&gt; s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+        .authorizeHttpRequests(a -&gt; {
+            a.requestMatchers("/api/v1/auth/**", "/.well-known/jwks.json").permitAll();
+            a.anyRequest().authenticated();
+        })
+        .oauth2ResourceServer(o -&gt; o.jwt(...).authenticationEntryPoint(problems).accessDeniedHandler(problems))
+        .addFilterAfter(new MdcUserFilter(), BearerTokenAuthenticationFilter.class);
+    return http.build();
+}</code></pre>
+<ul>
+<li><strong>Two chains.</strong> Actuator requests hit chain 1 and nothing else does. All other requests fall to chain 2.</li>
+<li><strong>Allow list.</strong> Only login-related paths and the public keys are open; <code>anyRequest().authenticated()</code> closes everything else. A new endpoint is protected automatically.</li>
+<li><strong>Stateless bearer tokens.</strong> <code>oauth2ResourceServer().jwt()</code> handles requests with an <code>Authorization: Bearer</code> header: the signature, expiry and issuer of the JWT are validated (<a href="https://docs.spring.io/spring-security/reference/servlet/oauth2/resource-server/jwt.html">JWT resource server</a>). No session; the code comment explains CSRF is off for that reason (ADR 0004 covers the cookie endpoints).</li>
+<li><strong>Same error format.</strong> <code>ProblemSecurityHandler</code> is both the 401 entry point and the 403 handler, so security failures also return problem+json (Lesson 25), even though no controller ran.</li>
+<li><strong>Custom filters</strong> are placed relative to a known one with <code>addFilterAfter</code>/<code>addFilterBefore</code>.</li>
+</ul>
+<div class="note">Extending: you rarely edit this file. A new <code>/api/v1/...</code> endpoint is authenticated by default. Only a deliberately public path needs a <code>permitAll</code> line, and that deserves a review.</div>
+<h2>Check yourself</h2>
+<div class="quiz" data-answer="c"><p>A request matches two <code>SecurityFilterChain</code> beans. What runs?</p>
+<button data-k="a" data-why="Only one chain is used.">Both chains in written order</button>
+<button data-k="b" data-why="Chains are never merged.">Spring merges them into one chain</button>
+<button data-k="c" data-why="Docs: only the first matching chain is invoked.">Only the first matching chain runs</button>
+<button data-k="d" data-why="The first match wins.">The last matching chain wins here</button>
+<div class="fb"></div></div>
+<div class="quiz" data-answer="a"><p>Why must <code>anyRequest()</code> be the last rule?</p>
+<button data-k="a" data-why="It matches everything; first match wins.">Later rules would never be reached</button>
+<button data-k="b" data-why="Speed is not the reason.">It runs faster when placed last</button>
+<button data-k="c" data-why="Earlier rules are applied first.">Spring ignores rules placed before</button>
+<button data-k="d" data-why="It is a runtime ordering matter.">The compiler demands it comes last</button>
+<div class="fb"></div></div>
+<div class="quiz" data-answer="d"><p>What does "deny by default" look like in <code>SecurityConfig</code>?</p>
+<button data-k="a" data-why="That is the opposite.">Everything public, a few paths protected</button>
+<button data-k="b" data-why="Checks happen in the filter chain.">Every path checked by the controller</button>
+<button data-k="c" data-why="Optional authentication is not deny-by-default.">Authentication is optional for all paths</button>
+<button data-k="d" data-why="permitAll for a few paths, then anyRequest().authenticated().">Few public paths, everything else authenticated</button>
+<div class="fb"></div></div>
+<div class="quiz" data-answer="b"><p>Why is CSRF disabled for the API chain?</p>
+<button data-k="a" data-why="They still exist.">CSRF attacks no longer exist anymore</button>
+<button data-k="b" data-why="The code comment gives this reason.">Stateless bearer tokens, no session cookie</button>
+<button data-k="c" data-why="They do not.">Browsers refuse all cross-site requests</button>
+<button data-k="d" data-why="Not the case here.">Spring Boot always disables it silently</button>
+<div class="fb"></div></div>
+<h2>Next</h2><p><a href="0030-who-is-calling.html">Lesson 30: Who is calling?</a></p>
+<p><strong>Read:</strong> <a href="https://docs.spring.io/spring-security/reference/servlet/architecture.html">Spring Security: Servlet Security Architecture</a>.</p>
+<p class="note">Questions? Ask me, for example what the rate-limit filters do in the same chain.</p>
+<script src="../assets/quiz.js"></script></body></html>

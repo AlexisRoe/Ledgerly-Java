@@ -40,3 +40,7 @@ target/
 *.keystore
 prod.env
 secrets/
+
+# learning stuff
+learning-records/
+NOTES.md

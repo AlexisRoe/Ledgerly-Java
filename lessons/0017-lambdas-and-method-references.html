@@ -1,0 +1,60 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Lesson 17: Lambdas and method references</title>
+<meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="../assets/style.css"></head><body>
+<h1>Lesson 17: Lambdas and method references</h1>
+<p class="meta"><a href="index.html">&larr; All lessons</a> &middot; About 12 minutes. Builds on <a href="0016-pattern-matching.html">Lesson 16</a>.</p>
+<h2>The one idea</h2>
+<p>A <strong>lambda</strong> is a nameless method you can pass around: parameters, an arrow, a body.</p>
+<pre><code>p -&gt; p.age() &gt;= 18                 // one parameter, expression body
+(a, b) -&gt; a.size() - b.size()      // several parameters
+s -&gt; { log(s); return s.trim(); }  // block body needs return</code></pre>
+<p>A lambda needs a <strong>target type</strong>: a <em>functional interface</em>, meaning "any interface that contains only one abstract method" (<a href="https://docs.oracle.com/javase/tutorial/java/javaOO/lambdaexpressions.html">Oracle: Lambda Expressions</a>). The JDK ships common ones in <code>java.util.function</code> (<code>Predicate</code>, <code>Function</code>, <code>Consumer</code>). A lambda may use local variables only if they are final or effectively final.</p>
+<p>A <strong>method reference</strong> is a shorthand when the lambda only calls one method (<a href="https://docs.oracle.com/javase/tutorial/java/javaOO/methodreferences.html">Oracle: Method References</a>):</p>
+<table><tr><th>Kind</th><th>Example</th><th>Same as</th></tr>
+<tr><td>static method</td><td><code>Person::compareByAge</code></td><td><code>(a, b) -&gt; Person.compareByAge(a, b)</code></td></tr>
+<tr><td>method of a given object</td><td><code>provider::compareByName</code></td><td><code>(a, b) -&gt; provider.compareByName(a, b)</code></td></tr>
+<tr><td>method of "any object of a type"</td><td><code>String::compareToIgnoreCase</code></td><td><code>(a, b) -&gt; a.compareToIgnoreCase(b)</code></td></tr>
+<tr><td>constructor</td><td><code>HashSet::new</code></td><td><code>() -&gt; new HashSet()</code></td></tr></table>
+<h2>Read real code</h2>
+<pre><code>// ScanReceipt.java line 76
+Optional&lt;Receipt&gt; found = tx.execute(s -&gt; receipts.findById(receiptId));
+
+// DownloadReceipt.java line 45
+.filter(r -&gt; r.isDownloadable())
+.orElseThrow(NotFound::new);
+
+// ExpenseDeletedCleanup.java line 38
+List&lt;String&gt; keys = found.stream().map(Receipt::storageKey).toList();</code></pre>
+<ul>
+<li><code>s -&gt; receipts.findById(receiptId)</code>: <code>tx.execute</code> wants a callback; the lambda is that callback and uses <code>receiptId</code> from the enclosing method (effectively final).</li>
+<li><code>NotFound::new</code> is a constructor reference: "make a NotFound when needed".</li>
+<li><code>Receipt::storageKey</code> equals <code>r -&gt; r.storageKey()</code> (third kind).</li>
+</ul>
+<h2>Check yourself</h2>
+<div class="quiz" data-answer="c"><p>What is a functional interface?</p>
+<button data-k="a" data-why="That is a constants interface.">An interface with only constants inside</button>
+<button data-k="b" data-why="Interfaces exist to be implemented.">An interface that cannot be implemented</button>
+<button data-k="c" data-why="Oracle&#x27;s definition; it is what lambdas target.">An interface with one abstract method</button>
+<button data-k="d" data-why="Zero methods gives a lambda nothing to implement.">An interface with no methods at all</button>
+<div class="fb"></div></div>
+<div class="quiz" data-answer="b"><p>Which lambda is equivalent to <code>Receipt::storageKey</code>?</p>
+<button data-k="a" data-why="That is not a method call.">r -&gt; storageKey</button>
+<button data-k="b" data-why="The parameter becomes the receiver of the method.">r -&gt; r.storageKey()</button>
+<button data-k="c" data-why="That would be a constructor reference.">() -&gt; new Receipt()</button>
+<button data-k="d" data-why="That would be a static method reference.">r -&gt; Receipt.storageKey(r)</button>
+<div class="fb"></div></div>
+<div class="quiz" data-answer="d"><p>What kind of reference is <code>NotFound::new</code>?</p>
+<button data-k="a" data-why="That names a method, not new.">A static method reference</button>
+<button data-k="b" data-why="That names a method, not new.">An instance method reference</button>
+<button data-k="c" data-why="Java has no such thing.">A field reference literal</button>
+<button data-k="d" data-why="Oracle: ClassName::new refers to a constructor.">A reference to constructor</button>
+<div class="fb"></div></div>
+<div class="quiz" data-answer="b"><p>What may a lambda do with an enclosing local variable?</p>
+<button data-k="a" data-why="Locals cannot be static.">Declared as static only</button>
+<button data-k="b" data-why="Oracle: only final or effectively final locals.">Use it if effectively final</button>
+<button data-k="c" data-why="Any type works if effectively final.">Always a primitive type</button>
+<button data-k="d" data-why="Loops are not the rule.">Initialised before any loop</button>
+<div class="fb"></div></div>
+<h2>Next</h2><p><a href="0018-streams.html">Lesson 18: Streams</a>.</p>
+<p><strong>Read:</strong> <a href="https://docs.oracle.com/javase/tutorial/java/javaOO/methodreferences.html">The Java Tutorials: Method References</a>.</p>
+<p class="note">Questions? Ask me what "effectively final" means in practice.</p>
+<script src="../assets/quiz.js"></script></body></html>

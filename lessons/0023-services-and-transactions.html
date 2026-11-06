@@ -1,0 +1,55 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Lesson 23: Services (use cases) and transactions</title>
+<meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="../assets/style.css"></head><body>
+<h1>Lesson 23: Services (use cases) and transactions</h1>
+<p class="meta"><a href="index.html">&larr; All lessons</a> &middot; About 14 minutes. Builds on <a href="0022-controllers.html">Lesson 22</a>.</p>
+<h2>The one idea</h2>
+<p>The "service" in Ledgerly is a <strong>use case</strong>: one <code>@Service</code> class per action, with one public method <code>execute</code>. It receives a plain <code>Command</code> record, applies the domain rules, and returns a <code>Result</code> record. It never touches HTTP.</p>
+<pre><code>@Service
+public class CreateExpense {
+    public record Command(TeamId teamId, UserId claimantId, Money money, ...) {}
+    public record Result(ExpenseView view, boolean replayed) {}
+
+    private final ExpenseRepository expenses;   private final Clock clock;   ...
+
+    CreateExpense(ExpenseRepository expenses, ..., Clock clock) { ... }   // Lesson 19
+
+    @Transactional
+    public Result execute(Command c, @Nullable String idempotencyKey) {
+        access.actor(c.teamId(), c.claimantId());
+        Expense expense = Expense.draft(c.teamId(), ..., clock);
+        ExpenseView view = ExpenseView.of(expenses.save(expense));
+        events.publishEvent(new ExpenseEvent.Created(...));
+        return new Result(view, false);
+    }</code></pre>
+<p>That is <a href="$R/expenses/internal/application/CreateExpense.java"><code>CreateExpense</code></a>: check access, build the entity through the domain's factory (Lesson 7), save it, publish an event.</p>
+<h2>@Transactional</h2>
+<p><code>@Transactional</code> on a method runs it in one database transaction: all writes commit together or none do. It is "merely metadata"; Spring acts on it by wrapping the bean in a proxy (<a href="https://docs.spring.io/spring-framework/reference/data-access/transaction/declarative/annotations.html">Spring: @Transactional</a>). Three rules to remember:</p>
+<ul>
+<li><strong>Rollback:</strong> "Any <code>RuntimeException</code> or <code>Error</code> triggers rollback"; a checked <code>Exception</code> does not by default. Lesson 10 pays off: every <code>ExpenseException</code> is a <code>RuntimeException</code>, so a refused rule undoes the whole use case.</li>
+<li><strong>readOnly:</strong> <code>@Transactional(readOnly = true)</code> marks queries; the repo uses it in <code>DownloadReceipt</code>, <code>ListReceipts</code>, <code>ReceiptChecksImpl</code>.</li>
+<li><strong>Self-invocation:</strong> in proxy mode only calls coming in through the proxy count. A method calling another <code>@Transactional</code> method of the same class gets no new transaction. Keep annotated methods as the public entry point, as the use cases do.</li>
+</ul>
+<div class="note"><a href="$R/receipts/internal/application/ScanReceipt.java"><code>ScanReceipt</code></a> uses <code>tx.execute(s -&gt; ...)</code>, a <code>TransactionTemplate</code> with a lambda (Lesson 17), to run only part of a method in a transaction.</div>
+<h2>Check yourself</h2>
+<div class="quiz" data-answer="c"><p>A <code>@Transactional</code> use case throws <code>NotDraft</code> (a RuntimeException). What happens?</p>
+<button data-k="a" data-why="It ends either way.">The transaction stays open afterwards</button>
+<button data-k="b" data-why="RuntimeExceptions trigger rollback.">The transaction is committed anyway</button>
+<button data-k="c" data-why="Spring docs: any RuntimeException or Error triggers rollback.">The transaction is rolled back</button>
+<button data-k="d" data-why="There is no pause or retry.">The transaction is paused until retry</button>
+<div class="fb"></div></div>
+<div class="quiz" data-answer="b"><p>By default, a checked exception leaving a <code>@Transactional</code> method...</p>
+<button data-k="a" data-why="Only runtime exceptions and errors do.">triggers a rollback like others</button>
+<button data-k="b" data-why="Checked exceptions need rollbackFor to roll back.">does not trigger a rollback</button>
+<button data-k="c" data-why="Spring does not convert it.">is converted into a runtime one</button>
+<button data-k="d" data-why="It happens after start.">blocks the transaction from starting</button>
+<div class="fb"></div></div>
+<div class="quiz" data-answer="b"><p>A <code>@Transactional</code> method calls another <code>@Transactional</code> method on <code>this</code>. What happens?</p>
+<button data-k="a" data-why="Self-invocation bypasses the proxy.">Spring starts a nested transaction</button>
+<button data-k="b" data-why="Spring docs: self-invocation does not lead to an actual transaction.">No new transaction starts there</button>
+<button data-k="c" data-why="No retries are involved.">Spring retries the call twice</button>
+<button data-k="d" data-why="It runs, just without its own transaction.">The inner method is skipped</button>
+<div class="fb"></div></div>
+<h2>Next</h2><p><a href="0024-entities-and-repositories.html">Lesson 24: Entities and repositories</a>.</p>
+<p><strong>Read:</strong> <a href="https://docs.spring.io/spring-framework/reference/data-access/transaction/declarative/annotations.html">Spring Framework: Using @Transactional</a>.</p>
+<p class="note">Questions? Ask me, for instance why the use case publishes the event inside the transaction.</p>
+<script src="../assets/quiz.js"></script></body></html>

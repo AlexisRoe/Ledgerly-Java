@@ -1,0 +1,59 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Lesson 36: Configuration and profiles</title>
+<meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="../assets/style.css"></head><body>
+<h1>Lesson 36: Configuration and profiles</h1>
+<p class="meta"><a href="index.html">&larr; All lessons</a> &middot; About 14 minutes. Builds on <a href="0035-recap-reading-the-security-and-event-flow.html">Lesson 35</a>.</p>
+<h2>The one idea</h2>
+<p>Behaviour that differs per environment lives in configuration, not code. Spring Boot reads <code>application.yaml</code> from the classpath, plus <code>application-{profile}.yaml</code> when that profile is active, and profile files override the base ones. Later sources override earlier ones; environment variables beat the files, and command-line arguments beat both (<a href="https://docs.spring.io/spring-boot/reference/features/external-config.html">Spring Boot: externalized configuration</a>). Environment variables use underscores: <code>SPRING_CONFIG_NAME</code> for <code>spring.config.name</code>. Activate a profile with <code>spring.profiles.active</code> (<a href="https://docs.spring.io/spring-boot/reference/features/profiles.html">Spring Boot: profiles</a>).</p>
+<h2>Read real code</h2>
+<pre><code># application.yaml (always)               # application-local.yaml (profile "local")
+spring:                                    logging: { structured: { format: { console: "" } } }   # readable logs
+  jpa:                                     ledgerly:
+    hibernate: { ddl-auto: validate }        storage: { s3: { endpoint: http://localhost:8333, ... } }
+management: { server: { port: 8081 } }       receipts: { clamav: { host: localhost, port: 3310 } }</code></pre>
+<ul>
+<li><a href="../src/main/resources/application.yaml"><code>application.yaml</code></a> holds what is true everywhere (graceful shutdown, <code>ddl-auto: validate</code>, actuator on its own port). <a href="../src/main/resources/application-local.yaml"><code>application-local.yaml</code></a> adds developer conveniences. <code>make run</code> sets <code>SPRING_PROFILES_ACTIVE=local</code>; <code>compose.yaml</code> sets the same for the app container, plus <code>SPRING_DATASOURCE_URL</code> and <code>LEDGERLY_STORAGE_S3_ENDPOINT</code> (the environment form of <code>ledgerly.storage.s3.endpoint</code>).</li>
+<li><strong>Production refuses to start with missing secrets.</strong> <a href="$R/shared/config/ProductionEnvironmentCheck.java"><code>ProductionEnvironmentCheck</code></a> (Lesson 3's loop) runs when the <code>prod</code> profile is active and lists every missing property with its environment variable name. <a href="../.env.example"><code>.env.example</code></a> documents them; the real <code>.env</code> is git-ignored.</li>
+<li><strong>Tests</strong> override with <code>@SpringBootTest(properties = "management.server.port=0")</code> (Lesson 26); test properties have the highest precedence.</li>
+</ul>
+<h2>Typed configuration</h2>
+<p>Instead of scattered strings, bind a prefix to a <strong>record</strong> (Lesson 8). A single constructor means constructor binding; <code>@DefaultValue</code> supplies defaults (<a href="https://docs.spring.io/spring-boot/reference/features/external-config.html">docs</a>). Register it with <code>@EnableConfigurationProperties</code> and inject it like any bean (Lesson 19):</p>
+<pre><code>@Validated
+@ConfigurationProperties("ledgerly.limits")
+public record LedgerlyLimits(@DefaultValue("100") @Positive int maxPageSize, @DefaultValue("10MB") DataSize maxUploadSize, ...) {}
+
+@Configuration(proxyBeanMethods = false)
+@EnableConfigurationProperties(LedgerlyLimits.class)
+class LimitsConfig {}
+
+// used in ListExpenses: constructor-injected, then limits.maxPageSize()</code></pre>
+<p>Property <code>ledgerly.limits.max-page-size</code> binds to <code>maxPageSize</code> (relaxed binding: <code>context-path</code> binds to <code>contextPath</code>). The Boot page excerpt I read did not cover validation or <code>Duration</code>/<code>DataSize</code> conversion; the repo shows both in use (<code>@Positive</code>, <code>"10MB"</code>, <code>"2s"</code> in <a href="$R/receipts/internal/infrastructure/ReceiptsProperties.java"><code>ReceiptsProperties</code></a>).</p>
+<div class="note">Extending: a new setting is a field with a safe default in a properties record, a mention in <code>.env.example</code> if it has no default, and a line in the required list if production must set it. Never read secrets with hard-coded strings.</div>
+<h2>Check yourself</h2>
+<div class="quiz" data-answer="b"><p><code>application.yaml</code> says <code>server.port: 8080</code> and the start command passes <code>--server.port=9000</code>. Which wins?</p>
+<button data-k="a" data-why="Command-line arguments take precedence over files.">The yaml file value wins</button>
+<button data-k="b" data-why="It beats file-based sources.">The command-line value wins</button>
+<button data-k="c" data-why="Precedence is by source type.">Whichever was written last wins</button>
+<button data-k="d" data-why="Overrides are normal.">Spring refuses to start up</button>
+<div class="fb"></div></div>
+<div class="quiz" data-answer="c"><p>Which property does the environment variable <code>SPRING_DATASOURCE_URL</code> set?</p>
+<button data-k="a" data-why="Only dots become underscores.">spring.data.source.url</button>
+<button data-k="b" data-why="Wrong prefix.">ledgerly.datasource.url</button>
+<button data-k="c" data-why="Dots map to underscores, uppercased.">spring.datasource.url</button>
+<button data-k="d" data-why="The property uses dots.">spring_datasource_url</button>
+<div class="fb"></div></div>
+<div class="quiz" data-answer="c"><p>When is <code>application-local.yaml</code> loaded?</p>
+<button data-k="a" data-why="Profile files load only for their profile.">On every start, before application.yaml</button>
+<button data-k="b" data-why="Docker is irrelevant.">Only when running inside Docker</button>
+<button data-k="c" data-why="Profile-specific files follow the profile.">When the local profile is active</button>
+<button data-k="d" data-why="Tests are not required.">Only while the tests are running</button>
+<div class="fb"></div></div>
+<div class="quiz" data-answer="a"><p><code>ledgerly.limits.max-page-size</code> is not set anywhere. What is <code>maxPageSize</code>?</p>
+<button data-k="a" data-why="The @DefaultValue supplies it.">It becomes 100</button>
+<button data-k="b" data-why="The default is 100.">It becomes 0</button>
+<button data-k="c" data-why="An int cannot be null.">It stays null</button>
+<button data-k="d" data-why="A default exists.">Startup always fails</button>
+<div class="fb"></div></div>
+<h2>Next</h2><p><a href="0037-api-tests-with-bruno.html">Lesson 37: API tests with Bruno</a>. Reference: <a href="../reference/operations-and-config.html">Operations and config</a>.</p>
+<p><strong>Read:</strong> <a href="https://docs.spring.io/spring-boot/reference/features/external-config.html">Spring Boot: Externalized Configuration</a> (long page; the first part was read).</p>
+<p class="note">Questions? Ask me to find where each ledgerly.* property is read.</p>
+<script src="../assets/quiz.js"></script></body></html>

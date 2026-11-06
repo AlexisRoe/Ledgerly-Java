@@ -1,0 +1,53 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Lesson 33: Events</title>
+<meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="../assets/style.css"></head><body>
+<h1>Lesson 33: Events</h1>
+<p class="meta"><a href="index.html">&larr; All lessons</a> &middot; About 13 minutes. Builds on <a href="0032-specifications.html">Lesson 32</a>.</p>
+<h2>The one idea</h2>
+<p>An <strong>event</strong> says "something has happened"; modules react without the publisher knowing who listens. Publish with <code>ApplicationEventPublisher.publishEvent(...)</code>; receive with <code>@EventListener</code> on a bean method. By default listeners run synchronously: "the <code>publishEvent()</code> method blocks until all listeners have finished" (<a href="https://docs.spring.io/spring-framework/reference/core/beans/context-introduction.html">Spring: application events</a>).</p>
+<p><code>@TransactionalEventListener</code> binds the listener to a transaction phase; the default is <code>AFTER_COMMIT</code>, and "if no transaction is running, the listener is not invoked at all" unless <code>fallbackExecution = true</code> (<a href="https://docs.spring.io/spring-framework/reference/data-access/transaction/event.html">Spring: transaction-bound events</a>). The point: do not announce a change that might still roll back.</p>
+<h2>Read real code</h2>
+<pre><code>// CreateExpense.java, inside @Transactional execute(...)
+events.publishEvent(new ExpenseEvent.Created(c.teamId(), view.id(), c.claimantId(), clock.instant()));
+
+// ExpenseEvent.java
+public sealed interface ExpenseEvent permits Created, Edited, Deleted, Submitted, ... {
+    UUID eventId();   TeamId teamId();   ExpenseId expenseId();   UserId actorId();   Instant occurredAt();
+    record Created(UUID eventId, TeamId teamId, ExpenseId expenseId, UserId actorId, Instant occurredAt) implements ExpenseEvent {}
+}</code></pre>
+<ul>
+<li>Events are Lesson 15 and 8 combined: a <strong>sealed interface</strong> with <strong>record</strong> cases. <a href="$R/expenses/events/ExpenseEvent.java"><code>ExpenseEvent</code></a> lists everything that can happen to an expense.</li>
+<li>They carry ids and field names only; "no amounts, merchants, notes or rejection reasons, which may be personal" (ADR 0001). They carry <code>actorId</code> because a listener on another thread cannot ask who is logged in (Lesson 30).</li>
+<li><code>eventId</code> is "stable across re-delivery", so a listener can tell it has already handled an event.</li>
+<li>Time comes from the injected <code>Clock</code> (Lesson 27): <code>occurredAt</code> is when it happened, not when delivered.</li>
+<li><strong>Events vs. calls:</strong> ADR 0003 settles it: a module may <em>call</em> another's facade to ask it to change data; events are for <em>reacting</em> to something that already happened.</li>
+</ul>
+<div class="note">Extending: a new thing worth auditing means a new record in <code>ExpenseEvent</code>'s <code>permits</code> list; the compiler then points at every exhaustive switch to update (Lesson 16), and you publish it from the use case.</div>
+<h2>Check yourself</h2>
+<div class="quiz" data-answer="c"><p>By default, what does <code>publishEvent</code> do?</p>
+<button data-k="a" data-why="Default listeners are synchronous.">Returns immediately and runs later</button>
+<button data-k="b" data-why="All beans are eligible.">Skips listeners in other packages</button>
+<button data-k="c" data-why="Docs: it blocks until all listeners are done.">Waits until every listener has finished</button>
+<button data-k="d" data-why="They run on the calling thread by default.">Runs listeners on a random thread</button>
+<div class="fb"></div></div>
+<div class="quiz" data-answer="b"><p>What is the default phase of <code>@TransactionalEventListener</code>?</p>
+<button data-k="a" data-why="Must be requested explicitly.">BEFORE_COMMIT</button>
+<button data-k="b" data-why="The default: after a successful commit.">AFTER_COMMIT</button>
+<button data-k="c" data-why="Must be requested explicitly.">AFTER_ROLLBACK</button>
+<button data-k="d" data-why="Must be requested explicitly.">AFTER_COMPLETION</button>
+<div class="fb"></div></div>
+<div class="quiz" data-answer="d"><p>An event is published with no transaction running. What happens to a <code>@TransactionalEventListener</code>?</p>
+<button data-k="a" data-why="Only with fallbackExecution = true.">It runs right away anyway</button>
+<button data-k="b" data-why="It does not wait.">It runs after the next commit</button>
+<button data-k="c" data-why="No exception is thrown.">It fails with an IllegalStateException</button>
+<button data-k="d" data-why="Docs: the semantics cannot be honoured, so it is skipped.">It is not invoked at all</button>
+<div class="fb"></div></div>
+<div class="quiz" data-answer="c"><p>Why do <code>ExpenseEvent</code>s carry ids and field names but no amounts?</p>
+<button data-k="a" data-why="They can.">Records cannot hold decimal numbers</button>
+<button data-k="b" data-why="No such limit.">Events must stay under one kilobyte</button>
+<button data-k="c" data-why="ADR 0001 keeps personal data out of events.">Amounts and notes can be personal</button>
+<button data-k="d" data-why="They can.">Listeners cannot read decimal fields</button>
+<div class="fb"></div></div>
+<h2>Next</h2><p><a href="0034-async-and-tracked-listeners.html">Lesson 34: Async and tracked listeners</a>.</p>
+<p><strong>Read:</strong> <a href="https://docs.spring.io/spring-framework/reference/data-access/transaction/event.html">Spring Framework: Transaction-bound Events</a>.</p>
+<p class="note">Questions? Ask me to find every place an ExpenseEvent is published and every place it is received.</p>
+<script src="../assets/quiz.js"></script></body></html>

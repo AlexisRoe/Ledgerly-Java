@@ -1,0 +1,45 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Lesson 21: Anatomy of the Spring Boot app</title>
+<meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="../assets/style.css"></head><body>
+<h1>Lesson 21: Anatomy of the Spring Boot app</h1>
+<p class="meta"><a href="index.html">&larr; All lessons</a> &middot; About 12 minutes. First lesson of the Spring Boot track; syntax is done in Lessons 1 to 20.</p>
+<h2>The one idea</h2>
+<p><code>@SpringBootApplication</code> combines three things: <code>@EnableAutoConfiguration</code>, <code>@ComponentScan</code> "on the package where the application is located", and <code>@SpringBootConfiguration</code> (<a href="https://docs.spring.io/spring-boot/reference/using/using-the-springbootapplication-annotation.html">Spring Boot docs</a>). <a href="$R/LedgerlyApplication.java"><code>LedgerlyApplication</code></a> sits in <code>com.ledgerly</code>, so scanning finds every <code>@RestController</code>, <code>@Service</code> and <code>@Component</code> below it (Lesson 19). <code>main</code> calls <code>SpringApplication.run(...)</code> and that is the whole entry point.</p>
+<h2>How the repo is laid out</h2>
+<p>Each module (<code>expenses</code>, <code>receipts</code>, <code>teams</code>, <code>identity</code>, ...) has a small public surface at the top (facade interface, records, events) and an <code>internal</code> folder with four layers:</p>
+<table><tr><th>Folder</th><th>Holds</th><th>Example</th></tr>
+<tr><td><code>internal/web</code></td><td>Controllers, error handlers, mappers</td><td><code>ExpensesController</code></td></tr>
+<tr><td><code>internal/application</code></td><td>Use cases: one class per action</td><td><code>CreateExpense</code>, <code>ListExpenses</code></td></tr>
+<tr><td><code>internal/domain</code></td><td>Entities, rules, domain exceptions</td><td><code>Expense</code>, <code>InvalidInput</code></td></tr>
+<tr><td><code>internal/infrastructure</code></td><td>Repositories, adapters to the outside</td><td><code>ExpenseRepository</code></td></tr></table>
+<h2>One request, end to end</h2>
+<pre><code>POST /api/v1/teams/{teamId}/expenses
+  -&gt; ExpensesController.createExpense(...)       web: parse the request
+  -&gt; CreateExpense.execute(command, key)          application: orchestrate, @Transactional
+  -&gt; Expense.draft(...)                           domain: rules, builds the entity
+  -&gt; ExpenseRepository.save(expense)              infrastructure: writes to the database
+  &lt;- ResponseEntity 201 Created                   web: map the answer</code></pre>
+<p>The controller's own class comment says it: "Thin: parse, call one use case, map the answer." Rules live in the domain, orchestration in the use case, HTTP details in the controller. When you extend the backend, ask first: <em>which layer is this change about?</em></p>
+<p>For the module rules and reasons see <a href="../CONCEPT.md">CONCEPT.md</a> and the <a href="../docs/adr/">ADRs</a>.</p>
+<h2>Check yourself</h2>
+<div class="quiz" data-answer="b"><p>What does component scanning in <code>@SpringBootApplication</code> cover?</p>
+<button data-k="a" data-why="Scanning covers packages, not files.">Only classes in the same file</button>
+<button data-k="b" data-why="The application class&#x27;s package and its subpackages.">Its own package and everything below</button>
+<button data-k="c" data-why="Only the application&#x27;s package tree.">Every package on the whole classpath</button>
+<button data-k="d" data-why="All stereotypes are detected, not one.">Only classes carrying the @RestController annotation</button>
+<div class="fb"></div></div>
+<div class="quiz" data-answer="d"><p>Where do expenses controllers live?</p>
+<button data-k="a" data-why="That holds entities and rules.">expenses/internal/domain</button>
+<button data-k="b" data-why="That holds repositories.">expenses/internal/infrastructure</button>
+<button data-k="c" data-why="That holds use cases.">expenses/internal/application</button>
+<button data-k="d" data-why="Controllers, handlers and mappers.">expenses/internal/web</button>
+<div class="fb"></div></div>
+<div class="quiz" data-answer="b"><p>Who calls <code>ExpenseRepository.save</code> when an expense is created?</p>
+<button data-k="a" data-why="The controller only calls a use case.">The controller class directly</button>
+<button data-k="b" data-why="The application layer saves the entity.">The use case, CreateExpense</button>
+<button data-k="c" data-why="It only generates interfaces and models.">The OpenAPI generator tool</button>
+<button data-k="d" data-why="Entities do not know repositories.">The Expense entity itself</button>
+<div class="fb"></div></div>
+<h2>Next</h2><p><a href="0022-controllers.html">Lesson 22: Controllers</a>. Reference: <a href="../reference/spring-boot-request-flow.html">Request flow</a>.</p>
+<p><strong>Read:</strong> <a href="https://docs.spring.io/spring-boot/reference/using/using-the-springbootapplication-annotation.html">Spring Boot: Using the @SpringBootApplication Annotation</a>.</p>
+<p class="note">Questions? Ask me to trace any other endpoint, for example receipts upload, through the same layers.</p>
+<script src="../assets/quiz.js"></script></body></html>

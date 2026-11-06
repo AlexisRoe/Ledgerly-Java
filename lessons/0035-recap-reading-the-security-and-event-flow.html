@@ -1,0 +1,55 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Lesson 35: Recap, one endpoint through every layer</title>
+<meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="../assets/style.css"></head><body>
+<h1>Lesson 35: Recap, one endpoint through every layer</h1>
+<p class="meta"><a href="index.html">&larr; All lessons</a> &middot; About 15 minutes. Mixed retrieval practice on Lessons 21 to 34.</p>
+<h2>Try before you look</h2>
+<p>One endpoint from Lessons 21 to 34: <strong>an approver lists the team's expenses</strong> (<code>GET /api/v1/teams/{teamId}/expenses?status=SUBMITTED</code>). Read <a href="$R/expenses/internal/application/ListExpenses.java"><code>ListExpenses.execute</code></a> and <a href="$R/expenses/internal/application/ExpenseFilters.java"><code>ExpenseFilters.build</code></a> first.</p>
+<pre><code>@Transactional(readOnly = true)
+public PageResult execute(Query q) {
+    Actor actor = access.actor(q.teamId(), q.caller());
+    ...
+    Specification&lt;Expense&gt; spec = ExpenseFilters.build(actor, q.teamId(), new Filter(q.status(), ...));
+    var page = expenses.findAll(spec, PageRequest.of(q.page(), q.size(), sort));
+    ...
+}</code></pre>
+<div class="quiz" data-answer="b"><p>(Lessons 29, 30) Which part first rejects a request with no token?</p>
+<button data-k="a" data-why="That runs later, after authentication.">The use case's access check</button>
+<button data-k="b" data-why="anyRequest().authenticated() with the JWT filter.">The Spring Security filter chain</button>
+<button data-k="c" data-why="Far too late.">The Specification query built later</button>
+<button data-k="d" data-why="Far too late.">The Expense domain class code</button>
+<div class="fb"></div></div>
+<div class="quiz" data-answer="c"><p>(Lesson 30) Where does <code>q.caller()</code> ultimately come from?</p>
+<button data-k="a" data-why="A client could forge it.">The body the client sent along</button>
+<button data-k="b" data-why="A client could forge it.">A query parameter called caller here</button>
+<button data-k="c" data-why="Via JwtCurrentUser in the controller.">The subject claim of the token</button>
+<button data-k="d" data-why="Unrelated.">The first row of the table</button>
+<div class="fb"></div></div>
+<div class="quiz" data-answer="a"><p>(Lesson 31) The caller is not a teammate. What does <code>access.actor(...)</code> do?</p>
+<button data-k="a" data-why="orElseThrow(NotFound::new).">Throws NotFound, which becomes a 404</button>
+<button data-k="b" data-why="It would grant access to strangers.">Returns an Actor with role MEMBER</button>
+<button data-k="c" data-why="It never returns null.">Returns null so the query is empty</button>
+<button data-k="d" data-why="That reveals the team exists.">Throws Forbidden, which becomes a 403</button>
+<div class="fb"></div></div>
+<div class="quiz" data-answer="b"><p>(Lesson 32) Which line keeps one team's data from leaking into another team's list?</p>
+<button data-k="a" data-why="That only does paging and sorting.">The PageRequest.of(page, size, sort) call</button>
+<button data-k="b" data-why="Every query is scoped to the team first.">Starting the spec with inTeam(teamId)</button>
+<button data-k="c" data-why="That only describes the transaction.">The @Transactional(readOnly = true) annotation</button>
+<button data-k="d" data-why="That identifies the caller only.">Reading q.caller() in the Query</button>
+<div class="fb"></div></div>
+<div class="quiz" data-answer="c"><p>(Lesson 23) What does <code>@Transactional(readOnly = true)</code> tell Spring here?</p>
+<button data-k="a" data-why="Not what it means.">It allows only one call ever</button>
+<button data-k="b" data-why="Not what it means.">It forces rollback after each call</button>
+<button data-k="c" data-why="That is the documented meaning.">It marks the transaction as read-only</button>
+<button data-k="d" data-why="That would be @Async.">It runs the method asynchronously now</button>
+<div class="fb"></div></div>
+<div class="quiz" data-answer="c"><p>(Lessons 33, 34) Another module wants to react whenever an expense is deleted. What is the pattern?</p>
+<button data-k="a" data-why="Modules do not call each other&#x27;s controllers.">Call ExpensesController from the other module</button>
+<button data-k="b" data-why="Forbidden by the module rules.">Read the expenses table from there</button>
+<button data-k="c" data-why="How ExpenseDeletedCleanup does it.">Add an @ApplicationModuleListener for Deleted events</button>
+<button data-k="d" data-why="Events exist to avoid polling.">Poll the repository from a loop</button>
+<div class="fb"></div></div>
+<div class="note">Missed one? Reread that lesson tomorrow and retry.</div>
+<h2>Next</h2>
+<p>Back to the <a href="index.html">lesson index</a>. You now know every layer of this backend. Best next step: do the Lesson 28 checklist for real on a branch with me, then add a role-restricted endpoint to test Lessons 29 to 32 end to end. Later topics: Bruno API tests, Docker/compose and the CI pipeline, observability (Micrometer, Grafana), and Spring Batch (used for imports).</p>
+<p class="note">Questions? Ask me.</p>
+<script src="../assets/quiz.js"></script></body></html>

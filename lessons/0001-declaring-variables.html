@@ -1,0 +1,60 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Lesson 1: Declaring variables</title>
+<meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="../assets/style.css"></head><body>
+<h1>Lesson 1: Declaring variables</h1>
+<p class="meta"><a href="index.html">&larr; All lessons</a> &middot; About 10 minutes. Mission: read Java backend code fluently, using Ledgerly as the text.</p>
+
+<h2>The one idea</h2>
+<p>Java is statically typed: every variable is declared with a type, written <em>before</em> the name.</p>
+<pre><code>Type name = value;</code></pre>
+
+<h2>Read real code</h2>
+<p>Open <a href="../src/main/java/com/ledgerly/shared/money/Money.java"><code>Money.java</code></a>. Lines 28 to 39:</p>
+<pre><code>int digits = currency.getDefaultFractionDigits();   // line 28
+if (digits &lt; 0) {                                    // line 29
+    throw new IllegalArgumentException("Not a monetary currency: " + currency);
+}
+...
+amount = amount.setScale(digits);                    // line 39</code></pre>
+<ul>
+<li><code>int</code> is the type, <code>digits</code> the name, and the right-hand side computes the value.</li>
+<li><code>digits</code> lives inside a constructor, so it is a <strong>local variable</strong>. Java has no keyword for that; location decides. Oracle: "There is no special keyword designating a variable as local" (<a href="https://docs.oracle.com/javase/tutorial/java/nutsandbolts/variables.html">Variables</a>).</li>
+<li><code>amount</code> and <code>currency</code> are <strong>parameters</strong> of the record, with types <code>BigDecimal</code> and <code>Currency</code>.</li>
+</ul>
+
+<h2>Primitives vs. everything else</h2>
+<p>Java has 8 primitive types (<code>byte short int long float double boolean char</code>), all lowercase. <code>int</code> is one. <code>String</code>, <code>BigDecimal</code> and <code>Currency</code> are classes: capitalised, and they can be <code>null</code>. Primitives cannot (<a href="https://docs.oracle.com/javase/tutorial/java/nutsandbolts/datatypes.html">Primitive Data Types</a>).</p>
+<div class="note">Why does Money use <code>BigDecimal</code> and not <code>double</code>? Oracle says <code>float</code> should not be used for precise values such as currency; <code>double</code> has the same binary-fraction problem.</div>
+
+<h2>Naming</h2>
+<p><code>camelCase</code> for variables, <code>UPPER_SNAKE</code> for constants, <code>PascalCase</code> for classes. Names cannot start with a digit or be a keyword.</p>
+
+<h2>Check yourself</h2>
+<div class="quiz" data-answer="a"><p>In <code>int digits = currency.getDefaultFractionDigits();</code>, what is <code>digits</code>?</p>
+<button data-k="a" data-why="It is declared inside a constructor, so it is local.">A local int variable</button>
+<button data-k="b" data-why="A static field would sit in the class body with the static modifier.">A static class field</button>
+<button data-k="c" data-why="Parameters sit in the parentheses of the signature.">A method parameter name</button>
+<button data-k="d" data-why="Keywords are fixed words like int or if.">A reserved Java keyword</button><div class="fb"></div></div>
+
+<div class="quiz" data-answer="b"><p>Which line is a valid declaration?</p>
+<button data-k="a" data-why="The type comes first in Java, not after the name.">count int = 3;</button>
+<button data-k="b" data-why="Type, name, value.">int count = 3;</button>
+<button data-k="c" data-why="Names cannot start with a digit.">int 3count = 3;</button>
+<button data-k="d" data-why="class is a reserved keyword.">int class = 3;</button><div class="fb"></div></div>
+
+<div class="quiz" data-answer="c"><p>Which of these is NOT a primitive type?</p>
+<button data-k="a" data-why="int is a primitive.">int</button>
+<button data-k="b" data-why="boolean is a primitive.">boolean</button>
+<button data-k="c" data-why="String is a class, though the language gives it special support.">String</button>
+<button data-k="d" data-why="char is a primitive.">char</button><div class="fb"></div></div>
+
+<div class="quiz" data-answer="d"><p>Which name follows the convention for a constant?</p>
+<button data-k="a" data-why="That is camelCase, used for ordinary variables.">maxPageSize</button>
+<button data-k="b" data-why="Mixed case is not used for constants.">Max_page_size</button>
+<button data-k="c" data-why="Hyphens are illegal in names.">max-page-size</button>
+<button data-k="d" data-why="Constants are uppercase with underscores.">MAX_PAGE_SIZE</button><div class="fb"></div></div>
+
+<h2>Next</h2>
+<p>Quick reference: <a href="../reference/variables-and-types.html">Variables and types</a>. Next lesson: <code>if</code> and <code>else</code>, starting from the checks in the same constructor.</p>
+<p><strong>Read:</strong> <a href="https://docs.oracle.com/javase/tutorial/java/nutsandbolts/variables.html">The Java Tutorials: Variables</a>.</p>
+<p class="note">Anything unclear? Ask me. I am your teacher here, and can explain any line of this repo.</p>
+<script src="../assets/quiz.js"></script></body></html>

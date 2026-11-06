@@ -1,0 +1,20 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Reference: Methods, classes, records</title><link rel="stylesheet" href="../assets/style.css"></head><body>
+<h1>Methods, classes, records</h1><p class="meta">Sources: <a href="https://docs.oracle.com/javase/tutorial/java/javaOO/methods.html">Methods</a>, <a href="https://docs.oracle.com/javase/tutorial/java/javaOO/constructors.html">Constructors</a>, <a href="https://docs.oracle.com/en/java/javase/21/language/records.html">Records</a></p>
+<h2>Method</h2>
+<pre><code>modifiers  returnType  name(paramType param) { body }
+public     Money      plus(Money other)    { ... }</code></pre>
+<p>Signature = name + parameter types. <code>void</code> = no result. Overloads differ by parameters, not return type.</p>
+<h2>Class</h2>
+<pre><code>public class Expense {
+    private ExpenseStatus status;                    // field
+    private Expense(...) { this.status = ...; }      // constructor: class name, no return type
+    public static Expense draft(...) { return new Expense(...); }   // static factory
+    public ExpenseStatus status() { return status; } // instance method
+}</code></pre>
+<h2>Record</h2>
+<pre><code>public record Money(BigDecimal amount, Currency currency) {
+    public Money { /* validate; reassign params if needed */ }
+}
+m.amount();   // accessor, no "get"</code></pre>
+<p>Generated: private final fields, accessors, canonical constructor, equals, hashCode, toString. Use for values; use a class for things with identity that change.</p>
+</body></html>

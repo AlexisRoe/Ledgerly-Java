@@ -1,0 +1,22 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Reference: Operations and configuration</title><link rel="stylesheet" href="../assets/style.css"></head><body>
+<h1>Operations and configuration (Ledgerly)</h1><p class="meta">Lessons 36 to 40. Sources in <a href="../RESOURCES.md">RESOURCES.md</a>.</p>
+<h2>Commands</h2>
+<table><tr><th>Command</th><th>Does</th></tr>
+<tr><td><code>make deps</code></td><td>start only Postgres, storage, ClamAV, Grafana</td></tr>
+<tr><td><code>make run</code></td><td>app from Maven, profile <code>local</code></td></tr>
+<tr><td><code>make up / down / reset</code></td><td>whole stack in Docker / stop / stop and delete data</td></tr>
+<tr><td><code>make test / verify</code></td><td>tests (Docker needed) / everything CI runs</td></tr>
+<tr><td><code>make api-test</code></td><td>Bruno collection against the running app</td></tr>
+<tr><td><code>make format / lint</code></td><td>Spotless + Prettier / check them</td></tr>
+<tr><td><code>make lessons</code></td><td>open these lessons</td></tr></table>
+<h2>Configuration precedence (low to high)</h2>
+<p>application.yaml, then application-{profile}.yaml, then environment variables (<code>LEDGERLY_STORAGE_S3_BUCKET</code>), then command line, then test properties. Typed access: <code>@ConfigurationProperties("ledgerly.x")</code> on a record + <code>@EnableConfigurationProperties</code>.</p>
+<h2>Observability</h2>
+<ul><li>Logs: ECS JSON in prod, text in local; MDC fields <code>userId</code>, <code>teamId</code></li>
+<li>Metrics: inject <code>MeterRegistry</code>; scrape <code>:8081/actuator/prometheus</code>; probes <code>/actuator/health/liveness|readiness</code></li>
+<li>Traces: <code>Observation.createNotStarted(name, registry)</code>, low-cardinality key values only for bounded data</li></ul>
+<h2>Batch import</h2>
+<pre><code>Job -> Step (chunk 100, one transaction each) -> reader (CSV) -> processor (RowRejected = skip) -> writer (facade.createDrafts)
+identifying parameter: importId; restart = same parameters, resumes after the last committed chunk</code></pre>
+<h2>CI jobs</h2><p>verify, openapi-lint, format-config, gitleaks, image. Run <code>make verify</code> before pushing.</p>
+</body></html>

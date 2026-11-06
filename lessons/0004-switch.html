@@ -1,0 +1,79 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Lesson 4: switch</title>
+<meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="../assets/style.css"></head><body>
+<h1>Lesson 4: switch</h1>
+<p class="meta"><a href="index.html">&larr; All lessons</a> &middot; About 12 minutes. Builds on <a href="0003-loops.html">Lesson 3</a>.</p>
+
+<h2>The one idea</h2>
+<p><code>switch</code> picks a path from one value. It comes in two styles, and modern backend code mostly uses the second.</p>
+<h3>Classic: colon and break</h3>
+<pre><code>switch (month) {
+    case 1:  name = "January"; break;
+    default: name = "Invalid"; break;
+}</code></pre>
+<p>Without <code>break</code>, execution <em>falls through</em> into the next case. With <code>month = 8</code> Oracle's example adds August through December (<a href="https://docs.oracle.com/javase/tutorial/java/nutsandbolts/switch.html">Oracle: switch</a>). It handles <code>byte short char int</code>, enums and <code>String</code>.</p>
+<h3>Modern: arrow, returns a value</h3>
+<pre><code>int n = switch (day) {
+    case MONDAY, FRIDAY -> 6;
+    case TUESDAY        -> 7;
+    default             -> 0;
+};</code></pre>
+<p>Arrow rules "do not fall through", so no <code>break</code>. Several labels share a rule with commas. A block on the right returns with <code>yield</code>. A switch <em>expression</em> must cover every value; an enum switch covering all constants needs no <code>default</code> (<a href="https://docs.oracle.com/en/java/javase/21/language/switch-expressions-and-statements.html">Oracle: switch expressions</a>). Oracle recommends arrows because forgetting <code>break</code> causes accidental fall-through.</p>
+
+<h2>Fall-through, traced</h2>
+<p>Think of the matching <code>case</code> as an entry door, not a filter. Java jumps to the match, then keeps running downward until it hits <code>break</code> or the end.</p>
+<pre><code>switch (month) {          // month = 8
+    case 8:  add("August");     // entry: runs
+    case 9:  add("September");  // no break above: runs
+    case 10: add("October");    // runs
+    case 11: add("November");   // runs
+    case 12: add("December");   // runs
+             break;             // stops here
+    default: break;
+}</code></pre>
+<p>Compare <code>case 8 -&gt; ...</code>: the arrow form runs only its own right-hand side. Same input, no fall-through.</p>
+<div class="quiz" data-answer="b"><p>Same switch, but <code>month = 11</code>. What is added?</p>
+<button data-k="a" data-why="Entry is at case 11, not at the top; later cases still run.">Only November is added</button>
+<button data-k="b" data-why="Enter at 11, fall into 12, stop at its break.">November and December added</button>
+<button data-k="c" data-why="Execution only moves downward from the entry point.">August to December added</button>
+<button data-k="d" data-why="A matching case exists, so default is skipped.">Nothing; default runs instead</button><div class="fb"></div></div>
+
+<h2>Read real code</h2>
+<p><a href="../src/main/java/com/ledgerly/expenses/internal/web/CsvCells.java"><code>CsvCells.neutralise</code></a>, line 28:</p>
+<pre><code>return switch (value.charAt(0)) {
+    case '=', '+', '-', '@', '\t', '\r' -> "'" + value;
+    default -> value;
+};</code></pre>
+<p>If a cell starts with a spreadsheet-formula character, prefix a quote. Single quotes mean <code>char</code>; double quotes mean <code>String</code> (Lesson 1).</p>
+<p><a href="../src/main/java/com/ledgerly/expenses/internal/application/ListExpenses.java"><code>ListExpenses.parseSort</code></a>:</p>
+<pre><code>direction = switch (parts[1]) {
+    case "asc"  -&gt; Sort.Direction.ASC;
+    case "desc" -&gt; Sort.Direction.DESC;
+    default     -&gt; throw new InvalidRequest("sort", "Direction must be asc or desc");
+};</code></pre>
+<p>A <code>String</code> switch whose default throws. Throwing is allowed on the right of an arrow, so bad input can never produce a value.</p>
+<p>Your own enum: <a href="../src/main/java/com/ledgerly/expenses/internal/domain/ExpenseStatus.java"><code>ExpenseStatus</code></a> (<code>DRAFT, SUBMITTED, APPROVED, REJECTED, REIMBURSED</code>). Switching on it with all five cases needs no default.</p>
+
+<h2>Check yourself</h2>
+<div class="quiz" data-answer="c"><p>Classic <code>switch</code> with <code>month = 8</code> and no breaks. What happens?</p>
+<button data-k="a" data-why="Without break, execution continues into later cases.">Only August is added</button>
+<button data-k="b" data-why="A matching case exists, so default is skipped.">Nothing; default runs instead</button>
+<button data-k="c" data-why="Fall-through runs every statement until a break.">August to December added</button>
+<button data-k="d" data-why="It does not stop after one more case.">August and September only</button><div class="fb"></div></div>
+
+<div class="quiz" data-answer="a"><p>Why does an arrow case need no <code>break</code>?</p>
+<button data-k="a" data-why="Exactly. That is the reason Oracle recommends them.">Arrow rules never fall through</button>
+<button data-k="b" data-why="break still exists in classic switches.">Because break was removed entirely</button>
+<button data-k="c" data-why="The rule has nothing to do with enums only.">Because only enums need breaks</button>
+<button data-k="d" data-why="default is unrelated to fall-through.">Because default always catches it</button><div class="fb"></div></div>
+
+<div class="quiz" data-answer="b"><p>A switch expression on <code>ExpenseStatus</code> lists all five constants. Is <code>default</code> required?</p>
+<button data-k="a" data-why="Oracle: covering all enum constants gets an implicit default.">Yes, the compiler demands it</button>
+<button data-k="b" data-why="Correct: all constants covered, so the switch is exhaustive.">No, all constants are covered</button>
+<button data-k="c" data-why="yield is unrelated to exhaustiveness.">Only if yield is used</button>
+<button data-k="d" data-why="Only classic statements are lenient, not expressions.">Yes, for every switch expression</button><div class="fb"></div></div>
+
+<h2>Next</h2>
+<p>Reference: <a href="../reference/control-flow.html">Control flow</a>. Next time: a recap quiz mixing Lessons 1 to 4 (spaced retrieval), then methods and classes.</p>
+<p><strong>Read:</strong> <a href="https://docs.oracle.com/en/java/javase/21/language/switch-expressions-and-statements.html">Oracle: Switch Expressions and Statements</a>.</p>
+<p class="note">Questions? Ask me. For example: what are <code>TransitionExpense</code>'s two nested switches doing?</p>
+<script src="../assets/quiz.js"></script></body></html>

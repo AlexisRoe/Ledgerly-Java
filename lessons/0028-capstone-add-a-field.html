@@ -1,0 +1,46 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Lesson 28: Capstone, add a field end to end</title>
+<meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="../assets/style.css"></head><body>
+<h1>Lesson 28: Capstone, add a field end to end</h1>
+<p class="meta"><a href="index.html">&larr; All lessons</a> &middot; About 15 minutes. Builds on <a href="0027-bigdecimal-and-time.html">Lesson 27</a>.</p>
+<h2>The goal</h2>
+<p>You can now name every piece. This lesson is the map for the most common real task: <strong>add an optional <code>projectCode</code> to an expense</strong>. It is a guided checklist: read first, then (in a separate session, with me beside you) do it for real on a branch.</p>
+<h2>The checklist, in order</h2>
+<ol>
+<li><strong>Contract.</strong> In <a href="../api/openapi.yaml"><code>api/openapi.yaml</code></a>, add <code>projectCode</code> (<code>maxLength: 20</code>) to <code>CreateExpenseRequest</code>, <code>UpdateExpenseRequest</code> and <code>ExpenseResponse</code>. Build: the generated request/response classes and validation (Lesson 22, 25) appear in <code>target/generated-sources</code>.</li>
+<li><strong>Migration.</strong> Add a <em>new</em> file <code>src/main/resources/db/migration/V11__expense_project_code.sql</code> with <code>alter table expenses add column project_code varchar(20);</code>. V1 to V10 exist; Flyway applies versions in order (Lesson 24).</li>
+<li><strong>Entity.</strong> Add <code>private @Nullable String projectCode;</code> to <a href="$R/expenses/internal/domain/Expense.java"><code>Expense</code></a>, set it in the private constructor, add an accessor <code>projectCode()</code>. With <code>ddl-auto: validate</code>, the app refuses to start if column and field disagree.</li>
+<li><strong>Rule.</strong> Add a <code>validProjectCode</code> beside <code>validMerchant</code> that throws <code>InvalidInput("projectCode", ...)</code> (Lesson 25). Domain rules live in the domain, even if the contract repeats the limit.</li>
+<li><strong>Use cases and mapping.</strong> Carry the value through <code>NewExpense</code>/<code>CreateExpense.Command</code>, <code>UpdateExpense</code>, <code>ExpenseView</code> and <code>ExpenseMapper</code> (the controller stays thin, Lesson 22/23).</li>
+<li><strong>Tests.</strong> A unit test for the rule (like <code>MoneyTest</code>) and an API test for the happy path and the 400 (Lesson 26). Run <code>make verify</code> (Docker running).</li>
+<li><strong>Docs.</strong> Add a request to the <a href="../bruno/">Bruno collection</a> if the behaviour is user-visible.</li>
+</ol>
+<div class="note">The order is a map, not a law: contract first because it generates the interface you implement; migration before entity because the schema check runs at startup; tests last but before you call it done.</div>
+<h2>Check yourself</h2>
+<div class="quiz" data-answer="b"><p>Where do you begin when adding a request field to an endpoint?</p>
+<button data-k="a" data-why="The contract drives the generated types.">The Expense entity field</button>
+<button data-k="b" data-why="Generated request classes come from it.">The api/openapi.yaml contract</button>
+<button data-k="c" data-why="Tests come later.">A new test seeder</button>
+<button data-k="d" data-why="Docs come last.">The Bruno collection files</button>
+<div class="fb"></div></div>
+<div class="quiz" data-answer="c"><p>Which file makes the new database column exist?</p>
+<button data-k="a" data-why="Existing versions are history; add a new one.">An edited V1__expenses.sql script</button>
+<button data-k="b" data-why="Entities are hand-written here.">A new generated entity class</button>
+<button data-k="c" data-why="Flyway runs V11 at startup.">A new versioned SQL migration</button>
+<button data-k="d" data-why="Config does not create columns.">A changed application.yaml file</button>
+<div class="fb"></div></div>
+<div class="quiz" data-answer="d"><p>Where should the rule "projectCode is at most 20 characters" live in the domain?</p>
+<button data-k="a" data-why="Controllers stay thin.">The web controller class</button>
+<button data-k="b" data-why="SQL only describes storage.">The Flyway migration script</button>
+<button data-k="c" data-why="Repositories do not hold rules.">The ExpenseRepository interface</button>
+<button data-k="d" data-why="Like validMerchant, throwing InvalidInput.">The Expense domain class</button>
+<div class="fb"></div></div>
+<div class="quiz" data-answer="b"><p>You add the entity field but forget the migration. What happens?</p>
+<button data-k="a" data-why="ddl-auto is validate, not update.">Hibernate quietly creates the missing column</button>
+<button data-k="b" data-why="Schema validation fails at startup.">The app refuses to start up</button>
+<button data-k="c" data-why="The app fails to start too.">Only tests fail; the app runs</button>
+<button data-k="d" data-why="Validation would not ignore it.">The new field is ignored quietly</button>
+<div class="fb"></div></div>
+<h2>What next?</h2>
+<p>Back to the <a href="index.html">lesson index</a>. Suggested practice: do the checklist for real with me on a branch. Later topics: Spring Security basics (<code>CurrentUser</code>, roles), events and <code>@TransactionalEventListener</code>, <code>@Async</code>, JPA <code>Specification</code>s, and pagination. Tell me which you want.</p>
+<p class="note">Questions? Ask me. This is the exercise where the learning becomes a skill.</p>
+<script src="../assets/quiz.js"></script></body></html>

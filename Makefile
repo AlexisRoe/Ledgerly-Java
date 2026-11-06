@@ -82,3 +82,9 @@ test-one: ## Run one test class: make test-one T=ExpensesApiTest
 .PHONY: clean
 clean: ## Delete build output
 	$(MVN) -q clean
+
+# --- learning -----------------------------------------------------------------------------------------------------
+
+.PHONY: lessons
+lessons: ## Open the Java lessons index in the browser (lessons/index.html)
+	@open lessons/index.html 2>/dev/null || xdg-open lessons/index.html

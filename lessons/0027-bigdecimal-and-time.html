@@ -1,0 +1,47 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Lesson 27: BigDecimal and time</title>
+<meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="../assets/style.css"></head><body>
+<h1>Lesson 27: BigDecimal and time</h1>
+<p class="meta"><a href="index.html">&larr; All lessons</a> &middot; About 12 minutes. Builds on <a href="0026-testing.html">Lesson 26</a>.</p>
+<h2>The one idea</h2>
+<p>Money and dates are where backends go wrong. Two habits keep Ledgerly safe.</p>
+<p><strong>BigDecimal for money.</strong> A <code>BigDecimal</code> is an integer plus a <em>scale</em> (digits after the point). Create it from a <code>String</code>: <code>new BigDecimal(0.1)</code> is actually 0.1000000000000000055..., because a <code>double</code> carries binary error. <code>equals</code> needs "both the numerical value and representation to be the same", so <code>2.0</code> and <code>2.00</code> are <em>not</em> equal, but <code>compareTo</code> says 0. <code>setScale(2)</code> without a rounding mode throws if digits would be lost (<a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/math/BigDecimal.html">BigDecimal API</a>).</p>
+<pre><code>new BigDecimal("2.0").equals(new BigDecimal("2.00"));       // false
+new BigDecimal("2.0").compareTo(new BigDecimal("2.00"));   // 0
+new BigDecimal("2.345").setScale(2, RoundingMode.HALF_UP); // 2.35
+new BigDecimal("2.345").setScale(2);                       // ArithmeticException</code></pre>
+<p>That is why <a href="$R/shared/money/Money.java"><code>Money</code></a> (Lesson 8) ends its constructor with <code>amount = amount.setScale(digits)</code>: after normalising the scale, record <code>equals</code> works, which <code>MoneyTest</code> checks (<code>10.0</code> equals <code>10.00</code>). In the database it is <code>amount numeric(19,4)</code> (<code>V1__expenses.sql</code>).</p>
+<p><strong>Inject a Clock.</strong> <code>java.time</code> has <code>Instant</code> (a moment on the timeline), <code>LocalDate</code> (a date without time or zone) and <code>Clock</code>, an alternative to the system clock. Calling <code>now()</code> directly ties code to the real time; a <code>Clock</code> parameter lets tests use "a fixed clock, where time does not change" (<a href="https://docs.oracle.com/javase/tutorial/datetime/iso/clock.html">Oracle: Clock</a>, <a href="https://docs.oracle.com/javase/tutorial/datetime/iso/index.html">overview</a>).</p>
+<pre><code>// CreateExpense.java, via constructor injection (Lesson 19)
+private final Clock clock;
+Expense expense = Expense.draft(..., c.incurredOn(), ..., clock);   // LocalDate: when it was spent
+events.publishEvent(new ExpenseEvent.Created(..., clock.instant())); // Instant: when it happened</code></pre>
+<p><code>Expense.draft</code> uses the clock to refuse a future date. In tests <a href="../src/test/java/com/ledgerly/MutableClock.java"><code>MutableClock</code></a> extends <code>Clock</code> and has <code>advance(Duration)</code> for expiry and lockout tests.</p>
+<h2>Check yourself</h2>
+<div class="quiz" data-answer="c"><p>What does <code>new BigDecimal("2.0").equals(new BigDecimal("2.00"))</code> return?</p>
+<button data-k="a" data-why="No rounding happens.">true, after rounding up</button>
+<button data-k="b" data-why="equals never throws here.">an ArithmeticException occurs</button>
+<button data-k="c" data-why="equals compares value and representation.">false, the scales differ</button>
+<button data-k="d" data-why="That is what compareTo says, not equals.">true, the values match</button>
+<div class="fb"></div></div>
+<div class="quiz" data-answer="b"><p>Which method treats 2.0 and 2.00 as equal?</p>
+<button data-k="a" data-why="It also compares scale.">equals</button>
+<button data-k="b" data-why="It uses numerical order.">compareTo</button>
+<button data-k="c" data-why="It is not a comparison.">hashCode</button>
+<button data-k="d" data-why="It prints each differently.">toString</button>
+<div class="fb"></div></div>
+<div class="quiz" data-answer="a"><p>Why create a BigDecimal from the String "0.1" rather than the double 0.1?</p>
+<button data-k="a" data-why="The double is converted exactly, error included.">A double already carries binary error</button>
+<button data-k="b" data-why="Speed is not the point.">Strings are always parsed faster</button>
+<button data-k="c" data-why="They can, approximately.">Doubles cannot hold decimals at all</button>
+<button data-k="d" data-why="It accepts them.">The constructor rejects double arguments</button>
+<div class="fb"></div></div>
+<div class="quiz" data-answer="d"><p>Why does <code>CreateExpense</code> take a <code>Clock</code> instead of calling <code>Instant.now()</code>?</p>
+<button data-k="a" data-why="It still exists.">Instant.now() is removed from Java</button>
+<button data-k="b" data-why="Unrelated to speed.">Clocks make database writes faster</button>
+<button data-k="c" data-why="It does not.">Spring forbids static method calls</button>
+<button data-k="d" data-why="A fixed or mutable clock makes tests deterministic.">Tests can substitute their own time</button>
+<div class="fb"></div></div>
+<h2>Next</h2><p><a href="0028-capstone-add-a-field.html">Lesson 28: Capstone, add a field end to end</a>.</p>
+<p><strong>Read:</strong> <a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/math/BigDecimal.html">BigDecimal (Java 21 API)</a>.</p>
+<p class="note">Questions? Ask me what the 0.1 example prints and why.</p>
+<script src="../assets/quiz.js"></script></body></html>

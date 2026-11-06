@@ -1,0 +1,57 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Lesson 37: API tests with Bruno</title>
+<meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="../assets/style.css"></head><body>
+<h1>Lesson 37: API tests with Bruno</h1>
+<p class="meta"><a href="index.html">&larr; All lessons</a> &middot; About 12 minutes. Builds on <a href="0036-configuration-and-profiles.html">Lesson 36</a>.</p>
+<h2>The one idea</h2>
+<p>JUnit tests (Lesson 26) check code from the inside. The <a href="../bruno/"><code>bruno/</code></a> collection checks the <em>running</em> application from the outside, the way a client sees it. Each request is one text file ending in <code>.bru</code>, committed to git. Bruno tests use Chai's <code>expect</code>, and values can be saved with <code>bru.setVar</code> for later requests (<a href="https://docs.usebruno.com/testing/tests/introduction">Bruno: tests</a>).</p>
+<h2>Read real code</h2>
+<p><a href="../bruno/01-expenses/create%20draft.bru"><code>create draft.bru</code></a>, shortened:</p>
+<pre><code>meta { name: create draft, seq: 1 }
+post { url: {{host}}/teams/{{teamId}}/expenses, body: json, auth: bearer }
+headers { Idempotency-Key: {{$randomUUID}} }
+auth:bearer { token: {{carolToken}} }
+body:json { { "money": { "amount": "12.50", "currency": "EUR" }, "category": "MEALS", ... } }
+
+script:post-response {
+  bru.setVar("draftId", res.body.id);          // for the next requests
+  bru.setVar("draftEtag", res.headers["etag"]);
+}
+assert { res.status: eq 201   res.body.status: eq DRAFT }
+tests { test("Location and ETag are set", function () { expect(res.headers["etag"]).to.match(/^"\d+"$/); }); }</code></pre>
+<ul>
+<li><code>{{host}}</code>, <code>{{teamId}}</code> come from <a href="../bruno/environments/local.bru"><code>environments/local.bru</code></a>; tokens are set by the <code>00-auth</code> login requests.</li>
+<li><code>assert</code> is the short form (status, body fields); <code>tests</code> is JavaScript for anything more.</li>
+<li><strong>Negative tests matter as much as happy paths.</strong> <code>create with a future date.bru</code> asserts <code>400</code> (Lesson 25's domain rule). <code>edit with a stale If-Match.bru</code> sends <code>If-Match: "999"</code> and asserts <code>412</code> and code <code>PRECONDITION_FAILED</code>: the optimistic locking from <code>@Version</code> (Lesson 24) seen from the client.</li>
+<li>Folders <code>00-auth</code> to <code>05-security</code> run in order and pass tokens, ids and ETags along; <code>seq</code> orders requests inside a folder. The <a href="../bruno/README.md">README</a> table says what each folder proves.</li>
+</ul>
+<p><strong>Run it:</strong> <code>make up</code> (the whole stack with demo data), then <code>make api-test</code>, which runs <code>npx @usebruno/cli run --env local -r</code> in <code>bruno/</code>. Use it only on local demo data, never on a shared system. (The Bruno page I read does not cover the <code>assert</code> block or the CLI; the repo's README and Makefile do.)</p>
+<div class="note">Extending: for every new endpoint add at least a happy path and one refusal (wrong role, missing field, stale ETag) to the matching folder, so the contract in <code>openapi.yaml</code> is proven end to end.</div>
+<h2>Check yourself</h2>
+<div class="quiz" data-answer="c"><p>Which block saves the new expense id for later requests?</p>
+<button data-k="a" data-why="assert only checks values.">The assert block</button>
+<button data-k="b" data-why="That carries the token.">The auth:bearer block</button>
+<button data-k="c" data-why="bru.setVar stores values after the response.">The post-response script</button>
+<button data-k="d" data-why="That only names the request.">The meta block</button>
+<div class="fb"></div></div>
+<div class="quiz" data-answer="d"><p>A request sends <code>If-Match: "999"</code> for a draft at another version. Which status do the tests expect?</p>
+<button data-k="a" data-why="That would mean the edit succeeded.">200</button>
+<button data-k="b" data-why="That is for creation.">201</button>
+<button data-k="c" data-why="The expense exists.">404</button>
+<button data-k="d" data-why="Precondition Failed: the ETag no longer matches.">412</button>
+<div class="fb"></div></div>
+<div class="quiz" data-answer="a"><p>What must be running before <code>make api-test</code>?</p>
+<button data-k="a" data-why="The collection calls the real API.">The app started with make up</button>
+<button data-k="b" data-why="Nothing is served from build output.">Only the Maven build output</button>
+<button data-k="c" data-why="Bruno is only a client.">Nothing; Bruno starts the app</button>
+<button data-k="d" data-why="The application is needed too.">Just the Postgres container alone</button>
+<div class="fb"></div></div>
+<div class="quiz" data-answer="a"><p>Why do the collection's requests run in a fixed order?</p>
+<button data-k="a" data-why="Tokens, ids and ETags are passed along.">Later requests reuse earlier variables</button>
+<button data-k="b" data-why="Not the reason.">Bruno forbids parallel requests ever</button>
+<button data-k="c" data-why="Order comes from folders and seq.">Alphabetical order is a Bruno rule</button>
+<button data-k="d" data-why="Docker is unrelated.">Docker starts folders one by one</button>
+<div class="fb"></div></div>
+<h2>Next</h2><p><a href="0038-docker-compose-and-ci.html">Lesson 38: Docker Compose and CI</a>.</p>
+<p><strong>Read:</strong> <a href="https://docs.usebruno.com/testing/tests/introduction">Bruno docs: Tests</a> and the repo's <a href="../bruno/README.md">bruno/README.md</a>.</p>
+<p class="note">Questions? Ask me to write a new request with you for an endpoint of your choice.</p>
+<script src="../assets/quiz.js"></script></body></html>

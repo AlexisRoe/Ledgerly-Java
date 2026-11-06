@@ -1,0 +1,22 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Reference: Spring Boot request flow</title><link rel="stylesheet" href="../assets/style.css"></head><body>
+<h1>Spring Boot request flow (Ledgerly)</h1><p class="meta">Sources are linked in the lessons 21 to 28 and in <a href="../RESOURCES.md">RESOURCES.md</a>.</p>
+<pre><code>HTTP request
+ -> ExpensesController (internal/web)         implements generated ExpensesApi; parse, call ONE use case, map
+ -> CreateExpense.execute (internal/application)   @Service, @Transactional; Command in, Result out
+ -> Expense.draft(...) (internal/domain)      rules; throws ExpenseException (unchecked) on refusal
+ -> ExpenseRepository.save (internal/infrastructure)  Spring Data interface, derived queries
+ <- ResponseEntity; errors by @RestControllerAdvice -> ProblemDetail (application/problem+json)</code></pre>
+<h2>Annotations cheat sheet</h2>
+<table><tr><th>Annotation</th><th>Means</th></tr>
+<tr><td>@SpringBootApplication</td><td>auto-config + component scan below this package</td></tr>
+<tr><td>@RestController, @RequestMapping, @GetMapping...</td><td>HTTP endpoints (in Ledgerly: generated interface)</td></tr>
+<tr><td>@PathVariable / @RequestParam / @RequestBody / @RequestHeader</td><td>bind request parts to arguments</td></tr>
+<tr><td>@Service / @Component</td><td>Spring-managed bean; constructor injection</td></tr>
+<tr><td>@Transactional(readOnly = true)</td><td>one DB transaction; rollback on RuntimeException/Error</td></tr>
+<tr><td>@Entity, @EmbeddedId, @Embedded, @Version</td><td>JPA mapping; needs a non-private no-arg constructor</td></tr>
+<tr><td>@Valid</td><td>validate the Bean Validation constraints of the argument</td></tr>
+<tr><td>@RestControllerAdvice + @ExceptionHandler</td><td>central exception to response mapping</td></tr>
+<tr><td>@Test, @ParameterizedTest, @SpringBootTest</td><td>JUnit and Spring tests</td></tr></table>
+<h2>Add a field: order of work</h2>
+<ol><li>api/openapi.yaml</li><li>new Flyway migration V&lt;next&gt;__name.sql</li><li>Entity field + rule</li><li>Command, use case, view, mapper</li><li>Tests, then <code>make verify</code></li></ol>
+</body></html>

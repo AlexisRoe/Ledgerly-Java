@@ -1,0 +1,47 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Lesson 5: Recap, reading Expense.submit</title>
+<meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="../assets/style.css"></head><body>
+<h1>Lesson 5: Recap, reading Expense.submit</h1>
+<p class="meta"><a href="index.html">&larr; All lessons</a> &middot; About 10 minutes. No new syntax: retrieval practice on Lessons 1 to 4, mixed together on purpose.</p>
+<h2>Try before you look</h2>
+<p>Open <a href="../src/main/java/com/ledgerly/expenses/internal/domain/Expense.java"><code>Expense.java</code></a> and find <code>submit</code> (line 135). Read it once, then answer from memory of the lessons. Struggling a little is the point: it makes the knowledge stick.</p>
+<pre><code>public void submit(Actor actor, ReceiptSummary receipts) {
+    requireClaimant(actor, Action.SUBMIT);
+    requireStatus(ExpenseStatus.DRAFT, Action.SUBMIT);
+    if (receipts.accepted() &lt; 1) {
+        throw new RuleViolated("At least one accepted receipt is required to submit");
+    }
+    if (receipts.pendingScan() &gt; 0) {
+        throw new RuleViolated("Receipts are still being scanned");
+    }
+    status = ExpenseStatus.SUBMITTED;
+}</code></pre>
+
+<div class="quiz" data-answer="c"><p>(Lesson 1) <code>status</code> is declared in the class body, not in a method, and has no <code>static</code>. What is it?</p>
+<button data-k="a" data-why="Locals live inside a method or constructor.">A local variable</button>
+<button data-k="b" data-why="Parameters sit in the signature parentheses.">A method parameter</button>
+<button data-k="c" data-why="Declared in the class body without static: one copy per object.">An instance field</button>
+<button data-k="d" data-why="A static field would carry the static modifier.">A static constant</button><div class="fb"></div></div>
+
+<div class="quiz" data-answer="a"><p>(Lesson 2) Zero accepted receipts and two pending scans. What happens?</p>
+<button data-k="a" data-why="The first if is true and throws, so the method ends there.">First message only, then stop</button>
+<button data-k="b" data-why="The first if is checked first and throws.">Second message only, first skipped</button>
+<button data-k="c" data-why="A thrown exception leaves the method at once.">Both messages, one after another</button>
+<button data-k="d" data-why="status changes only if both checks pass.">Neither message; the status changes</button><div class="fb"></div></div>
+
+<div class="quiz" data-answer="d"><p>(Lesson 3) <code>BatchCreateExpenses</code> runs <code>for (int i = 0; i &lt; problems.size(); i++)</code> with 3 problems. Which values does <code>i</code> take?</p>
+<button data-k="a" data-why="Counting starts at the initialization value 0.">1, 2, 3</button>
+<button data-k="b" data-why="The test i &lt; 3 fails when i reaches 3.">0, 1, 2, 3</button>
+<button data-k="c" data-why="The loop continues until the test fails.">0, 1</button>
+<button data-k="d" data-why="Start at 0, stop before 3.">0, 1, 2</button><div class="fb"></div></div>
+
+<div class="quiz" data-answer="b"><p>(Lesson 4) <code>TransitionExpense</code> has an arrow <code>switch</code> over <code>action</code>. With <code>REOPEN</code>, what runs?</p>
+<button data-k="a" data-why="Arrow rules never fall through, so REIMBURSE is not reached.">REOPEN and REIMBURSE both run</button>
+<button data-k="b" data-why="Arrow rules never fall through: only the matching rule runs.">Only the REOPEN rule runs</button>
+<button data-k="c" data-why="That would be classic fall-through from the first case, and arrows prevent it.">Every rule from SUBMIT runs</button>
+<button data-k="d" data-why="This statement switch covers the enum constants and needs no default.">None, since no default exists</button><div class="fb"></div></div>
+
+<div class="note">Missed one? Reread the matching lesson section tomorrow and retry; spacing beats rereading now.</div>
+<h2>Next</h2>
+<p><a href="0006-methods.html">Lesson 6: Methods</a>. Reference: <a href="../reference/control-flow.html">Control flow</a>.</p>
+<p class="note">Ask me about anything that still feels fuzzy.</p>
+<script src="../assets/quiz.js"></script></body></html>

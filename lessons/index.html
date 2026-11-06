@@ -1,0 +1,52 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Java backend: lessons</title>
+<meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="../assets/style.css"></head><body>
+<h1>Java backend: lessons</h1>
+<p class="meta">Learning Java syntax with the Ledgerly repository as the textbook.</p>
+<h2>The goal</h2>
+<p>Land a Java backend job, able to maintain and extend an existing Spring Boot backend. You already program in another language, so these short lessons (10 to 15 minutes each) teach Java's syntax by reading real code in this repo: variables and types, control structures, methods, classes, records, collections, exceptions, interfaces, Optional, sealed types, lambdas, streams and Spring basics, then the Spring Boot request flow from controller to database to tests. The aim is that you can open any file here and follow it line by line, then write small pieces yourself.</p>
+<p>Each lesson has one idea, a few quizzes, and a primary source to read. Quick-reference sheets live in <a href="../reference/variables-and-types.html">variables and types</a>, <a href="../reference/control-flow.html">control flow</a> and <a href="../reference/classes-and-records.html">classes and records</a> and <a href="../reference/collections-exceptions-interfaces.html">collections, exceptions, interfaces</a> and <a href="../reference/modern-java-and-spring.html">modern Java and Spring basics</a> and <a href="../reference/spring-boot-request-flow.html">the Spring Boot request flow</a> and <a href="../reference/security-specs-events.html">security, specifications and events</a> and <a href="../reference/operations-and-config.html">operations and configuration</a>. The full mission is in <a href="../MISSION.md">MISSION.md</a>; sources are in <a href="../RESOURCES.md">RESOURCES.md</a>.</p>
+<h2>Lessons</h2>
+<ol>
+<li><a href="0001-declaring-variables.html">Lesson 1: Declaring variables</a><br><span class="meta">Type name = value; local variables, primitives, naming.</span></li>
+<li><a href="0002-if-else-and-conditions.html">Lesson 2: if, else and conditions</a><br><span class="meta">if / else, ==, &amp;&amp;, || and short-circuiting.</span></li>
+<li><a href="0003-loops.html">Lesson 3: Loops</a><br><span class="meta">for, for-each, while and do-while.</span></li>
+<li><a href="0004-switch.html">Lesson 4: switch</a><br><span class="meta">Classic switch and fall-through, arrow switch expressions.</span></li>
+<li><a href="0005-recap-reading-submit.html">Lesson 5: Recap, reading Expense.submit</a><br><span class="meta">Retrieval practice: reading Expense.submit.</span></li>
+<li><a href="0006-methods.html">Lesson 6: Methods</a><br><span class="meta">Method anatomy, signatures, static vs instance, overloading.</span></li>
+<li><a href="0007-classes-and-objects.html">Lesson 7: Classes and objects</a><br><span class="meta">Fields, constructors, new, static factory methods.</span></li>
+<li><a href="0008-records.html">Lesson 8: Records</a><br><span class="meta">Records, compact constructors, record vs class.</span></li>
+<li><a href="0009-collections-and-generics.html">Lesson 9: Collections and generics</a><br><span class="meta">List, Set, Map and what &lt;String&gt; means; method-anatomy warm-up.</span></li>
+<li><a href="0010-exceptions.html">Lesson 10: Exceptions</a><br><span class="meta">throw, try/catch, checked vs unchecked.</span></li>
+<li><a href="0011-interfaces.html">Lesson 11: Interfaces</a><br><span class="meta">Contracts, implements, ReceiptChecks.</span></li>
+<li><a href="0012-recap-reading-uploadreceipt.html">Lesson 12: Recap, reading UploadReceipt</a><br><span class="meta">Mixed retrieval practice, including classic switch.</span></li>
+<li><a href="0013-finally-and-try-with-resources.html">Lesson 13: finally and try-with-resources</a><br><span class="meta">Guaranteed cleanup and automatic closing.</span></li>
+<li><a href="0014-optional.html">Lesson 14: Optional</a><br><span class="meta">A value or nothing, instead of null.</span></li>
+<li><a href="0015-sealed-types.html">Lesson 15: Sealed types</a><br><span class="meta">A fixed set of subtypes with permits.</span></li>
+<li><a href="0016-pattern-matching.html">Lesson 16: Pattern matching</a><br><span class="meta">instanceof patterns, switch patterns, guards, exhaustiveness.</span></li>
+<li><a href="0017-lambdas-and-method-references.html">Lesson 17: Lambdas and method references</a><br><span class="meta">Functions as values; the four method reference kinds.</span></li>
+<li><a href="0018-streams.html">Lesson 18: Streams</a><br><span class="meta">Source, intermediate and terminal operations.</span></li>
+<li><a href="0019-spring-annotations-and-beans.html">Lesson 19: Spring annotations and beans</a><br><span class="meta">Stereotypes, component scanning, constructor injection.</span></li>
+<li><a href="0020-recap-reading-scanreceipt.html">Lesson 20: Recap, reading ScanReceipt</a><br><span class="meta">Mixed retrieval practice on Lessons 13 to 19.</span></li>
+<li><a href="0021-spring-boot-anatomy.html">Lesson 21: Anatomy of the Spring Boot app</a><br><span class="meta">Layers, folders and one request end to end.</span></li>
+<li><a href="0022-controllers.html">Lesson 22: Controllers</a><br><span class="meta">Mappings, arguments, ResponseEntity; the generated *Api interfaces.</span></li>
+<li><a href="0023-services-and-transactions.html">Lesson 23: Services (use cases) and transactions</a><br><span class="meta">@Service use cases, @Transactional, rollback rules.</span></li>
+<li><a href="0024-entities-and-repositories.html">Lesson 24: Entities, repositories and migrations</a><br><span class="meta">@Entity, derived queries, Flyway, schema validation.</span></li>
+<li><a href="0025-validation-and-errors.html">Lesson 25: Validation and error handling</a><br><span class="meta">Bean Validation, domain rules, @RestControllerAdvice, ProblemDetail.</span></li>
+<li><a href="0026-testing.html">Lesson 26: Testing</a><br><span class="meta">JUnit, AssertJ, @SpringBootTest, Testcontainers.</span></li>
+<li><a href="0027-bigdecimal-and-time.html">Lesson 27: BigDecimal and time</a><br><span class="meta">Scale, equals vs compareTo, injected Clock.</span></li>
+<li><a href="0028-capstone-add-a-field.html">Lesson 28: Capstone, add a field end to end</a><br><span class="meta">The checklist for a real change.</span></li>
+<li><a href="0029-spring-security-filter-chain.html">Lesson 29: Spring Security, the filter chain</a><br><span class="meta">Deny by default, ordered chains, stateless JWT.</span></li>
+<li><a href="0030-who-is-calling.html">Lesson 30: Who is calling? Authentication in code</a><br><span class="meta">SecurityContext, JwtAuthenticationToken, CurrentUser.</span></li>
+<li><a href="0031-authorization-in-layers.html">Lesson 31: Authorization in layers</a><br><span class="meta">404 vs 403, roles, Actor, SelfDealing, @PreAuthorize.</span></li>
+<li><a href="0032-specifications.html">Lesson 32: Specifications and dynamic queries</a><br><span class="meta">Composable filters scoped to the team.</span></li>
+<li><a href="0033-events.html">Lesson 33: Events</a><br><span class="meta">publishEvent, @EventListener, @TransactionalEventListener.</span></li>
+<li><a href="0034-async-and-tracked-listeners.html">Lesson 34: Async and tracked listeners</a><br><span class="meta">@Async and Spring Modulith's publication registry.</span></li>
+<li><a href="0035-recap-reading-the-security-and-event-flow.html">Lesson 35: Recap, one endpoint through every layer</a><br><span class="meta">Mixed retrieval practice on Lessons 21 to 34.</span></li>
+<li><a href="0036-configuration-and-profiles.html">Lesson 36: Configuration and profiles</a><br><span class="meta">application.yaml, profiles, environment variables, @ConfigurationProperties records.</span></li>
+<li><a href="0037-api-tests-with-bruno.html">Lesson 37: API tests with Bruno</a><br><span class="meta">The .bru files, variables, assertions, make api-test.</span></li>
+<li><a href="0038-docker-compose-and-ci.html">Lesson 38: Docker Compose and CI</a><br><span class="meta">The local stack, Makefile targets, GitHub Actions jobs.</span></li>
+<li><a href="0039-logs-metrics-traces.html">Lesson 39: Logs, metrics and traces</a><br><span class="meta">MDC, actuator, Micrometer, observations.</span></li>
+<li><a href="0040-batch-imports.html">Lesson 40: Batch imports with Spring Batch</a><br><span class="meta">Chunks, skips, job parameters, restart.</span></li>
+</ol>
+<p class="note">Open from the repo root with <code>make lessons</code>. Questions about any lesson? Ask your teacher in the chat.</p>
+</body></html>

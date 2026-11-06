@@ -1,0 +1,62 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Lesson 14: Optional</title>
+<meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="../assets/style.css"></head><body>
+<h1>Lesson 14: Optional</h1>
+<p class="meta"><a href="index.html">&larr; All lessons</a> &middot; About 12 minutes. Builds on <a href="0013-finally-and-try-with-resources.html">Lesson 13</a>.</p>
+<h2>The one idea</h2>
+<p><code>Optional&lt;T&gt;</code> is a container that holds a non-null value or is empty. Oracle's API note: it is "primarily intended for use as a method return type where there is a clear need to represent 'no result'" (<a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/Optional.html">Optional API</a>). A method that may find nothing returns <code>Optional</code> instead of <code>null</code>, so the caller cannot forget the "nothing" case.</p>
+<table><tr><th>Method</th><th>Does</th></tr>
+<tr><td><code>Optional.of(v)</code></td><td>wraps a non-null value; <code>null</code> throws <code>NullPointerException</code></td></tr>
+<tr><td><code>ofNullable(v)</code></td><td>empty if <code>v</code> is null</td></tr>
+<tr><td><code>isPresent() / isEmpty()</code></td><td>tests for a value</td></tr>
+<tr><td><code>ifPresent(action)</code></td><td>runs the action only if a value exists</td></tr>
+<tr><td><code>map(f)</code></td><td>transforms the value if present; otherwise stays empty</td></tr>
+<tr><td><code>orElse(other)</code></td><td>the value, or <code>other</code></td></tr>
+<tr><td><code>orElseThrow()</code></td><td>the value, or <code>NoSuchElementException</code>; preferred over <code>get()</code></td></tr></table>
+<div class="note">The lambdas (<code>x -&gt; ...</code>) and <code>Type::method</code> forms are explained in <a href="0017-lambdas-and-method-references.html">Lesson 17</a>. For now read them as "do this with the value".</div>
+
+<h2>Read real code</h2>
+<pre><code>// Login.java line 68
+Optional&lt;User&gt; found = users.findByEmail(normalised);
+if (found.isEmpty()) { ... throw new Unauthenticated(); }
+
+// IdentityFacade.java line 14
+return find(id).map(UserSummary::verified).orElse(false);
+
+// DownloadReceipt.java line 46
+var receipt = receipts.findByIdAndTeamIdAndExpenseId(...)
+        .filter(r -&gt; r.isDownloadable())
+        .orElseThrow(NotFound::new);</code></pre>
+<ul>
+<li>A repository method returns <code>Optional&lt;User&gt;</code>: maybe the email is unknown. <a href="$R/identity/internal/application/Login.java"><code>Login</code></a> checks <code>isEmpty()</code>.</li>
+<li><a href="$R/identity/IdentityFacade.java"><code>IdentityFacade</code></a>: if there is a user, take its <code>verified</code> flag; if not, <code>false</code>. One line, no null check.</li>
+<li><a href="$R/receipts/internal/application/DownloadReceipt.java"><code>DownloadReceipt</code></a>: no receipt, or not downloadable, gives a 404 (<code>NotFound</code>). (<code>filter</code> keeps the value only if the test passes; read from this code, not from the Oracle page.)</li>
+</ul>
+<h2>Check yourself</h2>
+<div class="quiz" data-answer="c"><p>What does <code>Optional.of(null)</code> do?</p>
+<button data-k="a" data-why="That is ofNullable, not of.">Returns an empty Optional</button>
+<button data-k="b" data-why="An Optional never holds null.">Returns Optional holding null</button>
+<button data-k="c" data-why="Oracle: of throws if the value is null.">Throws a NullPointerException</button>
+<button data-k="d" data-why="It throws at run time.">Compiles but returns nothing</button>
+<div class="fb"></div></div>
+<div class="quiz" data-answer="d"><p><code>find(id).map(UserSummary::verified).orElse(false)</code> and no user exists. What is the result?</p>
+<button data-k="a" data-why="orElse supplies a value.">The result is null</button>
+<button data-k="b" data-why="The default is false.">The result is true</button>
+<button data-k="c" data-why="orElse never throws here.">An exception is thrown</button>
+<button data-k="d" data-why="Empty stays empty through map, then orElse gives false.">The result is false</button>
+<div class="fb"></div></div>
+<div class="quiz" data-answer="c"><p>Where is <code>Optional</code> primarily intended to be used?</p>
+<button data-k="a" data-why="Oracle names return types.">As a field type</button>
+<button data-k="b" data-why="Oracle names return types.">As a parameter type</button>
+<button data-k="c" data-why="Exactly: where there is a clear need for no result.">As a method return type</button>
+<button data-k="d" data-why="Not what Optional is for.">As a loop counter</button>
+<div class="fb"></div></div>
+<div class="quiz" data-answer="b"><p>Which method does Oracle prefer over <code>get()</code>?</p>
+<button data-k="a" data-why="That only tests.">isPresent()</button>
+<button data-k="b" data-why="The API says it is the preferred alternative to get.">orElseThrow()</button>
+<button data-k="c" data-why="That creates an Optional.">ofNullable()</button>
+<button data-k="d" data-why="That runs an action.">ifPresent()</button>
+<div class="fb"></div></div>
+<h2>Next</h2><p><a href="0015-sealed-types.html">Lesson 15: Sealed types</a>.</p>
+<p><strong>Read:</strong> <a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/Optional.html">Optional (Java 21 API)</a>.</p>
+<p class="note">Questions? Ask me.</p>
+<script src="../assets/quiz.js"></script></body></html>

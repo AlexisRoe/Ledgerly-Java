@@ -1,0 +1,56 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Lesson 2: if, else and conditions</title>
+<meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="../assets/style.css"></head><body>
+<h1>Lesson 2: if, else and conditions</h1>
+<p class="meta"><a href="index.html">&larr; All lessons</a> &middot; About 10 minutes. Builds on <a href="0001-declaring-variables.html">Lesson 1</a>.</p>
+
+<h2>The one idea</h2>
+<p>An <code>if</code> needs a <code>boolean</code> condition in parentheses and a block in braces. Chain more paths with <code>else if</code> and <code>else</code>. The first branch whose condition is true runs; the rest are skipped (<a href="https://docs.oracle.com/javase/tutorial/java/nutsandbolts/if.html">Oracle: if-then-else</a>).</p>
+<pre><code>if (digits &lt; 0) {
+    ...
+} else if (digits == 0) {
+    ...
+} else {
+    ...
+}</code></pre>
+<p>Oracle notes braces are optional for one statement, but omitting them makes code brittle when a second statement is added later. This repo always uses braces.</p>
+
+<h2>Read real code</h2>
+<p>In <a href="../src/main/java/com/ledgerly/shared/config/ProductionEnvironmentCheck.java"><code>ProductionEnvironmentCheck.java</code></a> (about line 50):</p>
+<pre><code>if (value == null || value.isBlank()) {
+    missing.add(property);
+}</code></pre>
+<ul>
+<li><code>==</code> compares, <code>=</code> assigns. Oracle: "you must use '==', not '=', when testing if two primitive values are equal". There is no <code>===</code> as in JavaScript.</li>
+<li><code>||</code> (or) and <code>&amp;&amp;</code> (and) are <strong>short-circuit</strong>: "the second operand is evaluated only if needed" (<a href="https://docs.oracle.com/javase/tutorial/java/nutsandbolts/op2.html">Oracle: operators</a>). If <code>value</code> is null, the left side is true, so <code>value.isBlank()</code> never runs. Swapped, a null would crash it.</li>
+</ul>
+<p>Another one, in <a href="../src/main/java/com/ledgerly/expenses/internal/application/ListExpenses.java"><code>ListExpenses.java</code></a>, method <code>parseSort</code>:</p>
+<pre><code>if (field == SortField.AMOUNT &amp;&amp; !hasCurrencyFilter) {
+    throw new InvalidRequest("sort", "Sorting by amount needs a currency filter");
+}</code></pre>
+<p><code>!</code> negates a boolean. This is a <em>guard clause</em>: check the bad case first, throw, and keep the rest of the method flat.</p>
+<div class="note">Oracle also covers the ternary <code>cond ? a : b</code>, shorthand for if-else that returns a value. <code>BatchCreateExpenses</code> uses <code>valid.isEmpty() ? List.of() : facade.createDrafts(...)</code>.</div>
+
+<h2>Check yourself</h2>
+<div class="quiz" data-answer="b"><p>In <code>value == null || value.isBlank()</code>, what if the two sides were swapped?</p>
+<button data-k="a" data-why="Short-circuiting means the right side is skipped when the left decides the result.">Nothing changes; both sides always get evaluated</button>
+<button data-k="b" data-why="With null, isBlank would be called on nothing and fail. The order is the safety.">It crashes: isBlank is called on null</button>
+<button data-k="c" data-why="Operand order never causes a compile error here.">It fails to compile: wrong operand order</button>
+<button data-k="d" data-why="Speed is not the issue; correctness is.">It still works but becomes much slower</button><div class="fb"></div></div>
+
+<div class="quiz" data-answer="c"><p>Which compares two ints for equality?</p>
+<button data-k="a" data-why="A single = assigns. It does not compare.">if (a = b)</button>
+<button data-k="b" data-why="Java has no === operator.">if (a === b)</button>
+<button data-k="c" data-why="Double equals compares primitives.">if (a == b)</button>
+<button data-k="d" data-why="equals is a method call, not an operator.">if (a equals b)</button><div class="fb"></div></div>
+
+<div class="quiz" data-answer="a"><p>With <code>testscore = 76</code> in an else-if chain (&gt;=90, &gt;=80, &gt;=70, &gt;=60), which branches run?</p>
+<button data-k="a" data-why="76 matches the &gt;=70 branch first; Java skips the rest, even though &gt;=60 is also true.">Only the C branch</button>
+<button data-k="b" data-why="Chained else-ifs never run two branches.">C and D both</button>
+<button data-k="c" data-why="Only one branch runs per chain.">All of the branches</button>
+<button data-k="d" data-why="else runs only if no condition matched.">None; the else runs</button><div class="fb"></div></div>
+
+<h2>Next</h2>
+<p>Reference: <a href="../reference/control-flow.html">Control flow</a>. Next: <a href="0003-loops.html">Lesson 3: Loops</a>.</p>
+<p><strong>Read:</strong> <a href="https://docs.oracle.com/javase/tutorial/java/nutsandbolts/op2.html">The Java Tutorials: Relational and Conditional Operators</a>.</p>
+<p class="note">Stuck on anything? Ask me. I can walk through any line of this repo with you.</p>
+<script src="../assets/quiz.js"></script></body></html>

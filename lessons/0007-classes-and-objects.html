@@ -1,0 +1,54 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Lesson 7: Classes and objects</title>
+<meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="../assets/style.css"></head><body>
+<h1>Lesson 7: Classes and objects</h1>
+<p class="meta"><a href="index.html">&larr; All lessons</a> &middot; About 12 minutes. Builds on <a href="0006-methods.html">Lesson 6</a>.</p>
+<h2>The one idea</h2>
+<p>A class bundles <strong>fields</strong> (state), a <strong>constructor</strong> (how to start) and <strong>methods</strong> (behaviour). An object is created with <code>new</code>, which calls a constructor (<a href="https://docs.oracle.com/javase/tutorial/java/javaOO/constructors.html">Oracle: Constructors</a>).</p>
+<p>A constructor looks like a method but has the class name and <em>no return type</em>. If you write none, the compiler adds a no-argument one. Access modifiers on a constructor decide who may call it; if other classes cannot call it, they cannot create objects directly.</p>
+
+<h2>Read real code</h2>
+<p>All in <a href="../src/main/java/com/ledgerly/expenses/internal/domain/Expense.java"><code>Expense.java</code></a>:</p>
+<pre><code>private ExpenseStatus status;                 // field (state)
+
+private Expense(ExpenseId id, ..., String merchant, String note) {
+    this.id = id;                             // parameter -&gt; field
+    ...
+    this.status = ExpenseStatus.DRAFT;        // every new expense starts as a draft
+}
+
+public static Expense draft(TeamId teamId, ..., Clock clock) {
+    ... checks ...
+    return new Expense(ExpenseId.random(), ...);
+}</code></pre>
+<ul>
+<li>The constructor is <code>private</code>: no other class can write <code>new Expense(...)</code>.</li>
+<li>The only way in is the <code>static</code> method <code>draft</code>, a <strong>factory method</strong>: it runs the validation, then calls <code>new</code>. An invalid expense cannot exist. (<code>Money.of</code> is the same idea.)</li>
+<li><code>this.id = id</code>: <code>this</code> is the object being built, so this assigns the parameter to the field of the same name.</li>
+<li>Fields are <code>private</code>; outside code reads them through methods such as <code>version()</code> and <code>id()</code>.</li>
+</ul>
+<div class="note">The class comment explains why this is a class and not a record: it "has an identity ... and changes over time". Lesson 8 shows the other kind.</div>
+
+<h2>Check yourself</h2>
+<div class="quiz" data-answer="c"><p>What marks a constructor?</p>
+<button data-k="a" data-why="Constructors are named after the class.">Lowercase verb name, void type</button>
+<button data-k="b" data-why="There is no method named init involved.">Called init, returns an int</button>
+<button data-k="c" data-why="Oracle: class name and no return type.">Class name, no return type</button>
+<button data-k="d" data-why="Constructors are not static and return nothing.">Always static, returns the object</button><div class="fb"></div></div>
+
+<div class="quiz" data-answer="a"><p>Why can another class not call the all-argument <code>new Expense(...)</code>?</p>
+<button data-k="a" data-why="private limits who may call it.">The constructor is private</button>
+<button data-k="b" data-why="It has constructors, just hidden ones.">Expense has no constructors</button>
+<button data-k="c" data-why="Expense is a class, not an enum.">Expense is an enum</button>
+<button data-k="d" data-why="Static does not forbid construction.">The class is static</button><div class="fb"></div></div>
+
+<div class="quiz" data-answer="a"><p>What is <code>Expense.draft(...)</code>?</p>
+<button data-k="a" data-why="static, called on the class, returns a new validated object.">A static factory method</button>
+<button data-k="b" data-why="Instance methods need an object first.">An instance accessor method</button>
+<button data-k="c" data-why="Compact constructors belong to records.">A compact constructor</button>
+<button data-k="d" data-why="Default constructors are generated, not written.">A default constructor</button><div class="fb"></div></div>
+
+<h2>Next</h2>
+<p><a href="0008-records.html">Lesson 8: Records</a>.</p>
+<p><strong>Read:</strong> <a href="https://docs.oracle.com/javase/tutorial/java/javaOO/constructors.html">The Java Tutorials: Providing Constructors</a>.</p>
+<p class="note">Questions? Ask me what <code>protected Expense() {}</code> is for.</p>
+<script src="../assets/quiz.js"></script></body></html>

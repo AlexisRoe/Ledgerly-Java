@@ -1,0 +1,16 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Reference: Collections, exceptions, interfaces</title><link rel="stylesheet" href="../assets/style.css"></head><body>
+<h1>Collections, exceptions, interfaces</h1><p class="meta">Sources: <a href="https://docs.oracle.com/javase/tutorial/collections/interfaces/index.html">Collections</a>, <a href="https://docs.oracle.com/javase/tutorial/essential/exceptions/runtime.html">Exceptions</a>, <a href="https://docs.oracle.com/javase/tutorial/java/IandI/createinterface.html">Interfaces</a></p>
+<h2>Collections</h2>
+<table><tr><th>Type</th><th>Use</th></tr><tr><td>List&lt;T&gt;</td><td>ordered, duplicates, index</td></tr><tr><td>Set&lt;T&gt;</td><td>no duplicates, membership</td></tr><tr><td>Map&lt;K,V&gt;</td><td>key to value, unique keys</td></tr></table>
+<pre><code>List&lt;String&gt; xs = new ArrayList&lt;&gt;();  xs.add("a");  xs.get(0);  xs.size();
+Set&lt;String&gt; ok = Set.of("a", "b");        ok.contains("a");
+Map&lt;String,String&gt; m = Map.of("k", "v");  m.get("k");</code></pre>
+<h2>Exceptions</h2>
+<pre><code>if (bad) { throw new IllegalArgumentException("why"); }
+try { ... } catch (IOException | SQLException e) { ... }</code></pre>
+<p>Checked: must catch or declare (recoverable). Unchecked: RuntimeException, Error and subclasses.</p>
+<h2>Interfaces</h2>
+<pre><code>public interface Scanner { Result scan(Input in); }
+class ClamAv implements Scanner { @Override public Result scan(Input in) { ... } }
+Scanner s = new ClamAv();   // variable: contract, object: implementation</code></pre>
+</body></html>

@@ -1,0 +1,52 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Lesson 12: Recap, reading UploadReceipt</title>
+<meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="../assets/style.css"></head><body>
+<h1>Lesson 12: Recap, reading UploadReceipt</h1>
+<p class="meta"><a href="index.html">&larr; All lessons</a> &middot; About 10 minutes. Mixed retrieval practice on Lessons 4 and 6 to 11.</p>
+<h2>Try before you look</h2>
+<p>Open <a href="../src/main/java/com/ledgerly/receipts/internal/application/UploadReceipt.java"><code>UploadReceipt.java</code></a> (lines 43, 94 and 160). No new syntax.</p>
+<pre><code>static final Set&lt;String&gt; ALLOWED_TYPES = Set.of("application/pdf", "image/jpeg", "image/png");
+if (!ALLOWED_TYPES.contains(staged.type())) { ... }
+
+private static MessageDigest newDigest() {
+    try {
+        return MessageDigest.getInstance("SHA-256");
+    } catch (NoSuchAlgorithmException e) {
+        throw new IllegalStateException(e);
+    }
+}</code></pre>
+
+<div class="quiz" data-answer="b"><p>(Lesson 9) When does the block under <code>if (!ALLOWED_TYPES.contains(...))</code> run?</p>
+<button data-k="a" data-why="! flips it: that is the opposite case.">When the type is listed there</button>
+<button data-k="b" data-why="contains is false, ! makes it true: the type is not allowed.">When the type is not listed</button>
+<button data-k="c" data-why="The test is about membership, not emptiness.">Only when the set is empty</button>
+<button data-k="d" data-why="! negates the result; it is not always true.">Always, since the bang means true</button><div class="fb"></div></div>
+
+<div class="quiz" data-answer="d"><p>(Lesson 10) What does the <code>catch</code> block in <code>newDigest</code> do?</p>
+<button data-k="a" data-why="It throws; nothing is ignored.">Prints it and then carries on</button>
+<button data-k="b" data-why="No retry loop exists.">Retries the call until it works</button>
+<button data-k="c" data-why="It does not return null.">Silently ignores it and returns null</button>
+<button data-k="d" data-why="It translates a checked exception into an unchecked one.">Replaces it with a different exception</button><div class="fb"></div></div>
+
+<div class="quiz" data-answer="c"><p>(Lesson 6) What is the signature of <code>newDigest</code>?</p>
+<button data-k="a" data-why="Return types are not part of a signature.">MessageDigest newDigest()</button>
+<button data-k="b" data-why="Modifiers are not part of a signature.">private newDigest()</button>
+<button data-k="c" data-why="Name plus parameter types; here there are none.">newDigest()</button>
+<button data-k="d" data-why="static is a modifier, not part of the signature.">static newDigest()</button><div class="fb"></div></div>
+
+<div class="quiz" data-answer="d"><p>(Lesson 11) A test needs a fake scanner instead of <code>ClamAvScanner</code>. What is easiest?</p>
+<button data-k="a" data-why="Editing private fields does not swap the behaviour.">Edit ClamAvScanner's private fields</button>
+<button data-k="b" data-why="Records have no role here.">Change MalwareScanner into a record</button>
+<button data-k="c" data-why="Enums do not help here.">Subclass an enum of scanners</button>
+<button data-k="d" data-why="Any class implementing the interface can stand in.">Write another class implementing MalwareScanner</button><div class="fb"></div></div>
+
+<div class="quiz" data-answer="b"><p>(Lesson 4) Classic <code>switch (month)</code> with no <code>break</code> until after <code>case 12</code>. With <code>month = 10</code>, what is added?</p>
+<button data-k="a" data-why="Fall-through continues past the matching case.">Only October is added</button>
+<button data-k="b" data-why="Enter at 10, fall through 11 and 12, stop at the break.">October to December added</button>
+<button data-k="c" data-why="Execution does not stop after one extra case.">October and November only</button>
+<button data-k="d" data-why="A matching case exists, so default is skipped.">Nothing; default runs instead</button><div class="fb"></div></div>
+
+<div class="note">Missed one? Reread that lesson section tomorrow, then retry.</div>
+<h2>Next</h2>
+<p>Back to the <a href="index.html">lesson index</a>. Ideas for next topics: streams and lambdas (used in <code>BatchCreateExpenses</code>), <code>Optional</code>, <code>sealed</code> types and pattern matching, then Spring annotations. Tell me which you want.</p>
+<p class="note">Ask me about anything that still feels fuzzy.</p>
+<script src="../assets/quiz.js"></script></body></html>

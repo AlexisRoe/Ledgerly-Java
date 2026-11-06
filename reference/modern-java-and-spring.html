@@ -1,0 +1,27 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Reference: Modern Java and Spring basics</title><link rel="stylesheet" href="../assets/style.css"></head><body>
+<h1>Modern Java and Spring basics</h1><p class="meta">Sources are linked in <a href="../RESOURCES.md">RESOURCES.md</a> (Oracle tutorials, Java 21 language guide, Spring reference).</p>
+<h2>Cleanup</h2>
+<pre><code>try (var in = open()) { ... }          // AutoCloseable, closed in reverse order
+try { ... } finally { cleanup(); }     // runs on any exit (not if the JVM exits)</code></pre>
+<h2>Optional</h2>
+<pre><code>Optional&lt;User&gt; u = repo.find(id);
+u.isEmpty();  u.map(User::name).orElse("?");  u.orElseThrow(NotFound::new);</code></pre>
+<p>Intended as a return type. Prefer <code>orElseThrow()</code> to <code>get()</code>.</p>
+<h2>Sealed and patterns</h2>
+<pre><code>sealed interface Result permits Clean, Infected {}
+record Clean() implements Result {}
+record Infected(String sig) implements Result {}
+
+switch (r) {
+    case Clean c -&gt; ...
+    case Infected i when i.sig().isEmpty() -&gt; ...
+    case Infected i -&gt; ...        // guarded case first; no default needed
+}
+if (x instanceof Infected i) { i.sig(); }</code></pre>
+<h2>Lambdas and streams</h2>
+<pre><code>list.stream().filter(r -&gt; r.id() != null).map(Receipt::key).toList();
+Type::staticMethod   obj::method   Type::instanceMethod   Type::new</code></pre>
+<h2>Spring</h2>
+<pre><code>@Service class Foo { private final Bar bar; Foo(Bar bar) { this.bar = bar; } }</code></pre>
+<p>@Component, @Service, @Repository, @Controller / @RestController. Bean name = uncapitalised class name; default scope singleton; the constructor lists the dependencies.</p>
+</body></html>

@@ -1,0 +1,50 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Lesson 11: Interfaces</title>
+<meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="../assets/style.css"></head><body>
+<h1>Lesson 11: Interfaces</h1>
+<p class="meta"><a href="index.html">&larr; All lessons</a> &middot; About 12 minutes. Builds on <a href="0010-exceptions.html">Lesson 10</a>.</p>
+<h2>The one idea</h2>
+<p>An interface is a contract: it lists method signatures, no bodies. It cannot be instantiated, only <em>implemented</em> by classes, which must supply a body for every method (<a href="https://docs.oracle.com/javase/tutorial/java/IandI/createinterface.html">Oracle: Interfaces</a>). Code that uses the interface depends only on the signatures, so implementations can be swapped.</p>
+<pre><code>public interface OperateCar { int signalTurn(...); }
+public class OperateBMW760i implements OperateCar { public int signalTurn(...) { ... } }</code></pre>
+
+<h2>Read real code</h2>
+<pre><code>// expenses/ReceiptChecks.java
+public interface ReceiptChecks {
+    ReceiptSummary summaryFor(ExpenseId expenseId);
+}
+
+// receipts/internal/application/ReceiptChecksImpl.java
+class ReceiptChecksImpl implements ReceiptChecks {
+    @Override
+    public ReceiptSummary summaryFor(ExpenseId expenseId) { ... }
+}</code></pre>
+<ul>
+<li><a href="../src/main/java/com/ledgerly/expenses/ReceiptChecks.java"><code>ReceiptChecks</code></a> has no body. <a href="../src/main/java/com/ledgerly/receipts/internal/application/ReceiptChecksImpl.java"><code>ReceiptChecksImpl</code></a> <code>implements</code> it. <code>@Override</code> marks a method that fulfils the contract.</li>
+<li>Its comment explains the design: expenses owns the interface and receipts implements it, so the dependency points from receipts to expenses (ADR 0002). <code>Expense.submit</code> only knows the interface; it does not know receipts exists.</li>
+<li>The same pattern: <a href="../src/main/java/com/ledgerly/receipts/internal/infrastructure/ClamAvScanner.java"><code>ClamAvScanner implements MalwareScanner</code></a>. A test can supply a different scanner with no virus engine.</li>
+<li><a href="../src/main/java/com/ledgerly/expenses/ExpensesFacade.java"><code>ExpensesFacade</code></a> is an interface too: the public front door of a module.</li>
+</ul>
+<p>This is also why Lesson 9 declared <code>List&lt;...&gt; valid = new ArrayList&lt;&gt;()</code>: the variable holds the contract, the object is one implementation.</p>
+
+<h2>Check yourself</h2>
+<div class="quiz" data-answer="c"><p>What must <code>ReceiptChecksImpl</code> do, since it implements <code>ReceiptChecks</code>?</p>
+<button data-k="a" data-why="Plain interface methods have no body to inherit.">Inherit all bodies from the interface</button>
+<button data-k="b" data-why="Methods need not be static.">Declare every method as static too</button>
+<button data-k="c" data-why="Oracle: the class must provide a body for every method.">Provide a body for every method</button>
+<button data-k="d" data-why="Then it would not fulfil the contract.">Leave the methods without any bodies</button><div class="fb"></div></div>
+<div class="quiz" data-answer="b"><p>Can you write <code>new ReceiptChecks()</code>?</p>
+<button data-k="a" data-why="Interfaces have no constructor to call.">Yes, with a constructor call</button>
+<button data-k="b" data-why="Oracle: interfaces cannot be instantiated, only implemented.">No, interfaces cannot be instantiated</button>
+<button data-k="c" data-why="Public methods do not change this.">Yes, if methods are public</button>
+<button data-k="d" data-why="Records are not instantiating interfaces either.">No, only records can be</button><div class="fb"></div></div>
+<div class="quiz" data-answer="a"><p>Why does expenses define <code>ReceiptChecks</code> while receipts implements it?</p>
+<button data-k="a" data-why="So expenses never depends on receipts' code (ADR 0002).">Expenses never depends on receipts code</button>
+<button data-k="b" data-why="Speed is not the reason.">Interfaces run faster than normal classes</button>
+<button data-k="c" data-why="Classes can call other classes freely.">Java forbids classes calling other classes</button>
+<button data-k="d" data-why="Records have nothing to do with this.">Records cannot be used in modules</button><div class="fb"></div></div>
+
+<h2>Next</h2>
+<p><a href="0012-recap-reading-uploadreceipt.html">Lesson 12: Recap</a>.</p>
+<p><strong>Read:</strong> <a href="https://docs.oracle.com/javase/tutorial/java/IandI/createinterface.html">The Java Tutorials: Creating and Using Interfaces</a>. Also see <a href="../docs/adr/0002-expenses-asks-receipts-through-an-interface-it-owns.md">ADR 0002</a>.</p>
+<p class="note">Questions? Ask me.</p>
+<script src="../assets/quiz.js"></script></body></html>
