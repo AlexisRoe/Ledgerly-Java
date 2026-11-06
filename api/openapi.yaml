@@ -19,6 +19,8 @@ tags:
     description: The calling user.
   - name: expenses
     description: Create, edit and move expenses through the approval workflow.
+  - name: receipts
+    description: Receipt files attached to draft expenses.
 security:
   - bearerAuth: []
 
@@ -487,6 +489,101 @@ paths:
         "428": { $ref: "#/components/responses/PreconditionRequired" }
         "500": { $ref: "#/components/responses/InternalError" }
 
+  /teams/{teamId}/expenses/{expenseId}/receipts:
+    parameters:
+      - $ref: "#/components/parameters/TeamId"
+      - $ref: "#/components/parameters/ExpenseId"
+    get:
+      tags: [receipts]
+      operationId: listReceipts
+      summary: List an expense's receipts, with their scan status
+      description: Visible to whoever can see the expense. This is the polling endpoint after an upload.
+      responses:
+        "200":
+          description: The receipts
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/ReceiptResponse" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "500": { $ref: "#/components/responses/InternalError" }
+    post:
+      tags: [receipts]
+      operationId: uploadReceipt
+      summary: Upload a receipt (claimant, draft expenses only)
+      description: >
+        Accepts PDF, JPEG and PNG, up to 10 MB. The type is detected from the file's own bytes; the declared
+        content type and the file name are ignored. The receipt starts as `PENDING_SCAN` and becomes `ACCEPTED`
+        or `QUARANTINED` after a malware scan, so poll the list endpoint. The same file twice on one expense is
+        a 409; the same file on another expense of the team is flagged `possibleDuplicate`.
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file: { type: string, format: binary }
+      responses:
+        "202":
+          description: Accepted for scanning
+          headers:
+            Location:
+              schema: { type: string }
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ReceiptResponse" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "413": { $ref: "#/components/responses/PayloadTooLarge" }
+        "415": { $ref: "#/components/responses/UnsupportedMediaType" }
+        "500": { $ref: "#/components/responses/InternalError" }
+
+  /teams/{teamId}/expenses/{expenseId}/receipts/{receiptId}:
+    delete:
+      tags: [receipts]
+      operationId: deleteReceipt
+      summary: Delete a receipt (claimant, draft expenses only)
+      parameters:
+        - $ref: "#/components/parameters/TeamId"
+        - $ref: "#/components/parameters/ExpenseId"
+        - $ref: "#/components/parameters/ReceiptId"
+      responses:
+        "204": { description: Deleted }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "500": { $ref: "#/components/responses/InternalError" }
+
+  /teams/{teamId}/expenses/{expenseId}/receipts/{receiptId}/download:
+    get:
+      tags: [receipts]
+      operationId: downloadReceipt
+      summary: A short-lived link to download an accepted receipt
+      description: >
+        Only `ACCEPTED` receipts can be downloaded; a pending or quarantined one is a 404. The link expires after
+        at most five minutes and forces a download with a sanitised file name.
+      parameters:
+        - $ref: "#/components/parameters/TeamId"
+        - $ref: "#/components/parameters/ExpenseId"
+        - $ref: "#/components/parameters/ReceiptId"
+      responses:
+        "200":
+          description: The download link
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DownloadLink" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "500": { $ref: "#/components/responses/InternalError" }
+
   /teams/{teamId}/expenses/{expenseId}:submit:
     post:
       tags: [expenses]
@@ -592,6 +689,11 @@ components:
       in: path
       required: true
       schema: { type: string, format: uuid }
+    ReceiptId:
+      name: receiptId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
     InvitationId:
       name: invitationId
       in: path
@@ -691,6 +793,26 @@ components:
         rejectionReasons:
           type: array
           items: { type: string }
+    ScanStatus:
+      type: string
+      enum: [PENDING_SCAN, ACCEPTED, QUARANTINED]
+    ReceiptResponse:
+      type: object
+      required: [id, expenseId, status, detectedType, sizeBytes, originalName, possibleDuplicate]
+      properties:
+        id: { type: string, format: uuid }
+        expenseId: { type: string, format: uuid }
+        status: { $ref: "#/components/schemas/ScanStatus" }
+        detectedType: { type: string, enum: [application/pdf, image/jpeg, image/png] }
+        sizeBytes: { type: integer, format: int64 }
+        originalName: { type: string, description: Metadata only; never used as a storage path. }
+        possibleDuplicate: { type: boolean }
+    DownloadLink:
+      type: object
+      required: [url, expiresAt]
+      properties:
+        url: { type: string }
+        expiresAt: { type: string, format: date-time }
     Role:
       type: string
       enum: [MEMBER, APPROVER, OWNER]
@@ -887,6 +1009,16 @@ components:
           schema: { $ref: "#/components/schemas/Problem" }
     Unprocessable:
       description: A business rule is not met, or an idempotency key was reused with a different body.
+      content:
+        application/problem+json:
+          schema: { $ref: "#/components/schemas/Problem" }
+    PayloadTooLarge:
+      description: The request body is larger than the limit.
+      content:
+        application/problem+json:
+          schema: { $ref: "#/components/schemas/Problem" }
+    UnsupportedMediaType:
+      description: The file is not a PDF, JPEG or PNG, whatever its name or declared type says.
       content:
         application/problem+json:
           schema: { $ref: "#/components/schemas/Problem" }

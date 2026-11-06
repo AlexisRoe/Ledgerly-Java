@@ -3,6 +3,7 @@ package com.ledgerly.teams.internal.web;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.ledgerly.MutableClock;
+import com.ledgerly.ReceiptSeeder;
 import com.ledgerly.TeamSeeder;
 import com.ledgerly.TestUsers;
 import com.ledgerly.TestUsers.TestUser;
@@ -480,13 +481,13 @@ class TeamsApiTest {
         TestUser approver = users.create(true);
         seeder.member(team.id(), claimant.id(), "MEMBER");
         seeder.member(team.id(), approver.id(), "APPROVER");
-        // FakeReceiptChecks (test profile) reports one accepted receipt, so submit works.
         String body = "{\"money\":{\"amount\":\"10.00\",\"currency\":\"EUR\"},\"category\":\"MEALS\","
                 + "\"incurredOn\":\"" + LocalDate.now() + "\",\"merchant\":\"Cafe\"}";
         String base = "/teams/" + team.id() + "/expenses";
         Resp created = call(claimant, HttpMethod.POST, base, body);
         assertThat(created.status()).isEqualTo(201);
         String expense = base + "/" + created.id();
+        new ReceiptSeeder(jdbc).accepted(team.id(), UUID.fromString(created.id()));
         assertThat(call(claimant, HttpMethod.POST, expense + ":submit", null).status())
                 .isEqualTo(200);
 

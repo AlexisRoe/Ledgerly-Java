@@ -23,6 +23,9 @@ public enum ErrorCatalogue {
     EXPENSE_RULE_VIOLATED("rule-violated", "Business rule violated", HttpStatus.UNPROCESSABLE_CONTENT),
     IDEMPOTENCY_KEY_REUSED(
             "idempotency-key-reused", "Idempotency key reused with a different body", HttpStatus.UNPROCESSABLE_CONTENT),
+    PAYLOAD_TOO_LARGE("payload-too-large", "Request body too large", HttpStatus.CONTENT_TOO_LARGE),
+    UNSUPPORTED_MEDIA_TYPE("unsupported-media-type", "Unsupported file type", HttpStatus.UNSUPPORTED_MEDIA_TYPE),
+    RECEIPT_DUPLICATE("receipt-duplicate", "This file is already attached to the expense", HttpStatus.CONFLICT),
     INTERNAL_ERROR("internal-error", "Unexpected error", HttpStatus.INTERNAL_SERVER_ERROR),
     REQUEST_REJECTED("request-rejected", "Request rejected", HttpStatus.BAD_REQUEST);
 

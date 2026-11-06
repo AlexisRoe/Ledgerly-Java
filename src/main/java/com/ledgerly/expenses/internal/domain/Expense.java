@@ -189,6 +189,16 @@ public class Expense {
         this.note = cleanNote;
     }
 
+    /** Throws unless the actor may add or remove receipts: the claimant, while it is a draft. */
+    public void requireCanChangeReceiptsBy(Actor actor) {
+        if (!actor.id().equals(claimantId)) {
+            throw new NotAllowed("Only the claimant may change receipts");
+        }
+        if (status != ExpenseStatus.DRAFT) {
+            throw new NotDraft(status);
+        }
+    }
+
     public boolean canAddOrRemoveReceipts(Actor actor) {
         return isDraftOf(actor);
     }

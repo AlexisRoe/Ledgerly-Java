@@ -358,6 +358,31 @@ class ExpenseTest {
     }
 
     @Nested
+    class ReceiptPermissions {
+
+        @Test
+        void claimantMayChangeReceiptsOfADraft() {
+            draft().requireCanChangeReceiptsBy(CLAIMANT);
+        }
+
+        @Test
+        void someoneElseMayNotEvenWithAHigherRole() {
+            assertThatThrownBy(() -> draft().requireCanChangeReceiptsBy(OWNER)).isInstanceOf(NotAllowed.class);
+            assertThatThrownBy(() -> draft().requireCanChangeReceiptsBy(OTHER_MEMBER))
+                    .isInstanceOf(NotAllowed.class);
+        }
+
+        @ParameterizedTest
+        @EnumSource(
+                value = ExpenseStatus.class,
+                names = {"SUBMITTED", "APPROVED", "REJECTED", "REIMBURSED"})
+        void notAfterTheDraftStage(ExpenseStatus status) {
+            assertThatThrownBy(() -> inStatus(status).requireCanChangeReceiptsBy(CLAIMANT))
+                    .isInstanceOf(NotDraft.class);
+        }
+    }
+
+    @Nested
     class Visibility {
 
         @Test

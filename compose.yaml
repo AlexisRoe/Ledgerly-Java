@@ -14,3 +14,14 @@ services:
       POSTGRES_PASSWORD: ledgerly
     ports:
       - "5432:5432"
+
+  seaweedfs:
+    image: chrislusf/seaweedfs:latest
+    command: server -s3 -s3.port=8333 -dir=/data
+    ports:
+      - "8333:8333"   # S3 API (no auth configured: local only)
+
+  clamav:
+    image: clamav/clamav:stable
+    ports:
+      - "3310:3310"   # clamd; the first start downloads signatures and takes a few minutes

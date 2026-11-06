@@ -65,3 +65,19 @@
 - **Edge case (documented and tested):** a removed claimant gets 404 on withdraw, reopen and read, because they are no longer a teammate. Approvers can still approve or reject the expense, and it keeps its claimant id.
 - **Gotchas:** after jumping the test clock days ahead the old access token is expired too, so tests mint a fresh one. `RoleMatrixTest` checks 80 cells (16 endpoints × 5 callers) from a table; a MEMBER gets 404 rather than 403 on a colleague's expense because the object itself is hidden.
 - **Explain it back (yours to write):** what you built, why `EnumSet` and enums with behaviour fit the role ladder, one thing still unclear.
+
+## M7 · Receipts
+
+- **Decisions:**
+  - Added `GET .../receipts` (list with scan status), which the concept did not list: a 202 + PENDING_SCAN upload needs something to poll.
+  - Download returns a JSON `{url, expiresAt}` instead of a redirect, so clients decide what to do with the link. The link lives five minutes and the store stays private.
+  - `ExpensesFacade` (in expenses) lets receipts ask "may this caller see / change receipts of this expense" and throws the usual 404/403/409 itself. `ReceiptChecks` is implemented by receipts (D3), so expenses never depends on receipts.
+  - Upload order: permission check, then stream to a temp file through a `CappedInputStream` and a `DigestInputStream`, then Tika magic-byte detection, then duplicate checks, then store under a random key, then insert the row and publish `ReceiptUploaded`. The database's unique index `(expense_id, sha256)` decides simultaneous identical uploads (tested with a barrier).
+  - The scan runs on `@Async @TransactionalEventListener(AFTER_COMMIT)`, with a hand-written ClamAV `INSTREAM` client under `@Retryable`. Infected files move to a `quarantine/` key and are never served. The ClamAV framing is tested against a stand-in `clamd` socket; the S3 adapter is tested against a real SeaweedFS container.
+  - **Known gap, on purpose:** if the application dies between the upload commit and the scan (or ClamAV stays down), the receipt stays `PENDING_SCAN` and nothing re-triggers it; `ExpenseDeletedCleanup` has the same hole (orphaned rows/objects). M9's event publication registry fixes both.
+  - Test setup: a directory-backed `ReceiptStorage` and a scanner that spots the EICAR string (assembled from pieces, so this repository is not flagged by antivirus tools) replace S3 and ClamAV in the `test` profile. `FakeReceiptChecks` is gone: expense tests seed `ACCEPTED` receipts.
+- **Gotchas:**
+  - Tomcat closes the connection after an oversized upload unless it may swallow the rest of the body, so the client saw "broken pipe" instead of 413. `server.tomcat.max-swallow-size=16MB` (just above the 11 MB request cap) fixes that without letting huge bodies through.
+  - The generator only checks the multipart part exists; type, size and duplicate rules are all enforced in code.
+  - **Build:** Error Prone sharing the real compile occasionally produced class files with unresolved type names (`NoClassDefFoundError: Action` at start-up), and once corrupt they survived incremental builds. NullAway now runs as a separate `nullaway` compiler execution into `target/nullaway-classes`, so the classes the app runs with always come from plain javac; a null violation still fails `verify`. The compiler `--add-exports` flags moved to `.mvn/jvm.config`.
+- **Explain it back (yours to write):** what you built, why `InputStream`, try-with-resources and `MessageDigest` shaped the upload, one thing still unclear.

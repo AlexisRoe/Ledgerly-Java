@@ -2,10 +2,9 @@ package com.ledgerly.expenses.internal.web;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.ledgerly.ReceiptSeeder;
 import com.ledgerly.TeamSeeder;
 import com.ledgerly.TestcontainersConfiguration;
-import com.ledgerly.expenses.FakeReceiptChecks;
-import com.ledgerly.expenses.ReceiptSummary;
 import com.ledgerly.identity.internal.application.AccessTokenIssuer;
 import java.time.LocalDate;
 import java.util.UUID;
@@ -36,9 +35,6 @@ class ExpensesApiTest {
     @Autowired
     JdbcClient jdbc;
 
-    @Autowired
-    FakeReceiptChecks receipts;
-
     RestTestClient client;
     UUID team;
     UUID claimant;
@@ -54,7 +50,6 @@ class ExpensesApiTest {
         claimant = UUID.randomUUID();
         approver = UUID.randomUUID();
         owner = UUID.randomUUID();
-        receipts.next = new ReceiptSummary(1, 0);
     }
 
     record Resp(int status, org.springframework.http.HttpHeaders headers, JsonNode body) {
@@ -116,6 +111,7 @@ class ExpensesApiTest {
 
     Resp submitted() {
         Resp d = createDraft();
+        new ReceiptSeeder(jdbc).accepted(team, UUID.fromString(d.id()));
         Resp s = call(HttpMethod.POST, expenses() + "/" + d.id() + ":submit", claimant, "MEMBER", null);
         assertThat(s.status()).isEqualTo(200);
         return s;
@@ -392,7 +388,6 @@ class ExpensesApiTest {
     @Test
     void submitNeedsAcceptedReceipt_D3() {
         Resp d = createDraft();
-        receipts.next = new ReceiptSummary(0, 0);
         Resp r = call(HttpMethod.POST, expenses() + "/" + d.id() + ":submit", claimant, "MEMBER", null);
         assertThat(r.status()).isEqualTo(422);
         assertThat(r.code()).isEqualTo("EXPENSE_RULE_VIOLATED");

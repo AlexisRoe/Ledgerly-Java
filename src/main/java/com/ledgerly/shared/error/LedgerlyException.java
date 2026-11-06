@@ -11,7 +11,9 @@ public abstract sealed class LedgerlyException extends RuntimeException
                 PreconditionFailed,
                 PreconditionRequired,
                 Unprocessable,
-                InvalidRequest {
+                InvalidRequest,
+                PayloadTooLarge,
+                UnsupportedMedia {
 
     private final ErrorCatalogue error;
     private final List<FieldViolation> violations;
