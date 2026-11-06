@@ -13,6 +13,10 @@ tags:
     description: Account and session lifecycle.
   - name: jwks
     description: Public keys for verifying access tokens.
+  - name: teams
+    description: Teams, their members and invitations.
+  - name: me
+    description: The calling user.
   - name: expenses
     description: Create, edit and move expenses through the approval workflow.
 security:
@@ -145,6 +149,178 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/JwkSet" }
+        "500": { $ref: "#/components/responses/InternalError" }
+
+  /me:
+    get:
+      tags: [me]
+      operationId: getMe
+      summary: The current user, their roles per team and pending invitations
+      description: >
+        Pending invitations are matched by the user's email, and only when the email is verified.
+      responses:
+        "200":
+          description: The current user
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/MeResponse" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "500": { $ref: "#/components/responses/InternalError" }
+
+  /teams:
+    post:
+      tags: [teams]
+      operationId: createTeam
+      summary: Create a team; the creator becomes its OWNER
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CreateTeamRequest" }
+      responses:
+        "201":
+          description: Created
+          headers:
+            Location:
+              schema: { type: string }
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/TeamResponse" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "500": { $ref: "#/components/responses/InternalError" }
+
+  /teams/{teamId}:leave:
+    post:
+      tags: [teams]
+      operationId: leaveTeam
+      summary: Leave a team
+      description: The last OWNER cannot leave.
+      parameters:
+        - $ref: "#/components/parameters/TeamId"
+      responses:
+        "204": { description: Left the team }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "500": { $ref: "#/components/responses/InternalError" }
+
+  /teams/{teamId}/invitations:
+    post:
+      tags: [teams]
+      operationId: inviteMember
+      summary: Invite an email address to the team (OWNER only)
+      description: >
+        The response is the same whether or not the address belongs to a registered user. Inviting an address
+        that already has a pending invitation replaces that invitation.
+      parameters:
+        - $ref: "#/components/parameters/TeamId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/InviteRequest" }
+      responses:
+        "201":
+          description: Invitation created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/InvitationResponse" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "500": { $ref: "#/components/responses/InternalError" }
+
+  /teams/{teamId}/invitations/{invitationId}:
+    delete:
+      tags: [teams]
+      operationId: revokeInvitation
+      summary: Revoke a pending invitation (OWNER only)
+      parameters:
+        - $ref: "#/components/parameters/TeamId"
+        - $ref: "#/components/parameters/InvitationId"
+      responses:
+        "204": { description: Revoked }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "500": { $ref: "#/components/responses/InternalError" }
+
+  /teams/{teamId}/members/{userId}:
+    patch:
+      tags: [teams]
+      operationId: changeMemberRole
+      summary: Change a teammate's role (OWNER only)
+      description: The last OWNER can never be demoted.
+      parameters:
+        - $ref: "#/components/parameters/TeamId"
+        - $ref: "#/components/parameters/UserId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ChangeRoleRequest" }
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/MemberResponse" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "500": { $ref: "#/components/responses/InternalError" }
+    delete:
+      tags: [teams]
+      operationId: removeMember
+      summary: Remove a teammate (OWNER only)
+      description: The last OWNER can never be removed.
+      parameters:
+        - $ref: "#/components/parameters/TeamId"
+        - $ref: "#/components/parameters/UserId"
+      responses:
+        "204": { description: Removed }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "500": { $ref: "#/components/responses/InternalError" }
+
+  /invitations/{invitationId}:accept:
+    post:
+      tags: [teams]
+      operationId: acceptInvitation
+      summary: Accept an invitation (the invited, verified user)
+      parameters:
+        - $ref: "#/components/parameters/InvitationId"
+      responses:
+        "200":
+          description: Joined
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/MembershipResponse" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "500": { $ref: "#/components/responses/InternalError" }
+
+  /invitations/{invitationId}:decline:
+    post:
+      tags: [teams]
+      operationId: declineInvitation
+      summary: Decline an invitation (the invited user)
+      parameters:
+        - $ref: "#/components/parameters/InvitationId"
+      responses:
+        "204": { description: Declined }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
         "500": { $ref: "#/components/responses/InternalError" }
 
   /teams/{teamId}/expenses:
@@ -416,6 +592,16 @@ components:
       in: path
       required: true
       schema: { type: string, format: uuid }
+    InvitationId:
+      name: invitationId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    UserId:
+      name: userId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
     IfMatch:
       name: If-Match
       in: header
@@ -505,6 +691,86 @@ components:
         rejectionReasons:
           type: array
           items: { type: string }
+    Role:
+      type: string
+      enum: [MEMBER, APPROVER, OWNER]
+    InvitationStatus:
+      type: string
+      enum: [PENDING, ACCEPTED, DECLINED, REVOKED, EXPIRED]
+    CreateTeamRequest:
+      type: object
+      required: [name]
+      additionalProperties: false
+      properties:
+        name: { type: string, minLength: 1, maxLength: 100 }
+    TeamResponse:
+      type: object
+      required: [id, name]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+    InviteRequest:
+      type: object
+      required: [email, role]
+      additionalProperties: false
+      properties:
+        email: { type: string, format: email, maxLength: 254 }
+        role: { $ref: "#/components/schemas/Role" }
+    InvitationResponse:
+      type: object
+      required: [id, role, status, expiresAt]
+      properties:
+        id: { type: string, format: uuid }
+        role: { $ref: "#/components/schemas/Role" }
+        status: { $ref: "#/components/schemas/InvitationStatus" }
+        expiresAt: { type: string, format: date-time }
+    ChangeRoleRequest:
+      type: object
+      required: [role]
+      additionalProperties: false
+      properties:
+        role: { $ref: "#/components/schemas/Role" }
+    MemberResponse:
+      type: object
+      required: [userId, role]
+      properties:
+        userId: { type: string, format: uuid }
+        role: { $ref: "#/components/schemas/Role" }
+    MembershipResponse:
+      type: object
+      required: [teamId, role]
+      properties:
+        teamId: { type: string, format: uuid }
+        role: { $ref: "#/components/schemas/Role" }
+    MeTeam:
+      type: object
+      required: [teamId, name, role]
+      properties:
+        teamId: { type: string, format: uuid }
+        name: { type: string }
+        role: { $ref: "#/components/schemas/Role" }
+    MeInvitation:
+      type: object
+      required: [id, teamId, teamName, role, expiresAt]
+      properties:
+        id: { type: string, format: uuid }
+        teamId: { type: string, format: uuid }
+        teamName: { type: string }
+        role: { $ref: "#/components/schemas/Role" }
+        expiresAt: { type: string, format: date-time }
+    MeResponse:
+      type: object
+      required: [id, email, verified, teams, invitations]
+      properties:
+        id: { type: string, format: uuid }
+        email: { type: string, format: email }
+        verified: { type: boolean }
+        teams:
+          type: array
+          items: { $ref: "#/components/schemas/MeTeam" }
+        invitations:
+          type: array
+          items: { $ref: "#/components/schemas/MeInvitation" }
     RegisterRequest:
       type: object
       required: [email, password]

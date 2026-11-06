@@ -7,4 +7,8 @@ public final class Forbidden extends LedgerlyException {
     public Forbidden(String detail) {
         super(ErrorCatalogue.FORBIDDEN, detail, List.of());
     }
+
+    public Forbidden(ErrorCatalogue error, String detail) {
+        super(error, detail, List.of());
+    }
 }

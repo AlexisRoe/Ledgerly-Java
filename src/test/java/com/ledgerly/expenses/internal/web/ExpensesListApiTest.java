@@ -3,6 +3,7 @@ package com.ledgerly.expenses.internal.web;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.ledgerly.ExpenseSeeder;
+import com.ledgerly.TeamSeeder;
 import com.ledgerly.TestcontainersConfiguration;
 import com.ledgerly.identity.internal.application.AccessTokenIssuer;
 import java.time.Instant;
@@ -67,11 +68,13 @@ class ExpensesListApiTest {
     }
 
     Resp list(UUID user, String role, String query) {
+        if (role != null) {
+            new TeamSeeder(jdbc).member(team, user, role);
+        }
         var result = client.get()
                 .uri("/api/v1/teams/" + team + "/expenses" + (query.isEmpty() ? "" : "?" + query))
                 .headers(h -> {
                     h.add("Authorization", "Bearer " + tokens.issue(user));
-                    if (role != null) h.add("X-Debug-Role", role);
                 })
                 .exchange()
                 .returnResult(String.class);

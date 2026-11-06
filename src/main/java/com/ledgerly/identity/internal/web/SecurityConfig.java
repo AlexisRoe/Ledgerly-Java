@@ -1,5 +1,6 @@
 package com.ledgerly.identity.internal.web;
 
+import com.ledgerly.shared.security.MdcTeamFilter;
 import com.ledgerly.shared.security.MdcUserFilter;
 import com.ledgerly.shared.security.ProblemSecurityHandler;
 import org.springframework.boot.security.autoconfigure.actuate.web.servlet.EndpointRequest;
@@ -10,6 +11,7 @@ import org.springframework.core.env.Environment;
 import org.springframework.core.env.Profiles;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.Customizer;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -18,6 +20,7 @@ import org.springframework.security.web.SecurityFilterChain;
 
 /** Deny by default: everything needs a valid access token except the few paths listed here. */
 @Configuration(proxyBeanMethods = false)
+@EnableMethodSecurity
 class SecurityConfig {
 
     /**
@@ -58,7 +61,8 @@ class SecurityConfig {
                         .authenticationEntryPoint(problems)
                         .accessDeniedHandler(problems))
                 .exceptionHandling(e -> e.authenticationEntryPoint(problems).accessDeniedHandler(problems))
-                .addFilterAfter(new MdcUserFilter(), BearerTokenAuthenticationFilter.class);
+                .addFilterAfter(new MdcUserFilter(), BearerTokenAuthenticationFilter.class)
+                .addFilterAfter(new MdcTeamFilter(), MdcUserFilter.class);
         return http.build();
     }
 }

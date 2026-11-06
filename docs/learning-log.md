@@ -50,3 +50,18 @@
 - **Gotchas:** the actuator port needs its own security chain (health and info only), otherwise the secured app answers the probes with 401. Tests now run against a real server (`RANDOM_PORT`) so the security filters are exercised. A mutable test clock moves time forward for expiry and lockout tests.
 - **Known limits:** the failure counter on `User` has no `@Version`, so two truly simultaneous bad logins can count as one. Fine for a lockout threshold; Bucket4j limits arrive in M10.
 - **Explain it back (yours to write):** what you built, why `Instant`, `Duration` and an injected `Clock` made the expiry tests possible, one thing still unclear.
+
+## M6 · Teams and authorization
+
+- **Decisions:**
+  - Roles are never in the token. `TeamAuthorization` (used from `@PreAuthorize("@teamAuthorization.anyOf(#teamId, 'OWNER')")`) reads the role from the database on every call: not a teammate is 404, a teammate with the wrong role is 403. It uses an `EnumSet` for the allowed roles and `Role.includes` for the ladder.
+  - The use cases re-check the caller's role *inside* their transaction after taking the team-row lock (`SELECT … FOR UPDATE` via `@Lock(PESSIMISTIC_WRITE)`). Checking only at the controller would let a caller who was demoted a moment earlier still act.
+  - `LastOwnerConcurrencyTest` races two owners demoting, removing and leaving each other with a `CyclicBarrier`. I confirmed it is meaningful: with the lock replaced by a plain `findById`, all 30 runs fail.
+  - Inviting never checks whether the address is registered or already a teammate, so the response cannot leak either. "Already a teammate" is only reported on accept, to the invited person.
+  - Invitation expiry is computed from the `Clock` when read (`Invitation.status(now)`), no scheduler. Re-inviting revokes and flushes the old pending row first, because of the partial unique index.
+  - `GET /me` lives in teams (D5). Pending invitations appear only for a verified email, and only unexpired ones.
+  - `MembershipLookup` in expenses now calls `TeamsFacade`; the debug role header and `ProdProfileTest` are gone. `teamId` joins `userId` on every log line through `MdcTeamFilter`.
+  - Teams events are a sealed `TeamEvent` (ids only, no emails) published with `ApplicationEventPublisher`; nobody listens until M9.
+- **Edge case (documented and tested):** a removed claimant gets 404 on withdraw, reopen and read, because they are no longer a teammate. Approvers can still approve or reject the expense, and it keeps its claimant id.
+- **Gotchas:** after jumping the test clock days ahead the old access token is expired too, so tests mint a fresh one. `RoleMatrixTest` checks 80 cells (16 endpoints × 5 callers) from a table; a MEMBER gets 404 rather than 403 on a colleague's expense because the object itself is hidden.
+- **Explain it back (yours to write):** what you built, why `EnumSet` and enums with behaviour fit the role ladder, one thing still unclear.

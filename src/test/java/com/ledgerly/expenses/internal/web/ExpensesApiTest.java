@@ -2,6 +2,7 @@ package com.ledgerly.expenses.internal.web;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.ledgerly.TeamSeeder;
 import com.ledgerly.TestcontainersConfiguration;
 import com.ledgerly.expenses.FakeReceiptChecks;
 import com.ledgerly.expenses.ReceiptSummary;
@@ -15,6 +16,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpMethod;
+import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.test.web.servlet.client.RestTestClient;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
@@ -30,6 +32,9 @@ class ExpensesApiTest {
 
     @Autowired
     AccessTokenIssuer tokens;
+
+    @Autowired
+    JdbcClient jdbc;
 
     @Autowired
     FakeReceiptChecks receipts;
@@ -67,9 +72,9 @@ class ExpensesApiTest {
     }
 
     Resp call(HttpMethod method, String path, UUID user, String role, String body, String... headerPairs) {
+        seedMembership(path, user, role);
         var spec = client.method(method).uri("/api/v1" + path).headers(h -> {
             if (user != null) h.add("Authorization", "Bearer " + tokens.issue(user));
-            if (role != null) h.add("X-Debug-Role", role);
             for (int i = 0; i < headerPairs.length; i += 2) h.add(headerPairs[i], headerPairs[i + 1]);
             if (body != null) h.add("Content-Type", "application/json");
         });
@@ -78,6 +83,16 @@ class ExpensesApiTest {
         String text = result.getResponseBody();
         JsonNode node = text == null || text.isBlank() ? JSON.createObjectNode() : JSON.readTree(text);
         return new Resp(result.getStatus().value(), result.getResponseHeaders(), node);
+    }
+
+    static final java.util.regex.Pattern TEAM_IN_PATH = java.util.regex.Pattern.compile("/teams/([0-9a-f-]{36})");
+
+    /** Makes {@code user} a teammate with {@code role} of the team named in the path (none when role is null). */
+    void seedMembership(String path, UUID user, String role) {
+        var matcher = TEAM_IN_PATH.matcher(path);
+        if (user != null && role != null && matcher.find()) {
+            new TeamSeeder(jdbc).member(UUID.fromString(matcher.group(1)), user, role);
+        }
     }
 
     String expenses() {
