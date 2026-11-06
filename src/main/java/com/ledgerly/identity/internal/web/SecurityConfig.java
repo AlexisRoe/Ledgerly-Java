@@ -89,7 +89,8 @@ class SecurityConfig {
                     a.requestMatchers("/api/v1/auth/**", "/.well-known/jwks.json")
                             .permitAll();
                     if (local) {
-                        a.requestMatchers(HttpMethod.GET, "/swagger-ui/**").permitAll();
+                        a.requestMatchers(HttpMethod.GET, "/swagger-ui/**", "/docs")
+                                .permitAll();
                     }
                     a.anyRequest().authenticated();
                 })

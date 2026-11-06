@@ -40,6 +40,39 @@ class SwaggerUiProfileTest {
     @Nested
     @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, properties = "management.server.port=0")
     @Import(TestcontainersConfiguration.class)
+    @ActiveProfiles({"local", "test"})
+    class LocalDocsShortcut {
+        @LocalServerPort
+        int port;
+
+        @Test
+        void docsLeadsToTheUiWithoutAToken() {
+            var client = RestTestClient.bindToServer()
+                    .baseUrl("http://localhost:" + port)
+                    .build();
+            client.get()
+                    .uri("/docs")
+                    .exchange()
+                    .expectStatus()
+                    .isOk()
+                    .expectBody(String.class)
+                    .value(page -> org.assertj.core.api.Assertions.assertThat(page)
+                            .as("followed the redirect to the UI page")
+                            .containsIgnoringCase("swagger"));
+        }
+
+        @Test
+        void onlyReadingIsOpen() {
+            var client = RestTestClient.bindToServer()
+                    .baseUrl("http://localhost:" + port)
+                    .build();
+            client.post().uri("/docs").exchange().expectStatus().isUnauthorized();
+        }
+    }
+
+    @Nested
+    @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, properties = "management.server.port=0")
+    @Import(TestcontainersConfiguration.class)
     class NotLocal {
         @LocalServerPort
         int port;
@@ -50,6 +83,14 @@ class SwaggerUiProfileTest {
                     .baseUrl("http://localhost:" + port)
                     .build();
             client.get().uri("/swagger-ui/index.html").exchange().expectStatus().isUnauthorized();
+        }
+
+        @Test
+        void docsIsDeniedToo() {
+            var client = RestTestClient.bindToServer()
+                    .baseUrl("http://localhost:" + port)
+                    .build();
+            client.get().uri("/docs").exchange().expectStatus().isUnauthorized();
         }
     }
 }

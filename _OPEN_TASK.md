@@ -51,6 +51,8 @@ About testing, see if you can make testing better. Tests should never test java 
 
 If not already existing, does a /docs endpoint exists for the OpenApiSpecs?
 
+**Status: DONE, verified.** It did not exist; only `/swagger-ui/index.html` (local profile only). Added `GET /docs`, local profile only, redirecting to the Swagger UI that renders `api/openapi.yaml` (open without a token; POST etc. stay refused). Tests in `SwaggerUiProfileTest`: local `/docs` ends on the UI page, other profiles answer 401 for `/docs`. Deliberately not served outside local (OWASP API9/API8); documented in `docs/deployment.md`.
+
 ## Task 9
 
 Its about hardening the local setup of supply-chain-attacks, secrets and such

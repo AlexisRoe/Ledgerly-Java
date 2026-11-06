@@ -79,3 +79,11 @@ so the API can be tried at once. `make up` or `make run` is enough; nothing is a
 
 The password of all four is `correct-horse-battery`. With the `keycloak` profile no users are created: the identity
 provider owns the accounts (see the Keycloak section above).
+
+## API documentation
+
+With the `local` profile (also `make up`), http://localhost:8080/docs opens Swagger UI for `api/openapi.yaml` (it
+redirects to `/swagger-ui/index.html`; the raw file is at `/swagger-ui/openapi.yaml`). No token is needed. Any other
+profile serves no documentation endpoint: `/docs` and `/swagger-ui/**` are refused like every other path without a
+token, so a deployed instance does not publish its API map. The contract itself is `api/openapi.yaml` in the
+repository.
