@@ -85,7 +85,7 @@
 
 ## M8 · Batch work
 
-- **Language study first:** `src/test/java/com/ledgerly/study/ConcurrencyStudyTest` has small experiments on `ExecutorService`, virtual threads, `CompletableFuture`, a lost-update race that is caused on purpose and then fixed three ways (`synchronized`, a lock, an atomic), and `ScopedValue` (final in JDK 25) against `ThreadLocal`. The M6 last-OWNER bug was the same read-decide-write shape.
+- **Language study first** (the experiments were removed from the test suite later, because tests must only cover Ledgerly's own code; they are in git history, commit `c6ba439`, `src/test/java/com/ledgerly/study/ConcurrencyStudyTest`): small experiments on `ExecutorService`, virtual threads, `CompletableFuture`, a lost-update race that is caused on purpose and then fixed three ways (`synchronized`, a lock, an atomic), and `ScopedValue` (final in JDK 25) against `ThreadLocal`. The M6 last-OWNER bug was the same read-decide-write shape.
 - **Decisions:**
   - `ExpensesFacade` (D4) got `validate(NewExpense)` and `createDrafts(team, claimant, list)`. `createDrafts` is all-or-nothing in one transaction and is the only way other modules create expenses; batch and import both use it. `Category` moved to the module's public package because `NewExpense` needs it.
   - Batch: the item schema in the spec has no length or format constraints on purpose, so one bad item becomes that item's `REJECTED` result instead of a 400 for the whole request. Structural problems (an unknown field, a non-string amount) are still a 400. `atomic=true` answers 422 `BATCH_REJECTED` with one `errors` entry per problem, named `items[<index>].<field>`.

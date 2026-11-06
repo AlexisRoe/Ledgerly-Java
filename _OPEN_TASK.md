@@ -40,6 +40,13 @@ Implementing lintern, prettier, test pipelines and implement automatic running c
 
 About testing, see if you can make testing better. Tests should never test java or library methods, just custom code. It should test expected data flows, edge-cases and what methods should not do or allow
 
+**Status: DONE, verified.** Reviewed all ~60 test classes and measured coverage with JaCoCo (70% of instructions, 46% of branches overall, run once from the command line; JaCoCo is not added to the build).
+- Removed: `ConcurrencyStudyTest` (18 tests that only exercised JDK executors, locks and `ScopedValue`, none of our code). It stays in git history (`c6ba439`) and the learning log says so.
+- Found otherwise sound: the existing tests are about our code (domain rules, role matrix, OWASP API Top 10 cases, Keycloak, S3/ClamAV adapters).
+- Added 28 tests in 5 classes for the decisions that had no test: partial edits (`UpdateExpenseTest`: unchanged fields, only names announced never values, blank note, stale version, wrong role, outsider, future date), the streamed CSV export (`LazyCsvInputStreamTest`: laziness, page order, formula and quote safety, read sizes), what an import tells the user about skipped lines (`ImportSkipListenerTest`: no internal message leaks, restart is idempotent, long messages), chunked bodies over the limit (`ChunkedBodyLimitTest`), and the event redelivery age rule (`EventMaintenanceTest`).
+- Checked that they bite: breaking the redelivery age, the formula guard and the message hiding on purpose made exactly the matching test fail.
+- Not done: a coverage gate in the build, and tests for `ProblemExceptionHandler` branches that need a deliberately failing endpoint.
+
 ## Task 8
 
 If not already existing, does a /docs endpoint exists for the OpenApiSpecs?
