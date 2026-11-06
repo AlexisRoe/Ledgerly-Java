@@ -46,6 +46,12 @@ logs: ## Follow the application's container logs
 ps: ## Show the running containers
 	docker compose --profile app ps
 
+# --- API checks ---------------------------------------------------------------------------------------------------
+
+.PHONY: api-test
+api-test: ## Run the Bruno collection in bruno/ against the running app (make up first; needs Node)
+	cd bruno && npx --yes @usebruno/cli@latest run --env local -r
+
 # --- quality ------------------------------------------------------------------------------------------------------
 
 .PHONY: format

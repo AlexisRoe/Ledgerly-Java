@@ -22,6 +22,8 @@ Add JSDOC like comments on methods, classes and variables to describe their inte
 
 Create Bruno files for api testing, including local setup, test cases
 
+**Status: DONE, verified.** `bruno/` (collection, `local` environment, 47 requests in 6 folders with assertions, README) plus `make api-test`. Run with the Bruno CLI against the Docker app with demo data: 47/47 requests, 74/74 assertions, twice in a row (repeatable). Checks that an unauthenticated or wrongly-roled caller is refused, not only that the happy path works.
+
 ## Task 5
 
 If not already happening, seed the database with a base set of data, so that testing can happen immeadabtly
