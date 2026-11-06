@@ -1,0 +1,12 @@
+# Generated or not ours to format
+target/
+node_modules/
+.mvn/
+bruno/**/*.bru
+# Hand-aligned tables and anchors; the OpenAPI file is linted by Redocly instead
+api/openapi.yaml
+docs/adr/
+keycloak/ledgerly-realm.json
+mvnw
+# Markdown is prose and hand-aligned tables: not reformatted
+*.md

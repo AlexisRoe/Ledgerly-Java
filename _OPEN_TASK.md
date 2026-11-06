@@ -34,6 +34,8 @@ If not already happening, seed the database with a base set of data, so that tes
 
 Implementing lintern, prettier, test pipelines and implement automatic running checks on push to main via PR to Github
 
+**Status: DONE, partly verified.** Already there from M11: Spotless (Java), Error Prone + NullAway, Redocly OpenAPI lint, gitleaks, tests, image build, Trivy, SBOM. Added now: Prettier for YAML/JSON (`.prettierrc.json`, a `format-config` CI job, a pre-commit hook, `make lint` / `make format`), CI runs for pull requests *into main* and for pushes to main, a run is cancelled when the PR gets a newer push, and failed runs keep the surefire reports. Verified locally: `make lint` passes; the workflow files parse. **Not verified:** the GitHub Actions run itself (it cannot run here; the first PR will show it). **Not done, needs you:** requiring these checks and a PR before merging is a branch-protection setting in GitHub (Settings > Branches), which I did not change; the list of check names is in the comment at the top of `ci.yml`. Markdown is deliberately not reformatted (it would rewrite your prose and tables). The Bruno API run is not in CI: it needs the whole stack including ClamAV signatures, which is minutes of start-up and could not be tested here.
+
 ## Task 7 
 
 About testing, see if you can make testing better. Tests should never test java or library methods, just custom code. It should test expected data flows, edge-cases and what methods should not do or allow

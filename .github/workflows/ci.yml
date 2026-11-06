@@ -1,9 +1,18 @@
 name: CI
 
+# Every pull request into main runs all of this; the same jobs run again on the merge commit that lands on main.
+# Make them required: Settings > Branches > main > "Require status checks to pass" (verify, openapi-lint,
+# format-config, gitleaks, image), and require a pull request, so nothing reaches main unchecked.
 on:
   push:
     branches: [main]
   pull_request:
+    branches: [main]
+
+# A new push to the same pull request replaces the run that is still going.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
@@ -20,12 +29,26 @@ jobs:
           cache: maven
       # Unit and integration tests (Testcontainers needs Docker, which the runner has), Spotless, NullAway.
       - run: ./mvnw -B verify
+      # The reports of a failed run, to read what failed without re-running it.
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: surefire-reports
+          path: target/surefire-reports/
+          retention-days: 7
 
   openapi-lint:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - run: npx --yes @redocly/cli@latest lint api/openapi.yaml
+
+  # Prettier for the configuration files (YAML, JSON). Java is formatted by Spotless inside `verify`.
+  format-config:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: npx --yes prettier@3 --check "**/*.{yml,yaml,json}"
 
   gitleaks:
     runs-on: ubuntu-latest

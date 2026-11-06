@@ -55,12 +55,14 @@ api-test: ## Run the Bruno collection in bruno/ against the running app (make up
 # --- quality ------------------------------------------------------------------------------------------------------
 
 .PHONY: format
-format: ## Format the Java code (Spotless)
+format: ## Format Java (Spotless) and config files (Prettier)
 	$(MVN) -q spotless:apply
+	npx --yes prettier@3 --write "**/*.{yml,yaml,json}"
 
 .PHONY: lint
-lint: ## Check formatting, lint the OpenAPI file
+lint: ## Check formatting (Java: Spotless, config files: Prettier), lint the OpenAPI file
 	$(MVN) -q spotless:check
+	npx --yes prettier@3 --check "**/*.{yml,yaml,json}"
 	npx --yes @redocly/cli@latest lint api/openapi.yaml
 
 .PHONY: test

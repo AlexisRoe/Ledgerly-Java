@@ -2,9 +2,9 @@ services:
   lgtm:
     image: grafana/otel-lgtm:latest
     ports:
-      - "3000:3000"   # Grafana (admin/admin)
-      - "4317:4317"   # OTLP gRPC
-      - "4318:4318"   # OTLP HTTP
+      - "3000:3000" # Grafana (admin/admin)
+      - "4317:4317" # OTLP gRPC
+      - "4318:4318" # OTLP HTTP
 
   postgres:
     image: postgres:17
@@ -24,13 +24,13 @@ services:
     image: chrislusf/seaweedfs:latest
     command: server -s3 -s3.port=8333 -dir=/data
     ports:
-      - "8333:8333"   # S3 API (no auth configured: local only)
+      - "8333:8333" # S3 API (no auth configured: local only)
 
   clamav:
     image: clamav/clamav:stable
-    platform: linux/amd64   # no arm64 image is published; Apple Silicon runs it under emulation
+    platform: linux/amd64 # no arm64 image is published; Apple Silicon runs it under emulation
     ports:
-      - "3310:3310"   # clamd; the first start downloads signatures and takes a few minutes
+      - "3310:3310" # clamd; the first start downloads signatures and takes a few minutes
 
   # Only needed with the `keycloak` profile (SPRING_PROFILES_ACTIVE=local,keycloak): the identity provider that
   # replaces Ledgerly's own login. The realm (client, audience mapper, two users) is imported on first start.
@@ -44,7 +44,7 @@ services:
     volumes:
       - ./keycloak/ledgerly-realm.json:/opt/keycloak/data/import/ledgerly-realm.json:ro
     ports:
-      - "8180:8080"   # admin console: http://localhost:8180 (admin/admin)
+      - "8180:8080" # admin console: http://localhost:8180 (admin/admin)
 
   # The application itself, for `make up` (compose profile "app"). Build the image first (`make image`).
   # It runs with the `local` profile: a throw-away token key, human-readable logs, Swagger UI and the demo data
@@ -70,5 +70,5 @@ services:
       LEDGERLY_RECEIPTS_CLAMAV_HOST: clamav
       MANAGEMENT_OPENTELEMETRY_TRACING_EXPORT_OTLP_ENDPOINT: http://lgtm:4318/v1/traces
     ports:
-      - "8080:8080"   # API and Swagger UI: http://localhost:8080/swagger-ui/index.html
-      - "8081:8081"   # actuator (local only: do not publish this in production)
+      - "8080:8080" # API and Swagger UI: http://localhost:8080/swagger-ui/index.html
+      - "8081:8081" # actuator (local only: do not publish this in production)

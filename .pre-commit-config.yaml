@@ -11,6 +11,11 @@ repos:
         language: system
         types: [java]
         pass_filenames: false
+      - id: prettier
+        name: prettier (yaml, json)
+        entry: npx --yes prettier@3 --write
+        language: system
+        files: \.(ya?ml|json)$
       - id: openapi-lint
         name: openapi lint
         entry: npx --yes @redocly/cli@latest lint api/openapi.yaml
