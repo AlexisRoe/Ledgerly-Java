@@ -1,6 +1,7 @@
 package com.ledgerly.identity.internal.application;
 
 import com.ledgerly.identity.events.UserRegistered;
+import com.ledgerly.identity.internal.OwnTokenIssuing;
 import com.ledgerly.identity.internal.domain.EmailVerification;
 import com.ledgerly.identity.internal.domain.User;
 import com.ledgerly.identity.internal.infrastructure.AuthProperties;
@@ -14,6 +15,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+@OwnTokenIssuing
 @Service
 public class Register {
 

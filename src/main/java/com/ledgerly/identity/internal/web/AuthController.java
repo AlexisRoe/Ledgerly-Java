@@ -1,5 +1,6 @@
 package com.ledgerly.identity.internal.web;
 
+import com.ledgerly.identity.internal.OwnTokenIssuing;
 import com.ledgerly.identity.internal.application.Login;
 import com.ledgerly.identity.internal.application.Logout;
 import com.ledgerly.identity.internal.application.Refresh;
@@ -22,6 +23,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+@OwnTokenIssuing
 @RestController
 @RequestMapping("/api/v1")
 class AuthController implements AuthApi {

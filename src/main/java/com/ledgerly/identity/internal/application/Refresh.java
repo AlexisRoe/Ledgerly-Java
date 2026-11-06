@@ -1,6 +1,7 @@
 package com.ledgerly.identity.internal.application;
 
 import com.ledgerly.identity.events.RefreshTokenReuseDetected;
+import com.ledgerly.identity.internal.OwnTokenIssuing;
 import com.ledgerly.identity.internal.domain.RefreshToken;
 import com.ledgerly.identity.internal.infrastructure.AuthProperties;
 import com.ledgerly.identity.internal.infrastructure.RefreshTokenRepository;
@@ -15,6 +16,7 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+@OwnTokenIssuing
 @Service
 public class Refresh {
 

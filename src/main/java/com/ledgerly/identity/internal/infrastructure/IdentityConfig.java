@@ -1,5 +1,6 @@
 package com.ledgerly.identity.internal.infrastructure;
 
+import com.ledgerly.identity.internal.OwnTokenIssuing;
 import com.nimbusds.jose.JWSAlgorithm;
 import com.nimbusds.jose.jwk.JWKSet;
 import com.nimbusds.jose.jwk.source.ImmutableJWKSet;
@@ -30,17 +31,20 @@ class IdentityConfig {
 
     /** Argon2id with Spring Security's recommended parameters (needs Bouncy Castle). */
     @Bean
+    @OwnTokenIssuing
     PasswordEncoder passwordEncoder() {
         return Argon2PasswordEncoder.defaultsForSpringSecurity_v5_8();
     }
 
     @Bean
+    @OwnTokenIssuing
     JwtKeys jwtKeys(AuthProperties props, Environment environment) {
         boolean generationAllowed = environment.acceptsProfiles(Profiles.of("local", "test"));
         return JwtKeys.create(props, generationAllowed);
     }
 
     @Bean
+    @OwnTokenIssuing
     JwtEncoder jwtEncoder(JwtKeys keys) {
         return new NimbusJwtEncoder(new ImmutableJWKSet<SecurityContext>(new JWKSet(keys.key())));
     }
@@ -50,6 +54,7 @@ class IdentityConfig {
      * rules out {@code alg: none} and algorithm-confusion tokens.
      */
     @Bean
+    @OwnTokenIssuing
     JwtDecoder jwtDecoder(JwtKeys keys, Clock clock) {
         DefaultJWTProcessor<SecurityContext> processor = new DefaultJWTProcessor<>();
         processor.setJWSKeySelector(new JWSVerificationKeySelector<>(

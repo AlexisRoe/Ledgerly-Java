@@ -1,5 +1,6 @@
 package com.ledgerly.identity.internal.web;
 
+import com.ledgerly.identity.internal.application.ExternalSubjectJwtConverter;
 import com.ledgerly.shared.config.LedgerlyLimits;
 import com.ledgerly.shared.ratelimit.RateLimiter;
 import com.ledgerly.shared.security.ApiRateLimitFilter;
@@ -9,6 +10,7 @@ import com.ledgerly.shared.security.MdcUserFilter;
 import com.ledgerly.shared.security.ProblemSecurityHandler;
 import com.ledgerly.shared.security.SecurityProperties;
 import java.util.List;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.security.autoconfigure.actuate.web.servlet.EndpointRequest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -59,7 +61,8 @@ class SecurityConfig {
             Environment environment,
             RateLimiter rateLimiter,
             LedgerlyLimits limits,
-            SecurityProperties securityProperties)
+            SecurityProperties securityProperties,
+            ObjectProvider<ExternalSubjectJwtConverter> externalSubjectConverter)
             throws Exception {
         boolean local = environment.acceptsProfiles(Profiles.of("local"));
         http
@@ -90,9 +93,10 @@ class SecurityConfig {
                     }
                     a.anyRequest().authenticated();
                 })
-                .oauth2ResourceServer(o -> o.jwt(Customizer.withDefaults())
-                        .authenticationEntryPoint(problems)
-                        .accessDeniedHandler(problems))
+                .oauth2ResourceServer(
+                        o -> o.jwt(jwt -> externalSubjectConverter.ifAvailable(jwt::jwtAuthenticationConverter))
+                                .authenticationEntryPoint(problems)
+                                .accessDeniedHandler(problems))
                 .exceptionHandling(e -> e.authenticationEntryPoint(problems).accessDeniedHandler(problems))
                 .addFilterAfter(new MdcUserFilter(), BearerTokenAuthenticationFilter.class)
                 .addFilterAfter(new MdcTeamFilter(), MdcUserFilter.class)

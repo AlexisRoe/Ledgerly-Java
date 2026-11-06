@@ -1,5 +1,6 @@
 package com.ledgerly.identity.internal.web;
 
+import com.ledgerly.identity.internal.OwnTokenIssuing;
 import com.ledgerly.identity.internal.infrastructure.JwtKeys;
 import com.ledgerly.shared.api.JwksApi;
 import com.ledgerly.shared.api.model.JwkSet;
@@ -9,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
 
 /** Publishes the public half of the signing key at /.well-known/jwks.json. */
+@OwnTokenIssuing
 @RestController
 class JwksController implements JwksApi {
 

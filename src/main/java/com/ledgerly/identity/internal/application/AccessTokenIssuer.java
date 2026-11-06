@@ -1,5 +1,6 @@
 package com.ledgerly.identity.internal.application;
 
+import com.ledgerly.identity.internal.OwnTokenIssuing;
 import com.ledgerly.identity.internal.infrastructure.AuthProperties;
 import com.ledgerly.identity.internal.infrastructure.JwtKeys;
 import java.time.Clock;
@@ -16,6 +17,7 @@ import org.springframework.stereotype.Component;
  * Signs access tokens. The claims are only {@code sub}, {@code iat}, {@code exp} and {@code jti}: no email and
  * no roles, because roles are per team and are read from the database on every call.
  */
+@OwnTokenIssuing
 @Component
 public class AccessTokenIssuer {
 

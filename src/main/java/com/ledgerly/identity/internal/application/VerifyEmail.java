@@ -1,6 +1,7 @@
 package com.ledgerly.identity.internal.application;
 
 import com.ledgerly.identity.events.UserVerified;
+import com.ledgerly.identity.internal.OwnTokenIssuing;
 import com.ledgerly.identity.internal.infrastructure.EmailVerificationRepository;
 import com.ledgerly.identity.internal.infrastructure.UserRepository;
 import com.ledgerly.shared.error.InvalidRequest;
@@ -11,6 +12,7 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+@OwnTokenIssuing
 @Service
 public class VerifyEmail {
 

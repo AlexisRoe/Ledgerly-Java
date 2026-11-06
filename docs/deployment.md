@@ -46,3 +46,20 @@ container a `terminationGracePeriodSeconds` of at least that.
 - The login lock and the request rate limits are kept in the memory of one instance. Two instances each keep their own
   (see the M10 notes in `learning-log.md`).
 - Logs are ECS JSON on stdout with `traceId`, `userId` and `teamId`; they hold no emails, tokens or file contents.
+
+## Using Keycloak instead of Ledgerly's own login
+
+Start with the `keycloak` profile (`SPRING_PROFILES_ACTIVE=prod,keycloak`) and set
+`SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI` to the realm URL (for example
+`https://id.example.com/realms/ledgerly`). Then:
+
+- Ledgerly stops issuing tokens: `/api/v1/auth/*` (register, login, refresh, logout, verify) and the JWKS endpoint are
+  not registered, and the signing keys are no longer required.
+- Tokens must come from that issuer **and** carry `ledgerly-api` in `aud`. A token Keycloak issued to another
+  application of the same realm is refused with 401.
+- The first valid token of a person creates their Ledgerly user (just-in-time); an existing local account with the same
+  *verified* email is linked instead of duplicated. Ledgerly's own user id stays the id everything else refers to.
+- `compose.yaml` starts a development Keycloak with `keycloak/ledgerly-realm.json` (users `alice@example.com` /
+  `alice-password`, `bob@example.com` / `bob-password`; development only).
+- The realm needs an audience mapper for `ledgerly-api` (the export has one), and the `basic` client scope so that
+  tokens carry `sub`.

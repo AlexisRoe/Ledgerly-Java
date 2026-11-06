@@ -1,5 +1,6 @@
 package com.ledgerly.identity.internal.application;
 
+import com.ledgerly.identity.internal.OwnTokenIssuing;
 import com.ledgerly.identity.internal.domain.RefreshToken;
 import com.ledgerly.identity.internal.domain.User;
 import com.ledgerly.identity.internal.infrastructure.AuthProperties;
@@ -16,6 +17,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+@OwnTokenIssuing
 @Service
 public class Login {
 
@@ -69,7 +71,9 @@ public class Login {
             throw new Unauthenticated();
         }
         User user = found.get();
-        if (!encoder.matches(rawPassword, user.passwordHash())) {
+        String hash = user.passwordHash();
+        // An account managed by an identity provider has no password here: same answer as a wrong one.
+        if (hash == null || !encoder.matches(rawPassword, hash)) {
             limiter.tryConsume(LIMIT_SCOPE, normalised, limit);
             throw new Unauthenticated();
         }

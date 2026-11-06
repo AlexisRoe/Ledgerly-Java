@@ -25,3 +25,17 @@ services:
     image: clamav/clamav:stable
     ports:
       - "3310:3310"   # clamd; the first start downloads signatures and takes a few minutes
+
+  # Only needed with the `keycloak` profile (SPRING_PROFILES_ACTIVE=local,keycloak): the identity provider that
+  # replaces Ledgerly's own login. The realm (client, audience mapper, two users) is imported on first start.
+  # Users: alice@example.com / alice-password (email verified), bob@example.com / bob-password (not verified).
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.8
+    command: start-dev --import-realm
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: admin
+    volumes:
+      - ./keycloak/ledgerly-realm.json:/opt/keycloak/data/import/ledgerly-realm.json:ro
+    ports:
+      - "8180:8080"   # admin console: http://localhost:8180 (admin/admin)

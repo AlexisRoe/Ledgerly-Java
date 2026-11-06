@@ -1,11 +1,13 @@
 package com.ledgerly.identity.internal.application;
 
+import com.ledgerly.identity.internal.OwnTokenIssuing;
 import com.ledgerly.identity.internal.infrastructure.RefreshTokenRepository;
 import java.time.Clock;
 import org.jspecify.annotations.Nullable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+@OwnTokenIssuing
 @Service
 public class Logout {
 
