@@ -2,26 +2,27 @@ package com.ledgerly;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.client.RestTestClient;
-import org.springframework.web.context.WebApplicationContext;
 
 class SwaggerUiProfileTest {
 
     @Nested
-    @SpringBootTest
+    @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, properties = "management.server.port=0")
     @Import(TestcontainersConfiguration.class)
     @ActiveProfiles({"local", "test"})
     class Local {
-        @Autowired
-        WebApplicationContext context;
+        @LocalServerPort
+        int port;
 
         @Test
         void servesUiAndSpec() {
-            var client = RestTestClient.bindToApplicationContext(context).build();
+            var client = RestTestClient.bindToServer()
+                    .baseUrl("http://localhost:" + port)
+                    .build();
             client.get().uri("/swagger-ui/index.html").exchange().expectStatus().isOk();
             client.get()
                     .uri("/swagger-ui/openapi.yaml")
@@ -37,16 +38,18 @@ class SwaggerUiProfileTest {
     }
 
     @Nested
-    @SpringBootTest
+    @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, properties = "management.server.port=0")
     @Import(TestcontainersConfiguration.class)
     class NotLocal {
-        @Autowired
-        WebApplicationContext context;
+        @LocalServerPort
+        int port;
 
         @Test
-        void isNotServed() {
-            var client = RestTestClient.bindToApplicationContext(context).build();
-            client.get().uri("/swagger-ui/index.html").exchange().expectStatus().isNotFound();
+        void isDeniedByDefault() {
+            var client = RestTestClient.bindToServer()
+                    .baseUrl("http://localhost:" + port)
+                    .build();
+            client.get().uri("/swagger-ui/index.html").exchange().expectStatus().isUnauthorized();
         }
     }
 }

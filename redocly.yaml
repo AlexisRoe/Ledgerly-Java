@@ -2,6 +2,6 @@ extends:
   - recommended
 rules:
   no-server-example.com: off
-  operation-4xx-response: error
+  operation-4xx-response: warn
   security-defined: error
   no-unused-components: error

@@ -39,9 +39,14 @@ class ContractDriftTest {
             Map<String, Object> spec = new Yaml().load(in);
             @SuppressWarnings("unchecked")
             Map<String, Map<String, Object>> paths = (Map<String, Map<String, Object>>) spec.get("paths");
-            paths.forEach((path, ops) -> ops.keySet().stream()
-                    .filter(k -> Set.of("get", "post", "put", "patch", "delete").contains(k))
-                    .forEach(k -> documented.add(k.toUpperCase() + " /api/v1" + path)));
+            paths.forEach((path, ops) -> {
+                // A path item may override the document's base URL (the JWKS endpoint lives at the root).
+                String base = ops.containsKey("servers") ? "" : "/api/v1";
+                ops.keySet().stream()
+                        .filter(k ->
+                                Set.of("get", "post", "put", "patch", "delete").contains(k))
+                        .forEach(k -> documented.add(k.toUpperCase() + " " + base + path));
+            });
         }
 
         assertThat(mapped).as("mapped but undocumented").isSubsetOf(documented);

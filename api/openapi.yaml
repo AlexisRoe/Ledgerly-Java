@@ -9,12 +9,144 @@ info:
 servers:
   - url: /api/v1
 tags:
+  - name: auth
+    description: Account and session lifecycle.
+  - name: jwks
+    description: Public keys for verifying access tokens.
   - name: expenses
     description: Create, edit and move expenses through the approval workflow.
 security:
   - bearerAuth: []
 
 paths:
+  /auth/register:
+    post:
+      tags: [auth]
+      operationId: register
+      summary: Register an account
+      description: >
+        Always answers 202 with the same body, whether the email is new or already taken, so registered
+        addresses cannot be discovered. A new account gets a verification link.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/RegisterRequest" }
+      responses:
+        "202":
+          description: Accepted
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Accepted" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "500": { $ref: "#/components/responses/InternalError" }
+
+  /auth/verify:
+    post:
+      tags: [auth]
+      operationId: verifyEmail
+      summary: Verify an email address with the single-use token from the verification link
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/VerifyRequest" }
+      responses:
+        "204": { description: Verified }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "500": { $ref: "#/components/responses/InternalError" }
+
+  /auth/login:
+    post:
+      tags: [auth]
+      operationId: login
+      summary: Log in
+      description: >
+        Returns a short-lived access token in the body and sets the refresh token as an HttpOnly cookie.
+        Unknown email, wrong password and a locked account all give the same 401.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/LoginRequest" }
+      responses:
+        "200":
+          description: Logged in
+          headers:
+            Set-Cookie:
+              description: "`refresh_token`; HttpOnly; Secure; SameSite=Strict; Path=/api/v1/auth"
+              schema: { type: string }
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/TokenResponse" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "500": { $ref: "#/components/responses/InternalError" }
+
+  /auth/refresh:
+    post:
+      tags: [auth]
+      operationId: refresh
+      summary: Exchange the refresh cookie for a new access token
+      description: >
+        Rotates the refresh token. Presenting a token that was already rotated revokes the whole session
+        family. The custom `X-Requested-With` header is required (see ADR 0004).
+      security: []
+      parameters:
+        - $ref: "#/components/parameters/RequestedWith"
+        - $ref: "#/components/parameters/RefreshCookie"
+      responses:
+        "200":
+          description: Refreshed
+          headers:
+            Set-Cookie:
+              description: The rotated `refresh_token` cookie.
+              schema: { type: string }
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/TokenResponse" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "500": { $ref: "#/components/responses/InternalError" }
+
+  /auth/logout:
+    post:
+      tags: [auth]
+      operationId: logout
+      summary: Revoke the session family and clear the cookie
+      security: []
+      parameters:
+        - $ref: "#/components/parameters/RequestedWith"
+        - $ref: "#/components/parameters/RefreshCookie"
+      responses:
+        "204":
+          description: Logged out
+          headers:
+            Set-Cookie:
+              description: Clears the `refresh_token` cookie.
+              schema: { type: string }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "500": { $ref: "#/components/responses/InternalError" }
+
+  /.well-known/jwks.json:
+    servers:
+      - url: /
+    get:
+      tags: [jwks]
+      operationId: getJwks
+      summary: Public keys that verify access tokens
+      security: []
+      responses:
+        "200":
+          description: A JSON Web Key Set
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/JwkSet" }
+        "500": { $ref: "#/components/responses/InternalError" }
+
   /teams/{teamId}/expenses:
     get:
       tags: [expenses]
@@ -290,6 +422,17 @@ components:
       required: true
       description: The ETag from the last read of this expense.
       schema: { type: string, maxLength: 64 }
+    RequestedWith:
+      name: X-Requested-With
+      in: header
+      required: true
+      description: Must be `ledgerly`. A header a cross-site form cannot set (CSRF defence, ADR 0004).
+      schema: { type: string, enum: [ledgerly] }
+    RefreshCookie:
+      name: refresh_token
+      in: cookie
+      required: false
+      schema: { type: string, maxLength: 200 }
     IdempotencyKey:
       name: Idempotency-Key
       in: header
@@ -362,6 +505,45 @@ components:
         rejectionReasons:
           type: array
           items: { type: string }
+    RegisterRequest:
+      type: object
+      required: [email, password]
+      additionalProperties: false
+      properties:
+        email: { type: string, format: email, maxLength: 254 }
+        password: { type: string, minLength: 12, maxLength: 128, writeOnly: true }
+    LoginRequest:
+      type: object
+      required: [email, password]
+      additionalProperties: false
+      properties:
+        email: { type: string, format: email, maxLength: 254 }
+        password: { type: string, minLength: 1, maxLength: 128, writeOnly: true }
+    VerifyRequest:
+      type: object
+      required: [token]
+      additionalProperties: false
+      properties:
+        token: { type: string, minLength: 20, maxLength: 200 }
+    Accepted:
+      type: object
+      required: [message]
+      properties:
+        message: { type: string }
+    TokenResponse:
+      type: object
+      required: [accessToken, tokenType, expiresIn]
+      properties:
+        accessToken: { type: string }
+        tokenType: { type: string, enum: [Bearer] }
+        expiresIn: { type: integer, description: Lifetime in seconds. }
+    JwkSet:
+      type: object
+      required: [keys]
+      properties:
+        keys:
+          type: array
+          items: { type: object, additionalProperties: true }
     PageMetadata:
       type: object
       description: Same shape as Spring Data's `PagedModel` page metadata.

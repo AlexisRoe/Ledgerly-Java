@@ -5,27 +5,31 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.ledgerly.TestcontainersConfiguration;
 import com.ledgerly.expenses.FakeReceiptChecks;
 import com.ledgerly.expenses.ReceiptSummary;
+import com.ledgerly.identity.internal.application.AccessTokenIssuer;
 import java.time.LocalDate;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpMethod;
 import org.springframework.test.web.servlet.client.RestTestClient;
-import org.springframework.web.context.WebApplicationContext;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
 
-@SpringBootTest
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, properties = "management.server.port=0")
 @Import(TestcontainersConfiguration.class)
 class ExpensesApiTest {
 
     static final JsonMapper JSON = JsonMapper.builder().build();
 
+    @LocalServerPort
+    int port;
+
     @Autowired
-    WebApplicationContext context;
+    AccessTokenIssuer tokens;
 
     @Autowired
     FakeReceiptChecks receipts;
@@ -38,7 +42,9 @@ class ExpensesApiTest {
 
     @BeforeEach
     void setUp() {
-        client = RestTestClient.bindToApplicationContext(context).build();
+        client = RestTestClient.bindToServer()
+                .baseUrl("http://localhost:" + port)
+                .build();
         team = UUID.randomUUID();
         claimant = UUID.randomUUID();
         approver = UUID.randomUUID();
@@ -62,7 +68,7 @@ class ExpensesApiTest {
 
     Resp call(HttpMethod method, String path, UUID user, String role, String body, String... headerPairs) {
         var spec = client.method(method).uri("/api/v1" + path).headers(h -> {
-            if (user != null) h.add("X-Debug-User-Id", user.toString());
+            if (user != null) h.add("Authorization", "Bearer " + tokens.issue(user));
             if (role != null) h.add("X-Debug-Role", role);
             for (int i = 0; i < headerPairs.length; i += 2) h.add(headerPairs[i], headerPairs[i + 1]);
             if (body != null) h.add("Content-Type", "application/json");
@@ -362,7 +368,7 @@ class ExpensesApiTest {
     }
 
     @Test
-    void missingUserGets401() {
+    void missingTokenGets401() {
         Resp r = call(HttpMethod.GET, expenses() + "/" + UUID.randomUUID(), null, "MEMBER", null);
         assertThat(r.status()).isEqualTo(401);
         assertThat(r.code()).isEqualTo("UNAUTHENTICATED");

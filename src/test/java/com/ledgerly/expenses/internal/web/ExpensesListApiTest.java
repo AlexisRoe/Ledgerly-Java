@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.ledgerly.ExpenseSeeder;
 import com.ledgerly.TestcontainersConfiguration;
+import com.ledgerly.identity.internal.application.AccessTokenIssuer;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -15,21 +16,24 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.context.annotation.Import;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.test.web.servlet.client.RestTestClient;
-import org.springframework.web.context.WebApplicationContext;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
 
-@SpringBootTest
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, properties = "management.server.port=0")
 @Import(TestcontainersConfiguration.class)
 class ExpensesListApiTest {
 
     static final JsonMapper JSON = JsonMapper.builder().build();
 
+    @LocalServerPort
+    int port;
+
     @Autowired
-    WebApplicationContext context;
+    AccessTokenIssuer tokens;
 
     @Autowired
     JdbcClient jdbc;
@@ -44,7 +48,9 @@ class ExpensesListApiTest {
 
     @BeforeEach
     void setUp() {
-        client = RestTestClient.bindToApplicationContext(context).build();
+        client = RestTestClient.bindToServer()
+                .baseUrl("http://localhost:" + port)
+                .build();
         seeder = new ExpenseSeeder(jdbc);
         team = UUID.randomUUID();
         alice = UUID.randomUUID();
@@ -64,7 +70,7 @@ class ExpensesListApiTest {
         var result = client.get()
                 .uri("/api/v1/teams/" + team + "/expenses" + (query.isEmpty() ? "" : "?" + query))
                 .headers(h -> {
-                    h.add("X-Debug-User-Id", user.toString());
+                    h.add("Authorization", "Bearer " + tokens.issue(user));
                     if (role != null) h.add("X-Debug-Role", role);
                 })
                 .exchange()

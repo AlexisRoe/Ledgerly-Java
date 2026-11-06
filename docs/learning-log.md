@@ -36,3 +36,17 @@
   - `shared.paging.Cursor` (Base64url JSON of `(Instant, UUID)`) and `KeysetPaging` are tested against `expenses` and get wired to `/audit-events` in M9.
 - **Gotchas:** the generated interface is `@Validated`, so parameter constraints throw `ConstraintViolationException` (not `HandlerMethodValidationException`) and need their own handler, or they become 500s. The spec's `maximum: 100` and `LedgerlyLimits.maxPageSize` are both checked.
 - **Explain it back (yours to write):** what you built, why keyset paging beats offset paging on a growing table, one thing still unclear.
+
+## M5 · Authentication
+
+- **Decisions:**
+  - The generated OpenAPI interfaces and models now live in `com.ledgerly.shared.api`, so expenses and identity both implement their own interface from one contract.
+  - Access tokens are ES256 JWTs with only `sub`, `iat`, `exp` and `jti`. The decoder is built from the in-process public key with a Nimbus `JWTProcessor`, because Spring's `withPublicKey` builder is RSA-only.
+  - Registration hashes the password even for taken emails and answers 202 either way; login runs a dummy hash for unknown emails.
+  - The verification token travels in an internal `VerificationLinkIssued` event (never published to other modules, never logged except by the `local`-only logger). The public `UserRegistered` / `UserVerified` events carry no secrets.
+  - `Login` and `Refresh` use `noRollbackFor = Unauthenticated`, otherwise the failure counter and the family revocation would be rolled back along with the 401.
+  - Refresh and logout check `X-Requested-With: ledgerly` in code, because the generated code only requires the header, not its value. See ADR 0004.
+  - The debug user header is gone. `X-Debug-Role` stays until M6.
+- **Gotchas:** the actuator port needs its own security chain (health and info only), otherwise the secured app answers the probes with 401. Tests now run against a real server (`RANDOM_PORT`) so the security filters are exercised. A mutable test clock moves time forward for expiry and lockout tests.
+- **Known limits:** the failure counter on `User` has no `@Version`, so two truly simultaneous bad logins can count as one. Fine for a lockout threshold; Bucket4j limits arrive in M10.
+- **Explain it back (yours to write):** what you built, why `Instant`, `Duration` and an injected `Clock` made the expiry tests possible, one thing still unclear.
