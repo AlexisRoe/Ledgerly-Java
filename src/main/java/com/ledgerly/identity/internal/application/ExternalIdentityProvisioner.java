@@ -88,6 +88,10 @@ public class ExternalIdentityProvisioner {
         Optional<User> byEmail = users.findByEmail(User.normalise(email));
         if (byEmail.isPresent()) {
             User existing = byEmail.get();
+            if (subject.equals(existing.externalSubject())) {
+                // A parallel first request of the same person committed this row after our look by subject.
+                return existing.id();
+            }
             if (!emailVerified || existing.externalSubject() != null) {
                 // Not provably the same person, or that account already belongs to a different provider identity.
                 throw new InvalidBearerTokenException("The email address belongs to another account");
