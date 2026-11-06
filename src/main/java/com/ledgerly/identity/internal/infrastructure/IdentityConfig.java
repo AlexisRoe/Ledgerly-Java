@@ -25,6 +25,9 @@ import org.springframework.security.oauth2.jwt.JwtTimestampValidator;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
 
+/**
+ * Wires password hashing and token signing/verification. Beans marked {@code @OwnTokenIssuing} are skipped under the keycloak profile.
+ */
 @Configuration(proxyBeanMethods = false)
 @EnableConfigurationProperties(AuthProperties.class)
 class IdentityConfig {
@@ -36,6 +39,7 @@ class IdentityConfig {
         return Argon2PasswordEncoder.defaultsForSpringSecurity_v5_8();
     }
 
+    /** Loads the configured key pair; only local and test may generate a throw-away one. */
     @Bean
     @OwnTokenIssuing
     JwtKeys jwtKeys(AuthProperties props, Environment environment) {
@@ -43,6 +47,7 @@ class IdentityConfig {
         return JwtKeys.create(props, generationAllowed);
     }
 
+    /** Signs with the loaded key. */
     @Bean
     @OwnTokenIssuing
     JwtEncoder jwtEncoder(JwtKeys keys) {

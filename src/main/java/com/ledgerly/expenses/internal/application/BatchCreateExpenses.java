@@ -27,22 +27,28 @@ public class BatchCreateExpenses {
 
     /** One item of the request, already parsed as far as the web layer could. */
     public sealed interface Candidate permits Candidate.Ready, Candidate.Unparseable {
+        /** A valid-looking item, ready for the domain checks. */
         record Ready(NewExpense expense) implements Candidate {}
 
         /** The item could not even be turned into a {@link NewExpense} (for example an amount that is not a number). */
         record Unparseable(String field, String message) implements Candidate {}
     }
 
+    /** Why an item was refused: a stable {@code code}, the offending {@code field} if any, a readable message. */
     public record Problem(String code, @Nullable String field, String message) {}
 
+    /** Outcome of the item at {@code index}: the new expense {@code id}, or a {@code problem}; exactly one is set. */
     public record ItemResult(
             int index, @Nullable UUID id, @Nullable Problem problem) {}
 
+    /** One {@link ItemResult} per input item, in input order. */
     public record Result(List<ItemResult> results) {
+        /** How many items became draft expenses. */
         public long created() {
             return results.stream().filter(r -> r.id() != null).count();
         }
 
+        /** How many items were refused. */
         public long rejected() {
             return results.size() - created();
         }
@@ -58,6 +64,12 @@ public class BatchCreateExpenses {
         this.limits = limits;
     }
 
+    /**
+     * Checks all items, then writes the valid ones (all or nothing when {@code atomic}).
+     *
+     * @param items 1 up to the configured batch size, otherwise {@link InvalidRequest}
+     * @param atomic one bad item rejects everything with a 422 listing each violation
+     */
     public Result execute(TeamId teamId, UserId caller, List<Candidate> items, boolean atomic) {
         access.actor(teamId, caller); // not a teammate: 404, before looking at anything else
         if (items.isEmpty() || items.size() > limits.maxBatchSize()) {

@@ -29,6 +29,9 @@ class ExpenseDeletedCleanup {
         this.storage = storage;
     }
 
+    /**
+     * Deletes the expense's receipt rows, then their files; a file that cannot be removed is logged and not retried.
+     */
     @ApplicationModuleListener
     void on(ExpenseEvent.Deleted event) {
         List<Receipt> found = receipts.findByExpenseId(event.expenseId().value());

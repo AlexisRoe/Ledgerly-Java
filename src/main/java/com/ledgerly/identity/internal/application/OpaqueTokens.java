@@ -21,6 +21,7 @@ final class OpaqueTokens {
         return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
     }
 
+    /** SHA-256 as lower-case hex: what is stored and looked up instead of the token itself. */
     static String hash(String token) {
         try {
             byte[] digest = MessageDigest.getInstance("SHA-256").digest(token.getBytes(StandardCharsets.UTF_8));

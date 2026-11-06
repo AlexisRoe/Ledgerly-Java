@@ -6,6 +6,7 @@ public enum Role {
     APPROVER,
     OWNER;
 
+    /** True if this role has at least the rank of {@code other} (OWNER includes APPROVER and MEMBER). */
     public boolean includes(Role other) {
         return compareTo(other) >= 0;
     }

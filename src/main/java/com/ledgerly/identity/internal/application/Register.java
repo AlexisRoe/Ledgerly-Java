@@ -15,6 +15,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+/** Creates an unverified account and issues its email-verification token. */
 @OwnTokenIssuing
 @Service
 public class Register {

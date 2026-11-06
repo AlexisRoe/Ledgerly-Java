@@ -6,6 +6,7 @@ import jakarta.persistence.Table;
 import java.time.Instant;
 import java.util.UUID;
 
+/** A group of people sharing expenses. Holds only its name; who belongs is in {@link Membership}. */
 @Entity
 @Table(name = "teams")
 public class Team {
@@ -20,16 +21,19 @@ public class Team {
     @SuppressWarnings("NullAway.Init")
     protected Team() {}
 
+    /** @param now creation time */
     public Team(String name, Instant now) {
         this.id = com.ledgerly.shared.id.UuidV7.generate();
         this.name = name.strip();
         this.createdAt = now;
     }
 
+    /** The team's id (UUIDv7). */
     public UUID id() {
         return id;
     }
 
+    /** The display name. */
     public String name() {
         return name;
     }

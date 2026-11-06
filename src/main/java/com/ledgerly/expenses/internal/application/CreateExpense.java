@@ -24,9 +24,11 @@ import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+/** Creates a draft expense for the caller. With an idempotency key, a repeated request returns the first result. */
 @Service
 public class CreateExpense {
 
+    /** Input: the claimant is the caller; {@code note} is optional. */
     public record Command(
             TeamId teamId,
             UserId claimantId,
@@ -58,6 +60,11 @@ public class CreateExpense {
         this.clock = clock;
     }
 
+    /**
+     * Creates the draft and publishes {@code ExpenseEvent.Created}.
+     *
+     * @param idempotencyKey optional; the same key with a different body is a conflict
+     */
     @Transactional
     public Result execute(Command c, @Nullable String idempotencyKey) {
         access.actor(c.teamId(), c.claimantId());

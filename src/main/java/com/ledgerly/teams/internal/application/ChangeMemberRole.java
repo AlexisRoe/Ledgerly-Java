@@ -12,9 +12,11 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+/** Lets an OWNER change another member's role; the last OWNER cannot be demoted. */
 @Service
 public class ChangeMemberRole {
 
+    /** The member and the role they now hold. */
     public record Result(UUID userId, Role role) {}
 
     private final TeamGuard guard;

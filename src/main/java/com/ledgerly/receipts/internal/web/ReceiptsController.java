@@ -25,6 +25,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+/**
+ * Upload, list, download-link and delete under /api/v1/teams/{teamId}/expenses/{expenseId}/receipts. Contract: api/openapi.yaml.
+ */
 @RestController
 @RequestMapping("/api/v1")
 class ReceiptsController implements ReceiptsApi {

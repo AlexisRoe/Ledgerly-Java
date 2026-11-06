@@ -47,6 +47,7 @@ class TeamGuard {
         teams.lockById(teamId).orElseThrow(NotFound::new);
     }
 
+    /** True when at most one OWNER is left, so removing or demoting them would orphan the team. */
     boolean isLastOwner(UUID teamId) {
         return memberships.countByIdTeamIdAndRole(teamId, Role.OWNER) <= 1;
     }

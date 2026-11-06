@@ -9,6 +9,7 @@ import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+/** Teams table. {@code lockById} takes a row lock that serialises membership changes of one team. */
 public interface TeamRepository extends JpaRepository<Team, UUID> {
 
     /**

@@ -15,6 +15,7 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+/** Lets an OWNER withdraw a pending invitation of their team. */
 @Service
 public class RevokeInvitation {
 
@@ -30,6 +31,7 @@ public class RevokeInvitation {
         this.clock = clock;
     }
 
+    /** @throws com.ledgerly.shared.error.Conflict if the invitation is no longer pending */
     @Transactional
     public void execute(UUID teamId, UUID invitationId, UserId caller) {
         guard.lockAndRequireOwner(teamId, caller.value());

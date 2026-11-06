@@ -20,6 +20,7 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+/** The module's public entry point for other modules (imports): creates drafts through the same rules as the API. */
 @Service
 class ExpensesFacadeImpl implements ExpensesFacade {
 

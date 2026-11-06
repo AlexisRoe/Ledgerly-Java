@@ -30,6 +30,10 @@ public class RefreshToken {
     @SuppressWarnings("NullAway.Init")
     protected RefreshToken() {}
 
+    /**
+     * @param familyId shared by all tokens of one session
+     * @param tokenHash SHA-256 of the raw token
+     */
     public RefreshToken(UUID familyId, UUID userId, String tokenHash, Instant now, Instant expiresAt) {
         this.id = com.ledgerly.shared.id.UuidV7.generate();
         this.familyId = familyId;
@@ -39,10 +43,12 @@ public class RefreshToken {
         this.expiresAt = expiresAt;
     }
 
+    /** True once {@code expiresAt} has passed. */
     public boolean isExpired(Instant now) {
         return !expiresAt.isAfter(now);
     }
 
+    /** True after logout or after a reuse was detected. */
     public boolean isRevoked() {
         return revokedAt != null;
     }
@@ -52,18 +58,22 @@ public class RefreshToken {
         return replacedBy != null;
     }
 
+    /** Marks this token as exchanged for {@code next}. */
     public void replaceWith(RefreshToken next) {
         this.replacedBy = next.id;
     }
 
+    /** The token record's id (not the secret). */
     public UUID id() {
         return id;
     }
 
+    /** The session this token belongs to. */
     public UUID familyId() {
         return familyId;
     }
 
+    /** The account the session belongs to. */
     public UUID userId() {
         return userId;
     }

@@ -25,6 +25,7 @@ public class RowProcessor implements ItemProcessor<RawRow, NewExpense> {
 
     private final ExpensesFacade expenses;
 
+    /** @param expenses used for the same field rules the API applies to a new expense */
     RowProcessor(ExpensesFacade expenses) {
         this.expenses = expenses;
     }

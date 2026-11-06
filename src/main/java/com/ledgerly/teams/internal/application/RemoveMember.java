@@ -13,6 +13,7 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+/** Lets an OWNER remove another member; the last OWNER cannot be removed. */
 @Service
 public class RemoveMember {
 
@@ -28,6 +29,7 @@ public class RemoveMember {
         this.clock = clock;
     }
 
+    /** @param target the user to remove */
     @Transactional
     public void execute(UUID teamId, UserId caller, UUID target) {
         guard.lockAndRequireOwner(teamId, caller.value());

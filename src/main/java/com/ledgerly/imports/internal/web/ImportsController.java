@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+/** POST an import (multipart CSV) and poll it under /api/v1/teams/{teamId}/imports. Contract: api/openapi.yaml. */
 @RestController
 @RequestMapping("/api/v1")
 class ImportsController implements ImportsApi {

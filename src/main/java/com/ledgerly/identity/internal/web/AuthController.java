@@ -23,6 +23,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+/**
+ * Register, verify, login, refresh and logout under /api/v1/auth. The refresh token travels in an HttpOnly cookie; refresh and logout also need the X-Requested-With header (ADR 0004).
+ */
 @OwnTokenIssuing
 @RestController
 @RequestMapping("/api/v1")
@@ -45,6 +48,7 @@ class AuthController implements AuthApi {
         this.logout = logout;
     }
 
+    /** 202 with the same body whether or not the address was already registered. */
     @Override
     public ResponseEntity<Accepted> register(RegisterRequest request) {
         register.execute(request.getEmail(), request.getPassword());
@@ -52,23 +56,27 @@ class AuthController implements AuthApi {
                 .body(new Accepted("If this address can be registered, a verification message has been sent."));
     }
 
+    /** 204 when the token was valid. */
     @Override
     public ResponseEntity<Void> verifyEmail(VerifyRequest request) {
         verify.execute(request.getToken());
         return ResponseEntity.noContent().build();
     }
 
+    /** Access token in the body, refresh token in the cookie. */
     @Override
     public ResponseEntity<TokenResponse> login(LoginRequest request) {
         return tokens(login.execute(request.getEmail(), request.getPassword()));
     }
 
+    /** Rotates the cookie and returns a new access token. */
     @Override
     public ResponseEntity<TokenResponse> refresh(String xRequestedWith, @Nullable String refreshToken) {
         requireCustomHeader(xRequestedWith);
         return tokens(refresh.execute(refreshToken));
     }
 
+    /** 204 and an expired cookie, whether or not a session existed. */
     @Override
     public ResponseEntity<Void> logout(String xRequestedWith, @Nullable String refreshToken) {
         requireCustomHeader(xRequestedWith);

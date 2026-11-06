@@ -16,6 +16,7 @@ class JwksController implements JwksApi {
 
     private final JwtKeys keys;
 
+    /** @param keys the signing key; only its public half is ever published */
     JwksController(JwtKeys keys) {
         this.keys = keys;
     }

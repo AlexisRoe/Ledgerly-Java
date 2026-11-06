@@ -4,6 +4,7 @@ import jakarta.persistence.AttributeConverter;
 import jakarta.persistence.Converter;
 import java.util.UUID;
 
+/** Stores a {@link UserId} as a plain UUID column. */
 @Converter(autoApply = true)
 public class UserIdConverter implements AttributeConverter<UserId, UUID> {
 

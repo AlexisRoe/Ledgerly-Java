@@ -24,6 +24,7 @@ public class EmailVerification {
     @SuppressWarnings("NullAway.Init")
     protected EmailVerification() {}
 
+    /** @param tokenHash SHA-256 of the raw token, which is never stored */
     public EmailVerification(UUID userId, String tokenHash, Instant expiresAt) {
         this.id = com.ledgerly.shared.id.UuidV7.generate();
         this.userId = userId;
@@ -31,14 +32,17 @@ public class EmailVerification {
         this.expiresAt = expiresAt;
     }
 
+    /** True while the token is unused and not expired. */
     public boolean isUsable(Instant now) {
         return usedAt == null && expiresAt.isAfter(now);
     }
 
+    /** Burns the token so it cannot be used again. */
     public void markUsed(Instant now) {
         usedAt = now;
     }
 
+    /** The account the token verifies. */
     public UUID userId() {
         return userId;
     }

@@ -15,12 +15,14 @@ import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+/** Gives a short-lived, signed link to an accepted receipt; the file is served by the object store, not by us. */
 @Service
 public class DownloadReceipt {
 
     /** Five minutes at most: long enough to click, short enough that a leaked link soon dies. */
     static final Duration LINK_TTL = Duration.ofMinutes(5);
 
+    /** {@code url} to fetch the file; valid until {@code expiresAt}. */
     public record Link(URI url, Instant expiresAt) {}
 
     private final ExpensesFacade expenses;

@@ -19,6 +19,7 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+/** Lists the expenses the caller may see: all for approvers and owners, their own for others. */
 @Service
 public class ListExpenses {
 
@@ -26,6 +27,9 @@ public class ListExpenses {
     public enum SortField {
         INCURRED_ON("incurredOn", "incurredOn"),
         CREATED_AT("createdAt", "createdAt"),
+        /**
+         * Sorting by amount is only allowed when filtering to one currency (amounts in different currencies do not compare).
+         */
         AMOUNT("amount", "money.amount");
 
         private final String apiName;
@@ -36,6 +40,7 @@ public class ListExpenses {
             this.property = property;
         }
 
+        /** @throws InvalidRequest for a name that is not on the list */
         static SortField fromApi(String name) {
             for (SortField f : values()) {
                 if (f.apiName.equals(name)) {
@@ -46,6 +51,7 @@ public class ListExpenses {
         }
     }
 
+    /** Paging is zero-based; {@code sort} is {@code field,asc|desc}. Filters are optional. */
     public record Query(
             TeamId teamId,
             UserId caller,
@@ -59,6 +65,7 @@ public class ListExpenses {
             @Nullable LocalDate incurredFrom,
             @Nullable LocalDate incurredTo) {}
 
+    /** One page plus the totals the client needs to build page links. */
     public record PageResult(List<ExpenseView> items, int page, int size, long totalElements, int totalPages) {}
 
     private final ExpenseAccess access;
@@ -71,6 +78,7 @@ public class ListExpenses {
         this.limits = limits;
     }
 
+    /** @throws InvalidRequest for a negative page, a size outside 1..max, or a bad sort */
     @Transactional(readOnly = true)
     public PageResult execute(Query q) {
         Actor actor = access.actor(q.teamId(), q.caller());

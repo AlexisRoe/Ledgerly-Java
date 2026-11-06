@@ -22,6 +22,11 @@ final class ExpenseMapper {
 
     private ExpenseMapper() {}
 
+    /**
+     * Parses the API's amount string and currency code.
+     *
+     * @param field the request field to name in the 422 if either is invalid
+     */
     static Money toMoney(com.ledgerly.shared.api.model.Money dto, String field) {
         try {
             return new Money(new BigDecimal(dto.getAmount()), Currency.getInstance(dto.getCurrency()));
@@ -31,10 +36,12 @@ final class ExpenseMapper {
         }
     }
 
+    /** API enum to domain enum (same names). */
     static Category toDomain(com.ledgerly.shared.api.model.Category dto) {
         return Category.valueOf(dto.name());
     }
 
+    /** Expense view to API body; amounts are plain decimal strings, never floats. */
     static ExpenseResponse toResponse(ExpenseView view) {
         var money = new com.ledgerly.shared.api.model.Money(
                 view.money().amount().toPlainString(), view.money().currency().getCurrencyCode());
@@ -53,6 +60,7 @@ final class ExpenseMapper {
                 .note(view.note());
     }
 
+    /** Page result to the API's page body with its paging totals. */
     static com.ledgerly.shared.api.model.ExpensePage toPage(ListExpenses.PageResult result) {
         var meta = new com.ledgerly.shared.api.model.PageMetadata(
                 result.size(), result.page(), result.totalElements(), result.totalPages());
@@ -74,6 +82,7 @@ final class ExpenseMapper {
                 money, toDomain(item.getCategory()), item.getIncurredOn(), item.getMerchant(), item.getNote()));
     }
 
+    /** Per-item outcomes plus created/rejected counts. */
     static BatchResponse toBatchResponse(BatchCreateExpenses.Result result) {
         List<BatchItemResult> items = result.results().stream()
                 .map(r -> {

@@ -16,6 +16,7 @@ class ImportSkipListener implements SkipListener<RawRow, NewExpense> {
     private final ImportJobs jobs;
     private final Counter skipped;
 
+    /** @param importId the import whose rejected lines are recorded */
     ImportSkipListener(UUID importId, ImportJobs jobs, MeterRegistry metrics) {
         this.importId = importId;
         this.jobs = jobs;

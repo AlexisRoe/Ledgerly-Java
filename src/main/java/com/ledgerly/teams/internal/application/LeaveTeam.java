@@ -13,6 +13,7 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+/** Lets a member leave; the last OWNER may not (LAST_OWNER, 409). */
 @Service
 public class LeaveTeam {
 
@@ -28,6 +29,7 @@ public class LeaveTeam {
         this.clock = clock;
     }
 
+    /** @param teamId a team the caller must belong to (otherwise 404) */
     @Transactional
     public void execute(UUID teamId, UserId caller) {
         guard.requireMember(teamId, caller.value()); // 404 before taking any lock

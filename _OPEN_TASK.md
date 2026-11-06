@@ -16,6 +16,8 @@ Create a MAKE file with all commands needed to run, stop, debug, lint, test the 
 
 Add JSDOC like comments on methods, classes and variables to describe their intentional purpose or shape, ingoing and outgoing data. Do NOT describe JAVA internal methods.
 
+**Status: DONE, verified (Spotless, compile, full `verify` green in the isolated copy).** About 350 doc comments added across all seven modules (154 files): types, records and their fields, use cases (inputs, outputs, errors thrown), repositories, events, controllers, filters, config. Left undocumented on purpose: constructors that only store injected dependencies, one-line event handlers covered by their class comment, and `@Override` methods (documented where declared). No behaviour changed.
+
 ## Task 4
 
 Create Bruno files for api testing, including local setup, test cases

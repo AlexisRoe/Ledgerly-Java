@@ -14,6 +14,7 @@ class ReceiptChecksImpl implements ReceiptChecks {
 
     private final ReceiptRepository receipts;
 
+    /** @param receipts counted by scan status for the submit rule */
     ReceiptChecksImpl(ReceiptRepository receipts) {
         this.receipts = receipts;
     }

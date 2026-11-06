@@ -16,6 +16,7 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+/** Exchanges a refresh token for a new access token and a new refresh token (rotation). */
 @OwnTokenIssuing
 @Service
 public class Refresh {

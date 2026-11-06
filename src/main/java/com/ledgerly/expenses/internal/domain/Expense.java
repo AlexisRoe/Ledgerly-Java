@@ -27,7 +27,9 @@ import org.jspecify.annotations.Nullable;
 @Table(name = "expenses")
 public class Expense {
 
+    /** Longest merchant name accepted. */
     public static final int MAX_MERCHANT = 200;
+
     public static final int MAX_NOTE = 2000;
     public static final int MAX_REASON = 1000;
 
@@ -88,6 +90,11 @@ public class Expense {
         this.status = ExpenseStatus.DRAFT;
     }
 
+    /**
+     * Creates a new DRAFT after checking the field rules.
+     *
+     * @throws InvalidInput naming the first field that breaks a rule
+     */
     public static Expense draft(
             TeamId teamId,
             UserId claimantId,
@@ -124,6 +131,7 @@ public class Expense {
 
     // --- transitions -----------------------------------------------------------------------
 
+    /** DRAFT -> SUBMITTED. Only the claimant, and only with at least one accepted receipt. */
     public void submit(Actor actor, ReceiptSummary receipts) {
         requireClaimant(actor, Action.SUBMIT);
         requireStatus(ExpenseStatus.DRAFT, Action.SUBMIT);
@@ -136,18 +144,21 @@ public class Expense {
         status = ExpenseStatus.SUBMITTED;
     }
 
+    /** SUBMITTED -> DRAFT. Only the claimant. */
     public void withdraw(Actor actor) {
         requireClaimant(actor, Action.WITHDRAW);
         requireStatus(ExpenseStatus.SUBMITTED, Action.WITHDRAW);
         status = ExpenseStatus.DRAFT;
     }
 
+    /** SUBMITTED -> APPROVED. Needs APPROVER or higher; never the claimant (no self-approval). */
     public void approve(Actor actor) {
         requireDecider(actor, Role.APPROVER, Action.APPROVE);
         requireStatus(ExpenseStatus.SUBMITTED, Action.APPROVE);
         status = ExpenseStatus.APPROVED;
     }
 
+    /** SUBMITTED -> REJECTED with a reason kept in the history. Needs APPROVER or higher; never the claimant. */
     public void reject(Actor actor, @Nullable String reason) {
         requireDecider(actor, Role.APPROVER, Action.REJECT);
         requireStatus(ExpenseStatus.SUBMITTED, Action.REJECT);
@@ -162,12 +173,14 @@ public class Expense {
         status = ExpenseStatus.REJECTED;
     }
 
+    /** REJECTED -> DRAFT, so the claimant can fix and resubmit. */
     public void reopen(Actor actor) {
         requireClaimant(actor, Action.REOPEN);
         requireStatus(ExpenseStatus.REJECTED, Action.REOPEN);
         status = ExpenseStatus.DRAFT;
     }
 
+    /** APPROVED -> REIMBURSED. Needs OWNER; never the claimant. */
     public void reimburse(Actor actor) {
         requireDecider(actor, Role.OWNER, Action.REIMBURSE);
         requireStatus(ExpenseStatus.APPROVED, Action.REIMBURSE);
@@ -213,6 +226,7 @@ public class Expense {
         }
     }
 
+    /** Whether the receipts controls should be offered: claimant and still a draft. */
     public boolean canAddOrRemoveReceipts(Actor actor) {
         return isDraftOf(actor);
     }
@@ -227,16 +241,19 @@ public class Expense {
         }
     }
 
+    /** Whether the delete control should be offered: claimant and still a draft. */
     public boolean canDelete(Actor actor) {
         return isDraftOf(actor);
     }
 
+    /** The claimant sees their own; APPROVER and OWNER see the whole team's. */
     public boolean isVisibleTo(Actor actor) {
         return actor.id().equals(claimantId) || actor.role().includes(Role.APPROVER);
     }
 
     // --- accessors -------------------------------------------------------------------------
 
+    /** Optimistic-locking counter; becomes the ETag. */
     public long version() {
         return version;
     }
@@ -273,10 +290,12 @@ public class Expense {
         return note;
     }
 
+    /** Where the expense is in its lifecycle. */
     public ExpenseStatus status() {
         return status;
     }
 
+    /** Every rejection so far, oldest first (read-only view). */
     public List<Rejection> rejections() {
         return Collections.unmodifiableList(rejections);
     }

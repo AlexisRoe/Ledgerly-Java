@@ -11,12 +11,18 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+/** Refresh tokens, found by the hash of the raw token. */
 public interface RefreshTokenRepository extends JpaRepository<RefreshToken, UUID> {
 
     /** Locked, so two refreshes with the same token are serialised and the second sees it as replaced. */
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     Optional<RefreshToken> findByTokenHash(String tokenHash);
 
+    /**
+     * Revokes every still-valid token of the session.
+     *
+     * @return how many tokens were revoked
+     */
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("update RefreshToken t set t.revokedAt = :now where t.familyId = :family and t.revokedAt is null")
     int revokeFamily(@Param("family") UUID familyId, @Param("now") Instant now);

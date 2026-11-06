@@ -60,6 +60,7 @@ public class Receipt {
         this.createdAt = now;
     }
 
+    /** PENDING_SCAN -> ACCEPTED after a clean scan. */
     public void accept() {
         scanStatus = ScanStatus.ACCEPTED;
     }
@@ -70,46 +71,57 @@ public class Receipt {
         storageKey = quarantineKey;
     }
 
+    /** True only for ACCEPTED receipts. */
     public boolean isDownloadable() {
         return scanStatus == ScanStatus.ACCEPTED;
     }
 
+    /** The receipt's id (UUIDv7). */
     public UUID id() {
         return id;
     }
 
+    /** The owning team. */
     public UUID teamId() {
         return teamId;
     }
 
+    /** The expense it is attached to. */
     public UUID expenseId() {
         return expenseId;
     }
 
+    /** Where the file lives in the object store (random; never shown to clients). */
     public String storageKey() {
         return storageKey;
     }
 
+    /** The uploader's file name; display only, sanitised before use in a download. */
     public String originalName() {
         return originalName;
     }
 
+    /** MIME type detected from the bytes. */
     public String detectedType() {
         return detectedType;
     }
 
+    /** Size of the stored file. */
     public long sizeBytes() {
         return sizeBytes;
     }
 
+    /** Where the receipt is in the malware check. */
     public ScanStatus scanStatus() {
         return scanStatus;
     }
 
+    /** True if the same content was already attached to another expense of the team. */
     public boolean possibleDuplicate() {
         return possibleDuplicate;
     }
 
+    /** The user who uploaded it. */
     public UUID uploadedBy() {
         return uploadedBy;
     }

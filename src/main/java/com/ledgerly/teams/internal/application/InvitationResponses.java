@@ -38,6 +38,7 @@ class InvitationResponses {
         return new Addressed(invitation, user);
     }
 
+    /** @throws Conflict INVITATION_EXPIRED or INVITATION_NOT_PENDING when it can no longer be answered */
     void requirePending(Invitation invitation, Instant now) {
         InvitationStatus status = invitation.status(now);
         if (status == InvitationStatus.EXPIRED) {
@@ -48,5 +49,6 @@ class InvitationResponses {
         }
     }
 
+    /** An invitation together with the caller's account that it was verified against. */
     record Addressed(Invitation invitation, UserSummary user) {}
 }

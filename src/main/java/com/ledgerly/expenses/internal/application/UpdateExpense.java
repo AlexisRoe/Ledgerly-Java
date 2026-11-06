@@ -19,6 +19,7 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+/** Edits the fields of a draft (partial update, optimistic locking). */
 @Service
 public class UpdateExpense {
 
@@ -44,6 +45,11 @@ public class UpdateExpense {
         this.clock = clock;
     }
 
+    /**
+     * Applies the non-null fields, publishes the names of the changed ones, returns the new view.
+     *
+     * @throws PreconditionFailed when {@code expectedVersion} is stale
+     */
     @Transactional
     public ExpenseView execute(Command c) {
         Actor actor = access.actor(c.teamId(), c.caller());

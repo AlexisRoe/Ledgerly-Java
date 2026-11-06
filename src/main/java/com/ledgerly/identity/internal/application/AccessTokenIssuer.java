@@ -33,6 +33,11 @@ public class AccessTokenIssuer {
         this.clock = clock;
     }
 
+    /**
+     * Signs an ES256 access token for the user.
+     *
+     * @return the compact JWT string
+     */
     public String issue(UUID userId) {
         Instant now = clock.instant();
         JwtClaimsSet claims = JwtClaimsSet.builder()
@@ -46,6 +51,7 @@ public class AccessTokenIssuer {
         return encoder.encode(JwtEncoderParameters.from(header, claims)).getTokenValue();
     }
 
+    /** How long an access token lives, in seconds (the {@code expiresIn} of a login). */
     public long ttlSeconds() {
         return props.accessTokenTtl().toSeconds();
     }

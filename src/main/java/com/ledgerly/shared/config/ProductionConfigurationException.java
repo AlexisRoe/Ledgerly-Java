@@ -7,11 +7,13 @@ public class ProductionConfigurationException extends RuntimeException {
 
     private final List<String> missing;
 
+    /** @param missing property names, in the order they are reported */
     public ProductionConfigurationException(List<String> missing) {
         super("Missing settings for the prod profile: " + String.join(", ", missing));
         this.missing = List.copyOf(missing);
     }
 
+    /** The property names that have no value. */
     public List<String> missing() {
         return missing;
     }

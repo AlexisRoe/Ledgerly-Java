@@ -43,6 +43,9 @@ public class UploadImport {
 
     static final List<String> REQUIRED_HEADER = List.of("date", "merchant", "amount", "currency", "category");
 
+    /**
+     * The uploaded file's stream is consumed (and capped) by {@link #execute}; {@code originalName} is display metadata only.
+     */
     public record Command(TeamId teamId, UserId caller, String originalName, InputStream content) {}
 
     private final TeamsFacade teams;
@@ -70,6 +73,11 @@ public class UploadImport {
         this.clock = clock;
     }
 
+    /**
+     * Validates and stores the CSV, saves a QUEUED import and returns its id; the job starts after commit.
+     *
+     * @throws com.ledgerly.shared.error.NotFound if the caller is not a teammate
+     */
     public UUID execute(Command c) {
         UUID team = c.teamId().value();
         UUID user = c.caller().value();

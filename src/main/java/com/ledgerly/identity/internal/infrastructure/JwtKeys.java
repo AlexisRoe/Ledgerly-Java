@@ -15,6 +15,9 @@ import org.jspecify.annotations.Nullable;
 /** The ES256 signing key pair, with a key id so verifiers can pick the right key. */
 public record JwtKeys(ECKey key) {
 
+    /**
+     * Uses the configured PEM pair, or generates one when allowed (local, test). @throws IllegalStateException if keys are missing and generation is not allowed
+     */
     public static JwtKeys create(AuthProperties props, boolean generationAllowed) {
         String priv = props.jwtPrivateKey();
         String pub = props.jwtPublicKey();
@@ -28,6 +31,7 @@ public record JwtKeys(ECKey key) {
         return fromPem(priv, pub);
     }
 
+    /** A random P-256 key with a random key id. */
     static JwtKeys generate() {
         try {
             return new JwtKeys(new ECKeyGenerator(Curve.P_256)
@@ -38,6 +42,9 @@ public record JwtKeys(ECKey key) {
         }
     }
 
+    /**
+     * Reads PKCS#8 (private) and X.509 (public) PEM text; the key id is the key's thumbprint, so it is stable across restarts.
+     */
     static JwtKeys fromPem(String privatePem, String publicPem) {
         try {
             KeyFactory factory = KeyFactory.getInstance("EC");
@@ -59,6 +66,7 @@ public record JwtKeys(ECKey key) {
         return Base64.getDecoder().decode(base64);
     }
 
+    /** The {@code kid} written into token headers and the JWKS. */
     public String keyId() {
         String kid = key.getKeyID();
         return kid == null ? "" : kid;

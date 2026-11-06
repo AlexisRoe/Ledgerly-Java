@@ -16,8 +16,10 @@ public interface ObjectStorage {
 
     InputStream open(String key) throws IOException;
 
+    /** Removes the object; a missing key is not an error. */
     void delete(String key);
 
+    /** Copies then deletes: used to quarantine an infected file. */
     void move(String fromKey, String toKey);
 
     /**

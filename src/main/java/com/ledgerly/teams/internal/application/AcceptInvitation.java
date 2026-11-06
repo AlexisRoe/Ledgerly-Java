@@ -17,9 +17,11 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+/** Turns an invitation addressed to the caller into a membership. */
 @Service
 public class AcceptInvitation {
 
+    /** The team joined and the role received. */
     public record Result(UUID teamId, Role role) {}
 
     private final InvitationResponses responses;

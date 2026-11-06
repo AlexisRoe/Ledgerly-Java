@@ -45,6 +45,7 @@ public class UploadReceipt {
     /** Magic-byte detection only: the file name and the declared content type are never consulted. */
     private static final Tika TIKA = new Tika();
 
+    /** The file stream is read once and capped; {@code originalName} is only metadata. */
     public record Command(
             TeamId teamId, ExpenseId expenseId, UserId caller, String originalName, InputStream content) {}
 
@@ -73,6 +74,12 @@ public class UploadReceipt {
         this.clock = clock;
     }
 
+    /**
+     * Stores the file and returns the receipt in PENDING_SCAN.
+     *
+     * @throws com.ledgerly.shared.error.UnsupportedMedia unless the bytes are a PDF, JPEG or PNG
+     * @throws com.ledgerly.shared.error.PayloadTooLarge when the upload exceeds the size limit
+     */
     public ReceiptView execute(Command c) {
         // Permission first: nothing is read from the client before we know the caller may upload here.
         expenses.requireCanChangeReceipts(c.teamId(), c.expenseId(), c.caller());

@@ -44,10 +44,12 @@ public class S3ObjectStorage implements ObjectStorage {
     private final S3Presigner presigner;
     private final ObservationRegistry observations;
 
+    /** Without metrics. */
     public S3ObjectStorage(StorageProperties props) {
         this(props, ObservationRegistry.NOOP);
     }
 
+    /** Every call is timed and traced as {@code ledgerly.s3} tagged with the operation, never the key. */
     @Autowired
     public S3ObjectStorage(StorageProperties props, ObservationRegistry observations) {
         this.observations = observations;
@@ -94,6 +96,7 @@ public class S3ObjectStorage implements ObjectStorage {
         }
     }
 
+    /** Releases the S3 clients at shutdown. */
     @PreDestroy
     public void close() {
         s3.close();

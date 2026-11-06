@@ -4,6 +4,9 @@ import com.ledgerly.receipts.internal.domain.Receipt;
 import com.ledgerly.receipts.internal.domain.ScanStatus;
 import java.util.UUID;
 
+/**
+ * A receipt as shown to the API. {@code detectedType} comes from the file's bytes; {@code possibleDuplicate} flags a file already attached elsewhere in the team.
+ */
 public record ReceiptView(
         UUID id,
         UUID expenseId,
@@ -13,6 +16,7 @@ public record ReceiptView(
         String originalName,
         boolean possibleDuplicate) {
 
+    /** Copies the entity; the storage key is never exposed. */
     static ReceiptView of(Receipt r) {
         return new ReceiptView(
                 r.id(),

@@ -25,6 +25,7 @@ public class ApiRateLimitFilter extends OncePerRequestFilter {
     private final RateLimit limit;
     private final ProblemSecurityHandler problems;
 
+    /** @param requestsPerMinute allowance per signed-in user; over it the answer is 429 with Retry-After */
     public ApiRateLimitFilter(RateLimiter limiter, int requestsPerMinute, ProblemSecurityHandler problems) {
         this.limiter = limiter;
         this.limit = RateLimit.perMinute(requestsPerMinute);

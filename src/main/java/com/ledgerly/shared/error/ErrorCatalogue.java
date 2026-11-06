@@ -43,18 +43,22 @@ public enum ErrorCatalogue {
         this.status = status;
     }
 
+    /** The stable machine-readable code clients switch on (the constant's name). */
     public String code() {
         return name();
     }
 
+    /** The problem {@code type} URI. */
     public String type() {
         return BASE + slug;
     }
 
+    /** Short human title, the same for every occurrence. */
     public String title() {
         return title;
     }
 
+    /** The HTTP status. */
     public HttpStatus status() {
         return status;
     }

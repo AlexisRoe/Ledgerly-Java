@@ -16,10 +16,12 @@ public record RateLimit(long capacity, Duration period, boolean gradual) {
         }
     }
 
+    /** Smooth: the allowance refills continuously over a minute. */
     public static RateLimit perMinute(long requests) {
         return new RateLimit(requests, Duration.ofMinutes(1), true);
     }
 
+    /** All {@code capacity} tokens come back together once {@code period} has passed (used for the login lock). */
     public static RateLimit intervally(long capacity, Duration period) {
         return new RateLimit(capacity, period, false);
     }

@@ -14,6 +14,7 @@ final class StorageResource extends AbstractResource {
     private final ObjectStorage storage;
     private final String key;
 
+    /** @param key the object-store key of the uploaded CSV */
     StorageResource(ObjectStorage storage, String key) {
         this.storage = storage;
         this.key = key;

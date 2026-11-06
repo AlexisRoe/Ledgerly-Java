@@ -33,6 +33,7 @@ public class JsonBodyLimitFilter extends OncePerRequestFilter {
     private final ProblemFactory problems;
     private final JsonMapper json;
 
+    /** @param limits the maximum JSON body size */
     JsonBodyLimitFilter(LedgerlyLimits limits, ProblemFactory problems, JsonMapper json) {
         this.limit = limits.maxJsonBodySize().toBytes();
         this.problems = problems;
@@ -80,6 +81,7 @@ public class JsonBodyLimitFilter extends OncePerRequestFilter {
 
         private final long limit;
 
+        /** @param limit most bytes the body may have; more throws 413 */
         CountingRequest(HttpServletRequest request, long limit) {
             super(request);
             this.limit = limit;

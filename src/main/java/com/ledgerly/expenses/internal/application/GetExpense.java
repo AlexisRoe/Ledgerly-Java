@@ -9,6 +9,7 @@ import java.util.Optional;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+/** Reads one expense; a teammate who may not see it gets the same 404 as one that does not exist. */
 @Service
 public class GetExpense {
 

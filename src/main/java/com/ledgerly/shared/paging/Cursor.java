@@ -17,6 +17,7 @@ public record Cursor(Instant timestamp, UUID id) {
 
     private static final JsonMapper JSON = JsonMapper.builder().build();
 
+    /** The Base64url text handed to clients as {@code nextCursor}. */
     public String encode() {
         String json = JSON.writeValueAsString(Map.of("t", timestamp.toString(), "id", id.toString()));
         return Base64.getUrlEncoder().withoutPadding().encodeToString(json.getBytes(StandardCharsets.UTF_8));

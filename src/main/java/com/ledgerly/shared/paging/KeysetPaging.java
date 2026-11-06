@@ -17,6 +17,7 @@ public final class KeysetPaging {
 
     private KeysetPaging() {}
 
+    /** {@code next} is the cursor of the page after this one, null on the last page. */
     public record Page<T>(List<T> items, @Nullable Cursor next) {}
 
     /**

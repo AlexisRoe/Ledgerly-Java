@@ -5,6 +5,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.resilience.annotation.EnableResilientMethods;
 import org.springframework.scheduling.annotation.EnableAsync;
 
+/** Registers {@link ReceiptsProperties}. */
 @Configuration(proxyBeanMethods = false)
 @EnableConfigurationProperties(ReceiptsProperties.class)
 @EnableAsync

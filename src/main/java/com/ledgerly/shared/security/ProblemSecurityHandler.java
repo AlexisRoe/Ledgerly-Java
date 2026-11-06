@@ -24,6 +24,7 @@ public class ProblemSecurityHandler implements AuthenticationEntryPoint, AccessD
     private final ProblemFactory problems;
     private final JsonMapper json;
 
+    /** @param json writes the problem body, since no controller is involved */
     ProblemSecurityHandler(ProblemFactory problems, JsonMapper json) {
         this.problems = problems;
         this.json = json;

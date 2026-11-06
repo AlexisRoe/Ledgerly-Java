@@ -29,6 +29,7 @@ class ExpenseDomainExceptionHandler {
         this.problems = problems;
     }
 
+    /** Turns a domain refusal into its problem+json response (status and error code come from the catalogue). */
     @ExceptionHandler(ExpenseException.class)
     ResponseEntity<ProblemDetail> handle(ExpenseException e) {
         // ExpenseException is sealed, so this switch must cover every case.

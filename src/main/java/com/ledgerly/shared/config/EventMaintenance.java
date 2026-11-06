@@ -31,16 +31,22 @@ class EventMaintenance {
     private final IncompleteEventPublications incomplete;
     private final CompletedEventPublications completed;
 
+    /**
+     * @param incomplete events whose listener has not finished
+     * @param completed events already delivered
+     */
     EventMaintenance(IncompleteEventPublications incomplete, CompletedEventPublications completed) {
         this.incomplete = incomplete;
         this.completed = completed;
     }
 
+    /** Every minute: delivers again the events whose listener never finished (older than two minutes). */
     @Scheduled(fixedDelayString = "${ledgerly.events.resubmit-interval:PT1M}", initialDelayString = "PT1M")
     void resubmitStuckEvents() {
         incomplete.resubmitIncompletePublicationsOlderThan(MINIMUM_AGE);
     }
 
+    /** Nightly: removes delivered events older than seven days from the publication registry. */
     @Scheduled(cron = "0 17 3 * * *")
     void deleteOldCompletedEvents() {
         completed.deletePublicationsOlderThan(KEEP_COMPLETED);

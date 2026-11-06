@@ -25,6 +25,9 @@ class ImportJobListener implements JobExecutionListener {
     private final ApplicationEventPublisher events;
     private final Clock clock;
 
+    /**
+     * Marks the import RUNNING / COMPLETED / FAILED, deletes the file after success and publishes the completion event.
+     */
     ImportJobListener(ImportJobs jobs, ObjectStorage storage, ApplicationEventPublisher events, Clock clock) {
         this.jobs = jobs;
         this.storage = storage;
@@ -66,6 +69,7 @@ class ImportJobListener implements JobExecutionListener {
         log.info("Import {} finished: {}", importId, execution.getStatus());
     }
 
+    /** The import id passed as job parameter. */
     static UUID importId(JobExecution execution) {
         return UUID.fromString(execution.getJobParameters().getString(ImportJobConfig.PARAM_IMPORT_ID));
     }

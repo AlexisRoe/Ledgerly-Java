@@ -12,6 +12,7 @@ final class ClockTimeMeter implements TimeMeter {
 
     private final Clock clock;
 
+    /** @param clock the application clock to read time from */
     ClockTimeMeter(Clock clock) {
         this.clock = clock;
     }

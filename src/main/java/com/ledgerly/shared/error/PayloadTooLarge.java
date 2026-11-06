@@ -2,6 +2,7 @@ package com.ledgerly.shared.error;
 
 import java.util.List;
 
+/** 413: the body or upload exceeds the configured limit. */
 public final class PayloadTooLarge extends LedgerlyException {
 
     public PayloadTooLarge(String detail) {

@@ -8,5 +8,6 @@ import com.ledgerly.shared.id.ExpenseId;
  */
 public interface ReceiptChecks {
 
+    /** Counts the receipts attached to the expense, by scan outcome. Submitting needs at least one accepted. */
     ReceiptSummary summaryFor(ExpenseId expenseId);
 }

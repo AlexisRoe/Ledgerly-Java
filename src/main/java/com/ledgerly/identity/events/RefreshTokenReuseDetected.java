@@ -9,6 +9,7 @@ import java.util.UUID;
 public record RefreshTokenReuseDetected(UUID eventId, UserId actorId, UUID familyId, Instant occurredAt)
         implements IdentityEvent {
 
+    /** @param familyId the session whose tokens were all revoked as a result */
     public RefreshTokenReuseDetected(UserId actorId, UUID familyId, Instant occurredAt) {
         this(UuidV7.generate(), actorId, familyId, occurredAt);
     }

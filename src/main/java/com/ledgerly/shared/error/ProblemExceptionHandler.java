@@ -33,10 +33,12 @@ public class ProblemExceptionHandler extends ResponseEntityExceptionHandler {
 
     private final ProblemFactory problems;
 
+    /** @param problems builds the response body */
     ProblemExceptionHandler(ProblemFactory problems) {
         this.problems = problems;
     }
 
+    /** Our own exceptions, with Retry-After for rate limits. */
     @ExceptionHandler(LedgerlyException.class)
     ResponseEntity<Object> ledgerly(LedgerlyException e, WebRequest request) {
         ProblemDetail problem = problems.create(e);
@@ -52,6 +54,7 @@ public class ProblemExceptionHandler extends ResponseEntityExceptionHandler {
 
     @ExceptionHandler({ObjectOptimisticLockingFailureException.class, jakarta.persistence.OptimisticLockException.class
     })
+    /** Two writers, one lost: 412 so the client re-reads. */
     ResponseEntity<Object> lostRace(Exception e) {
         return respond(problems.create(new PreconditionFailed()));
     }
@@ -65,6 +68,7 @@ public class ProblemExceptionHandler extends ResponseEntityExceptionHandler {
         return respond(problems.create(ErrorCatalogue.VALIDATION_FAILED, "Request validation failed", violations));
     }
 
+    /** Anything unforeseen: logged with its stack, answered with a generic 500 that leaks nothing. */
     @ExceptionHandler(Exception.class)
     ResponseEntity<Object> unexpected(Exception e) {
         log.error("Unhandled exception", e);

@@ -13,6 +13,7 @@ class LocalVerificationLogger {
 
     private static final Logger log = LoggerFactory.getLogger(LocalVerificationLogger.class);
 
+    /** Prints the one-time token so a developer can verify without an email service. */
     @EventListener
     void on(VerificationLinkIssued event) {
         log.info(

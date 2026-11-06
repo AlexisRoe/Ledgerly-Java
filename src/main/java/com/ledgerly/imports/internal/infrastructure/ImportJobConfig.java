@@ -44,6 +44,7 @@ class ImportJobConfig {
     static final String PARAM_USER_ID = "userId";
     static final String PARAM_STORAGE_KEY = "storageKey";
 
+    /** The single job; its listener keeps the status in {@code import_jobs} in step. */
     @Bean
     Job importExpensesJob(JobRepository repository, Step importStep, ImportJobListener listener) {
         return new JobBuilder(JOB_NAME, repository)

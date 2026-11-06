@@ -26,12 +26,16 @@ public sealed interface ExpenseEvent
     /** Stable across re-delivery, so a listener can recognise an event it has already handled. */
     UUID eventId();
 
+    /** The team the expense belongs to. */
     TeamId teamId();
 
+    /** The expense the event is about. */
     ExpenseId expenseId();
 
+    /** Who did it. */
     UserId actorId();
 
+    /** When it happened (from the application clock, not the delivery time). */
     Instant occurredAt();
 
     /** A draft was created: through the API, a batch or an import. */
@@ -65,6 +69,7 @@ public sealed interface ExpenseEvent
         }
     }
 
+    /** A draft was submitted for approval. */
     record Submitted(UUID eventId, TeamId teamId, ExpenseId expenseId, UserId actorId, Instant occurredAt)
             implements ExpenseEvent {
         public Submitted(TeamId teamId, ExpenseId expenseId, UserId actorId, Instant occurredAt) {
@@ -72,6 +77,7 @@ public sealed interface ExpenseEvent
         }
     }
 
+    /** The claimant took a submitted expense back to draft. */
     record Withdrawn(UUID eventId, TeamId teamId, ExpenseId expenseId, UserId actorId, Instant occurredAt)
             implements ExpenseEvent {
         public Withdrawn(TeamId teamId, ExpenseId expenseId, UserId actorId, Instant occurredAt) {
@@ -79,6 +85,7 @@ public sealed interface ExpenseEvent
         }
     }
 
+    /** An approver approved a submitted expense. */
     record Approved(UUID eventId, TeamId teamId, ExpenseId expenseId, UserId actorId, Instant occurredAt)
             implements ExpenseEvent {
         public Approved(TeamId teamId, ExpenseId expenseId, UserId actorId, Instant occurredAt) {
@@ -94,6 +101,7 @@ public sealed interface ExpenseEvent
         }
     }
 
+    /** The claimant moved a rejected expense back to draft. */
     record Reopened(UUID eventId, TeamId teamId, ExpenseId expenseId, UserId actorId, Instant occurredAt)
             implements ExpenseEvent {
         public Reopened(TeamId teamId, ExpenseId expenseId, UserId actorId, Instant occurredAt) {
@@ -101,6 +109,7 @@ public sealed interface ExpenseEvent
         }
     }
 
+    /** An owner marked an approved expense as paid out. */
     record Reimbursed(UUID eventId, TeamId teamId, ExpenseId expenseId, UserId actorId, Instant occurredAt)
             implements ExpenseEvent {
         public Reimbursed(TeamId teamId, ExpenseId expenseId, UserId actorId, Instant occurredAt) {

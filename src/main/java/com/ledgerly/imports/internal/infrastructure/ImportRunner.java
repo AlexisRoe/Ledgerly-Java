@@ -34,6 +34,7 @@ public class ImportRunner {
     private final ImportJobs jobs;
     private final Clock clock;
 
+    /** @param importExpensesJob the job defined in ImportJobConfig */
     ImportRunner(JobOperator operator, Job importExpensesJob, JobRepository repository, ImportJobs jobs, Clock clock) {
         this.operator = operator;
         this.job = importExpensesJob;
@@ -42,6 +43,7 @@ public class ImportRunner {
         this.clock = clock;
     }
 
+    /** Starts the job for a freshly queued import. */
     @Async
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     void on(ImportQueued event) {

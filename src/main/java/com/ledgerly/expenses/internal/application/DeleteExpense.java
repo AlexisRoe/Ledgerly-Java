@@ -13,6 +13,7 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+/** Deletes a draft expense; only its claimant may, and only with the current version. */
 @Service
 public class DeleteExpense {
 
@@ -28,6 +29,7 @@ public class DeleteExpense {
         this.clock = clock;
     }
 
+    /** @param expectedVersion the version the client saw (from If-Match); a stale one fails with 412 */
     @Transactional
     public void execute(TeamId teamId, ExpenseId id, UserId caller, long expectedVersion) {
         Actor actor = access.actor(teamId, caller);

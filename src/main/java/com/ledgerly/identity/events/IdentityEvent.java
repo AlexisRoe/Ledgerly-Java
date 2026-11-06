@@ -16,5 +16,6 @@ public sealed interface IdentityEvent permits UserRegistered, UserVerified, Refr
     /** The user the event is about (they are also the one who acted). */
     UserId actorId();
 
+    /** When it happened (application clock). */
     Instant occurredAt();
 }

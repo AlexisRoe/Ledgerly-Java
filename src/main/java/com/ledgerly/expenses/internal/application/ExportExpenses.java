@@ -28,6 +28,7 @@ public class ExportExpenses {
 
     static final int PAGE = 500;
 
+    /** Who asks (for the team and visibility rules) and the same optional filters as the list. */
     public record Query(
             TeamId teamId,
             UserId caller,
@@ -64,6 +65,9 @@ public class ExportExpenses {
         this.readOnly.setReadOnly(true);
     }
 
+    /**
+     * Returns the total plus a supplier that yields the rows page by page, so a large export is never held in memory.
+     */
     public Export execute(Query q) {
         Actor actor = readOnly.execute(s -> access.actor(q.teamId(), q.caller()));
         Specification<Expense> spec = ExpenseFilters.build(

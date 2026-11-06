@@ -19,6 +19,7 @@ import org.springframework.stereotype.Repository;
 @Repository
 public class AuditTrail {
 
+    /** What is stored for one event: ids and field names only; {@code detailsJson} is a JSON object. */
     public record Entry(
             UUID eventId,
             @Nullable UUID teamId,
@@ -29,6 +30,7 @@ public class AuditTrail {
             String detailsJson,
             Instant occurredAt) {}
 
+    /** A stored row as read back. {@code createdAt} is when it was recorded, {@code occurredAt} when it happened. */
     public record Row(
             UUID id,
             @Nullable UUID teamId,

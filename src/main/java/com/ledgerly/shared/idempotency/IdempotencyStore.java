@@ -20,16 +20,19 @@ public class IdempotencyStore {
 
     public static final Duration TTL = Duration.ofHours(24);
 
+    /** What was answered the first time: a hash of the request, the status and the id of the created resource. */
     public record Entry(String requestHash, int responseStatus, UUID resourceId) {}
 
     private final JdbcClient jdbc;
     private final Clock clock;
 
+    /** @param clock decides which keys have expired */
     IdempotencyStore(JdbcClient jdbc, Clock clock) {
         this.jdbc = jdbc;
         this.clock = clock;
     }
 
+    /** The unexpired entry for this user and key, or empty. Keys are per user. */
     public Optional<Entry> find(UserId user, String key) {
         return jdbc.sql("""
                         select request_hash, response_status, resource_id from idempotency_keys

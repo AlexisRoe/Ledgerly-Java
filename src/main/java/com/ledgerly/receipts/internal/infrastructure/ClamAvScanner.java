@@ -29,6 +29,7 @@ class ClamAvScanner implements MalwareScanner {
     private final ReceiptsProperties.ClamAv config;
     private final ObservationRegistry observations;
 
+    /** @param props clamd host, port and timeouts */
     ClamAvScanner(ReceiptsProperties props) {
         this(props, ObservationRegistry.NOOP);
     }
@@ -79,6 +80,7 @@ class ClamAvScanner implements MalwareScanner {
         }
     }
 
+    /** Reads clamd's NUL-terminated answer (bounded) as text. */
     static String readReply(InputStream in) throws IOException {
         var reply = new java.io.ByteArrayOutputStream();
         int b;

@@ -25,6 +25,7 @@ public record ExpenseView(
         List<String> rejectionReasons,
         long version) {
 
+    /** Copies an entity into the immutable shape handed to the web layer; rejection reasons are flattened to text. */
     static ExpenseView of(Expense e) {
         return new ExpenseView(
                 e.id(),

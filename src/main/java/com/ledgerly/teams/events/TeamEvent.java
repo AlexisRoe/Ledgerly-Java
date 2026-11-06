@@ -20,19 +20,23 @@ public sealed interface TeamEvent
     /** Stable across re-delivery, so a listener can recognise an event it has already handled. */
     UUID eventId();
 
+    /** The team the event happened in. */
     TeamId teamId();
 
     /** The user who did it. */
     UserId actorId();
 
+    /** When it happened (application clock). */
     Instant occurredAt();
 
+    /** A team was created; its creator became OWNER. */
     record TeamCreated(UUID eventId, TeamId teamId, UserId actorId, Instant occurredAt) implements TeamEvent {
         public TeamCreated(TeamId teamId, UserId actorId, Instant occurredAt) {
             this(UuidV7.generate(), teamId, actorId, occurredAt);
         }
     }
 
+    /** An OWNER invited an email address. {@code role} is the role offered (a name, no email is carried). */
     record MemberInvited(
             UUID eventId, TeamId teamId, UserId actorId, UUID invitationId, String role, Instant occurredAt)
             implements TeamEvent {
@@ -41,6 +45,7 @@ public sealed interface TeamEvent
         }
     }
 
+    /** An OWNER withdrew a pending invitation. */
     record InvitationRevoked(UUID eventId, TeamId teamId, UserId actorId, UUID invitationId, Instant occurredAt)
             implements TeamEvent {
         public InvitationRevoked(TeamId teamId, UserId actorId, UUID invitationId, Instant occurredAt) {
@@ -48,6 +53,7 @@ public sealed interface TeamEvent
         }
     }
 
+    /** The invited person accepted and became a member. */
     record InvitationAccepted(UUID eventId, TeamId teamId, UserId actorId, UUID invitationId, Instant occurredAt)
             implements TeamEvent {
         public InvitationAccepted(TeamId teamId, UserId actorId, UUID invitationId, Instant occurredAt) {
@@ -55,6 +61,7 @@ public sealed interface TeamEvent
         }
     }
 
+    /** The invited person declined. */
     record InvitationDeclined(UUID eventId, TeamId teamId, UserId actorId, UUID invitationId, Instant occurredAt)
             implements TeamEvent {
         public InvitationDeclined(TeamId teamId, UserId actorId, UUID invitationId, Instant occurredAt) {
@@ -62,6 +69,7 @@ public sealed interface TeamEvent
         }
     }
 
+    /** An OWNER changed a member's role; old and new are role names. */
     record MemberRoleChanged(
             UUID eventId,
             TeamId teamId,
@@ -77,6 +85,7 @@ public sealed interface TeamEvent
         }
     }
 
+    /** An OWNER removed {@code memberId} from the team. */
     record MemberRemoved(UUID eventId, TeamId teamId, UserId actorId, UserId memberId, Instant occurredAt)
             implements TeamEvent {
         public MemberRemoved(TeamId teamId, UserId actorId, UserId memberId, Instant occurredAt) {
@@ -84,6 +93,7 @@ public sealed interface TeamEvent
         }
     }
 
+    /** A member left the team on their own. */
     record MemberLeft(UUID eventId, TeamId teamId, UserId actorId, Instant occurredAt) implements TeamEvent {
         public MemberLeft(TeamId teamId, UserId actorId, Instant occurredAt) {
             this(UuidV7.generate(), teamId, actorId, occurredAt);

@@ -39,10 +39,15 @@ public record Money(
         amount = amount.setScale(digits);
     }
 
+    /**
+     * @param amount decimal text such as "12.50"
+     * @param currencyCode ISO 4217, for example EUR
+     */
     public static Money of(String amount, String currencyCode) {
         return new Money(new BigDecimal(amount), Currency.getInstance(currencyCode));
     }
 
+    /** @throws CurrencyMismatch if the currencies differ */
     public Money plus(Money other) {
         requireSameCurrency(other);
         return new Money(amount.add(other.amount), currency);

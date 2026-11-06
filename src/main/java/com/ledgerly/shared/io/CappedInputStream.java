@@ -11,6 +11,9 @@ public final class CappedInputStream extends FilterInputStream {
     private final long limit;
     private long read;
 
+    /**
+     * @param limit most bytes that may be read; reading beyond it throws {@link com.ledgerly.shared.error.PayloadTooLarge}
+     */
     public CappedInputStream(InputStream in, long limit) {
         super(in);
         this.limit = limit;

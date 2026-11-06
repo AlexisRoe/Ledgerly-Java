@@ -37,6 +37,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+/**
+ * Expense endpoints under /api/v1/teams/{teamId}/expenses. Thin: parse, call one use case, map the answer. Contract: api/openapi.yaml.
+ */
 @RestController
 @RequestMapping("/api/v1")
 class ExpensesController implements ExpensesApi {

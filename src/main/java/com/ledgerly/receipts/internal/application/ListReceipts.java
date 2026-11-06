@@ -9,6 +9,7 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+/** Lists an expense's receipts (any scan status) for whoever may see the expense. */
 @Service
 public class ListReceipts {
 

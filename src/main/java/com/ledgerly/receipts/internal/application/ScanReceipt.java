@@ -58,6 +58,7 @@ public class ScanReceipt {
         this.metrics = metrics;
     }
 
+    /** Scans the newly uploaded file as soon as the upload commits. */
     @Async
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void on(ReceiptUploaded event) {

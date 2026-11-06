@@ -12,6 +12,7 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+/** Confirms an email address with the single-use token from the verification message. */
 @OwnTokenIssuing
 @Service
 public class VerifyEmail {
@@ -32,6 +33,7 @@ public class VerifyEmail {
         this.clock = clock;
     }
 
+    /** @param token the raw token; unknown, used and expired tokens are all the same 422 on field {@code token} */
     @Transactional
     public void execute(String token) {
         Instant now = clock.instant();

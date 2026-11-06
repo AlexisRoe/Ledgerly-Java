@@ -22,6 +22,7 @@ public class ExternalSubjectJwtConverter implements Converter<Jwt, AbstractAuthe
     private final ExternalIdentityProvisioner provisioner;
     private final JwtAuthenticationConverter delegate = new JwtAuthenticationConverter();
 
+    /** @param provisioner creates or links the Ledgerly user for a token's subject on first sight */
     ExternalSubjectJwtConverter(ExternalIdentityProvisioner provisioner) {
         this.provisioner = provisioner;
     }

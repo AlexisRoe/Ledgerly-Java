@@ -26,10 +26,13 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class GetMe {
 
+    /** A team the caller belongs to and their role in it. */
     public record TeamRole(UUID teamId, String name, Role role) {}
 
+    /** An invitation waiting for the caller's answer (not expired, not answered). */
     public record PendingInvitation(UUID id, UUID teamId, String teamName, Role role, Instant expiresAt) {}
 
+    /** The caller's account, their teams and their open invitations. {@code verified} is the email state. */
     public record Me(
             UUID id, String email, boolean verified, List<TeamRole> teams, List<PendingInvitation> invitations) {}
 
@@ -52,6 +55,7 @@ public class GetMe {
         this.clock = clock;
     }
 
+    /** @throws com.ledgerly.shared.error.Unauthenticated if the account no longer exists */
     @Transactional(readOnly = true)
     public Me execute(UserId caller) {
         UserSummary user = identity.find(caller).orElseThrow(Unauthenticated::new);

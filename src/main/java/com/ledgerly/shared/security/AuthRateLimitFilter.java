@@ -24,6 +24,7 @@ public class AuthRateLimitFilter extends OncePerRequestFilter {
     private final RateLimit limit;
     private final ProblemSecurityHandler problems;
 
+    /** @param requestsPerMinute allowance per client address for /api/v1/auth/** */
     public AuthRateLimitFilter(RateLimiter limiter, int requestsPerMinute, ProblemSecurityHandler problems) {
         this.limiter = limiter;
         this.limit = RateLimit.perMinute(requestsPerMinute);

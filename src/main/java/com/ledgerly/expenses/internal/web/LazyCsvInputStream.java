@@ -20,6 +20,7 @@ final class LazyCsvInputStream extends InputStream {
     private int position;
     private boolean finished;
 
+    /** @param pages yields the next page of rows, or an empty list at the end; nothing is fetched before it is read */
     LazyCsvInputStream(Supplier<List<ExpenseView>> pages) {
         this.pages = pages;
     }

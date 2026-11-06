@@ -16,6 +16,7 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 
+/** Lets the claimant remove a receipt from their draft expense; the file goes with it. */
 @Service
 public class DeleteReceipt {
 
@@ -43,6 +44,7 @@ public class DeleteReceipt {
         this.clock = clock;
     }
 
+    /** @throws com.ledgerly.shared.error.NotFound if the receipt is not on that expense */
     public void execute(TeamId teamId, ExpenseId expenseId, UUID receiptId, UserId caller) {
         expenses.requireCanChangeReceipts(teamId, expenseId, caller);
         String key = tx.execute(s -> {

@@ -10,6 +10,7 @@ import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+/** Reads an import's progress and its first row errors; only teammates may (others get 404). */
 @Service
 public class GetImport {
 

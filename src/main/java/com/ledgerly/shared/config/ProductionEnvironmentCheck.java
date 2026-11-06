@@ -63,6 +63,9 @@ public class ProductionEnvironmentCheck implements EnvironmentPostProcessor {
         }
     }
 
+    /**
+     * The environment variable that sets a property, for example {@code ledgerly.storage.s3.bucket} -> {@code LEDGERLY_STORAGE_S3_BUCKET}.
+     */
     static String environmentVariable(String property) {
         return property.replace('.', '_').replace('-', '_').toUpperCase(Locale.ROOT);
     }

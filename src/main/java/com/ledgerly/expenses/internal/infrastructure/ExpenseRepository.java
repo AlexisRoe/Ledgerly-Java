@@ -15,10 +15,13 @@ import org.springframework.data.repository.Repository;
  */
 public interface ExpenseRepository extends Repository<Expense, ExpenseId> {
 
+    /** The expense, only if it belongs to that team; otherwise empty (same as not existing). */
     Optional<Expense> findByTeamIdAndId(TeamId teamId, ExpenseId id);
 
+    /** Inserts or updates; a stale version fails with an optimistic-locking exception. */
     Expense save(Expense expense);
 
+    /** Removes the expense and its rejection history. */
     void delete(Expense expense);
 
     /** Always combine with {@link ExpenseSpecifications#inTeam}; the use case does. */

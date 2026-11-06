@@ -18,6 +18,7 @@ import org.springframework.data.jpa.domain.Specification;
 /** The filters of the expense list, shared by the paged list and the CSV export so they can never disagree. */
 final class ExpenseFilters {
 
+    /** Optional narrowing criteria; null means "do not filter on this". */
     record Filter(
             @Nullable ExpenseStatus status,
             @Nullable Category category,

@@ -8,18 +8,23 @@ import java.time.Instant;
 import java.util.UUID;
 import org.jspecify.annotations.Nullable;
 
+/** Something that happened to a receipt. Carries ids only, never file names or content. */
 public sealed interface ReceiptEvent
         permits ReceiptEvent.Uploaded, ReceiptEvent.Accepted, ReceiptEvent.Quarantined, ReceiptEvent.Deleted {
 
     /** Stable across re-delivery, so a listener can recognise an event it has already handled. */
     UUID eventId();
 
+    /** The team the receipt's expense belongs to. */
     TeamId teamId();
 
+    /** The expense the receipt is attached to. */
     ExpenseId expenseId();
 
+    /** The receipt. */
     UUID receiptId();
 
+    /** When it happened (application clock). */
     Instant occurredAt();
 
     /** The user who did it; null when the system did (the malware scan). */
@@ -27,6 +32,7 @@ public sealed interface ReceiptEvent
         return null;
     }
 
+    /** A file was stored and is waiting for the malware scan. */
     record Uploaded(
             UUID eventId, TeamId teamId, ExpenseId expenseId, UUID receiptId, UserId actorId, Instant occurredAt)
             implements ReceiptEvent {
@@ -51,6 +57,7 @@ public sealed interface ReceiptEvent
         }
     }
 
+    /** A user removed a receipt. */
     record Deleted(UUID eventId, TeamId teamId, ExpenseId expenseId, UUID receiptId, UserId actorId, Instant occurredAt)
             implements ReceiptEvent {
         public Deleted(TeamId teamId, ExpenseId expenseId, UUID receiptId, UserId actorId, Instant occurredAt) {

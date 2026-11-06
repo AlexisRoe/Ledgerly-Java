@@ -16,10 +16,12 @@ public class ProblemFactory {
 
     private final ObjectProvider<Tracer> tracer;
 
+    /** @param tracer used to put the current trace id into the body, when tracing is on */
     ProblemFactory(ObjectProvider<Tracer> tracer) {
         this.tracer = tracer;
     }
 
+    /** Body with type, title, status, {@code code}, {@code traceId} and (if any) {@code errors}. */
     public ProblemDetail create(ErrorCatalogue error, @Nullable String detail, List<FieldViolation> violations) {
         ProblemDetail problem = ProblemDetail.forStatus(error.status());
         problem.setType(URI.create(error.type()));
@@ -35,6 +37,7 @@ public class ProblemFactory {
         return problem;
     }
 
+    /** Same, from an exception. */
     public ProblemDetail create(LedgerlyException e) {
         return create(e.error(), e.getMessage(), e.violations());
     }

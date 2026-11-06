@@ -12,6 +12,9 @@ import org.springframework.stereotype.Repository;
 @Repository
 public class ImportJobs {
 
+    /**
+     * One row of {@code import_jobs}. {@code status}: QUEUED, RUNNING, COMPLETED, FAILED; {@code storageKey} is the uploaded CSV.
+     */
     public record Job(
             UUID id,
             UUID teamId,
@@ -23,6 +26,7 @@ public class ImportJobs {
             int importedRows,
             Instant createdAt) {}
 
+    /** A rejected line: its number in the file, a stable code and a message. */
     public record RowError(int line, String code, String message) {}
 
     private final JdbcClient jdbc;
@@ -42,6 +46,7 @@ public class ImportJobs {
                 .singleRow();
     }
 
+    /** How many imports the user started in the team since {@code since} (daily limit). */
     public int countSince(UUID teamId, UUID userId, Instant since) {
         return jdbc.sql("""
                         select count(*) from import_jobs
@@ -54,6 +59,7 @@ public class ImportJobs {
                 .single();
     }
 
+    /** Stores a new import. */
     public void insert(Job job) {
         jdbc.sql("""
                         insert into import_jobs (id, team_id, user_id, status, original_name, storage_key,
@@ -71,6 +77,7 @@ public class ImportJobs {
                 .update();
     }
 
+    /** The import, or empty. */
     public Optional<Job> find(UUID id) {
         return jdbc.sql("""
                         select id, team_id, user_id, status, original_name, storage_key, total_rows, imported_rows,
@@ -91,6 +98,7 @@ public class ImportJobs {
                 .optional();
     }
 
+    /** Sets RUNNING and the start time. */
     public void markRunning(UUID id, Instant now) {
         jdbc.sql(
                         "update import_jobs set status = 'RUNNING', started_at = coalesce(started_at, :now), finished_at = null where id = :id")
@@ -99,6 +107,7 @@ public class ImportJobs {
                 .update();
     }
 
+    /** Sets the final status ({@code COMPLETED} or {@code FAILED}) and the finish time. */
     public void markFinished(UUID id, String status, Instant now) {
         jdbc.sql("update import_jobs set status = :status, finished_at = :now where id = :id")
                 .param("id", id)
@@ -128,6 +137,7 @@ public class ImportJobs {
                 .update();
     }
 
+    /** How many lines were rejected in total. */
     public int errorCount(UUID id) {
         return jdbc.sql("select count(*) from import_row_errors where import_id = :id")
                 .param("id", id)
@@ -135,6 +145,7 @@ public class ImportJobs {
                 .single();
     }
 
+    /** The first {@code limit} rejected lines, by line number. */
     public List<RowError> errors(UUID id, int limit) {
         return jdbc.sql(
                         "select line, code, message from import_row_errors where import_id = :id order by line limit :limit")

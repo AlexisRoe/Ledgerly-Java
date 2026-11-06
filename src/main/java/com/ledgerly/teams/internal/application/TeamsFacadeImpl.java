@@ -10,6 +10,7 @@ import java.util.Optional;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+/** Answers other modules' question "what role does this user have in this team?" from the memberships table. */
 @Service
 class TeamsFacadeImpl implements TeamsFacade {
 

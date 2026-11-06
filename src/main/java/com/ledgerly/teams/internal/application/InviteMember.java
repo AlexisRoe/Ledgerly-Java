@@ -15,6 +15,7 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+/** Lets an OWNER invite an email address to the team with a role. */
 @Service
 public class InviteMember {
 

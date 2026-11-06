@@ -17,6 +17,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+/** Checks email and password and starts a session: a short-lived access token plus a refresh token. */
 @OwnTokenIssuing
 @Service
 public class Login {

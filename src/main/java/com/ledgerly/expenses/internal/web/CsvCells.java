@@ -10,6 +10,7 @@ final class CsvCells {
 
     private CsvCells() {}
 
+    /** One CSV field: formula-neutralised, and quoted when it holds a comma, quote or line break. */
     static String cell(String value) {
         String text = neutralise(value);
         boolean needsQuotes = text.contains(",") || text.contains("\"") || text.contains("\n") || text.contains("\r");
@@ -19,6 +20,7 @@ final class CsvCells {
         return "\"" + text.replace("\"", "\"\"") + "\"";
     }
 
+    /** Prefixes a quote to values that start like a spreadsheet formula, so they show as text. */
     static String neutralise(String value) {
         if (value.isEmpty()) {
             return value;
@@ -29,6 +31,7 @@ final class CsvCells {
         };
     }
 
+    /** One CSV line (CRLF-terminated) from the given values. */
     static String row(String... cells) {
         var line = new StringBuilder();
         for (int i = 0; i < cells.length; i++) {

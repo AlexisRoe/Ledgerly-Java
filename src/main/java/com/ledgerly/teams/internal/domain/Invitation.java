@@ -36,6 +36,7 @@ public class Invitation {
     @SuppressWarnings("NullAway.Init")
     protected Invitation() {}
 
+    /** A new PENDING invitation for {@code email} (stored normalised) that expires {@code ttl} after {@code now}. */
     public Invitation(UUID teamId, String email, Role role, UUID invitedBy, Instant now, Duration ttl) {
         this.id = com.ledgerly.shared.id.UuidV7.generate();
         this.teamId = teamId;
@@ -47,6 +48,7 @@ public class Invitation {
         this.expiresAt = now.plus(ttl);
     }
 
+    /** Trims and lower-cases an address so it can be compared with an account's email. */
     public static String normalise(String email) {
         return email.strip().toLowerCase(Locale.ROOT);
     }
@@ -59,34 +61,42 @@ public class Invitation {
         return status;
     }
 
+    /** PENDING -> ACCEPTED. The caller has already checked the state. */
     public void accept() {
         status = InvitationStatus.ACCEPTED;
     }
 
+    /** PENDING -> DECLINED. */
     public void decline() {
         status = InvitationStatus.DECLINED;
     }
 
+    /** PENDING -> REVOKED. */
     public void revoke() {
         status = InvitationStatus.REVOKED;
     }
 
+    /** The invitation's id (UUIDv7). */
     public UUID id() {
         return id;
     }
 
+    /** The team the invitation is for. */
     public UUID teamId() {
         return teamId;
     }
 
+    /** The invited address, normalised. */
     public String email() {
         return email;
     }
 
+    /** The role the invited person gets on accepting. */
     public Role role() {
         return role;
     }
 
+    /** The moment after which it can no longer be answered. */
     public Instant expiresAt() {
         return expiresAt;
     }

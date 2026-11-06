@@ -14,6 +14,7 @@ import org.springframework.validation.annotation.Validated;
 @ConfigurationProperties("ledgerly.receipts")
 public record ReceiptsProperties(@DefaultValue @Valid ClamAv clamav) {
 
+    /** Where clamd listens and how long to wait for it (connect 2s, read 30s by default). */
     public record ClamAv(
             @NotBlank String host,
             @Min(1) @Max(65535) int port,

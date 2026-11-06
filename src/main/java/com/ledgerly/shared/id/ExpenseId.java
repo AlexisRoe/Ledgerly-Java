@@ -14,6 +14,7 @@ public record ExpenseId(@Column(name = "id") UUID value) implements Serializable
         Objects.requireNonNull(value, "value");
     }
 
+    /** A new time-ordered id. */
     public static ExpenseId random() {
         return new ExpenseId(UuidV7.generate());
     }

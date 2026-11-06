@@ -29,6 +29,7 @@ public class RateLimiter {
             .expireAfterAccess(Duration.ofHours(2))
             .build();
 
+    /** @param clock the application clock, so tests can move time */
     RateLimiter(Clock clock) {
         this.time = new ClockTimeMeter(clock);
     }

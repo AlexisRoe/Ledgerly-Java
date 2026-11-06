@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 import tools.jackson.core.type.TypeReference;
 import tools.jackson.databind.json.JsonMapper;
 
+/** {@code GET /api/v1/teams/{teamId}/audit-events}: the team's trail for its OWNERs (contract: api/openapi.yaml). */
 @RestController
 @RequestMapping("/api/v1")
 class AuditController implements AuditApi {
@@ -41,6 +42,7 @@ class AuditController implements AuditApi {
         return ResponseEntity.ok(new AuditEventPage(items).nextCursor(page.nextCursor()));
     }
 
+    /** Maps a stored row to the API shape; optional fields (actor, subject) are left out when the row has none. */
     private AuditEvent toResponse(AuditTrail.Row row) {
         Map<String, Object> details = json.readValue(row.detailsJson(), new TypeReference<Map<String, Object>>() {});
         var event = new AuditEvent(row.id(), row.eventType(), row.occurredAt().atOffset(ZoneOffset.UTC), details);

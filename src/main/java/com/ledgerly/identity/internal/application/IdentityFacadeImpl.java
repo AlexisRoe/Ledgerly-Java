@@ -8,6 +8,7 @@ import java.util.Optional;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+/** Answers other modules' account questions from the users table. */
 @Service
 class IdentityFacadeImpl implements IdentityFacade {
 

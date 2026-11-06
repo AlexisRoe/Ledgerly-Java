@@ -10,6 +10,7 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+/** Lets the person an invitation was sent to decline it. */
 @Service
 public class DeclineInvitation {
 
@@ -23,6 +24,7 @@ public class DeclineInvitation {
         this.clock = clock;
     }
 
+    /** @throws com.ledgerly.shared.error.NotFound if the invitation was not addressed to the caller */
     @Transactional
     public void execute(UUID invitationId, UserId caller) {
         var invitation = responses.load(invitationId, caller).invitation();

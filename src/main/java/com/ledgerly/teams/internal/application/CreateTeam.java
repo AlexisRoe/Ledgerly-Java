@@ -15,9 +15,11 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+/** Creates a team and makes the caller its first OWNER, in one transaction. */
 @Service
 public class CreateTeam {
 
+    /** The new team's id and name. */
     public record Result(UUID id, String name) {}
 
     private final TeamRepository teams;

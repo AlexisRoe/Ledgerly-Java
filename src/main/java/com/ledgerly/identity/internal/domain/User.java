@@ -9,6 +9,9 @@ import java.util.Locale;
 import java.util.UUID;
 import org.jspecify.annotations.Nullable;
 
+/**
+ * An account. Either has a password hash (own login) or an external subject (identity provider), see {@link #external}.
+ */
 @Entity
 @Table(name = "users")
 public class User {
@@ -33,6 +36,7 @@ public class User {
         this.createdAt = createdAt;
     }
 
+    /** A new unverified account with a password hash; the email is stored normalised. */
     public static User register(String email, String passwordHash, Instant now) {
         return new User(com.ledgerly.shared.id.UuidV7.generate(), normalise(email), passwordHash, now);
     }
@@ -58,14 +62,17 @@ public class User {
         this.externalSubject = subject;
     }
 
+    /** Records that the email address was confirmed. */
     public void markVerified() {
         verified = true;
     }
 
+    /** Ledgerly's own id, the one every other module refers to. */
     public UserId id() {
         return new UserId(id);
     }
 
+    /** The normalised email address. */
     public String email() {
         return email;
     }
@@ -75,10 +82,12 @@ public class User {
         return passwordHash;
     }
 
+    /** Whether the email address was confirmed (by us or by the identity provider). */
     public boolean verified() {
         return verified;
     }
 
+    /** The identity provider's id for this person; null for accounts with a local password. */
     public @Nullable String externalSubject() {
         return externalSubject;
     }
