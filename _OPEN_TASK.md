@@ -10,6 +10,8 @@ Make the hole application running in docker
 
 Create a MAKE file with all commands needed to run, stop, debug, lint, test the application
 
+**Status: DONE, verified.** `Makefile` (`make` lists targets): deps, run, debug (port 5005), image, up, down, reset, logs, ps, format, lint, test, verify, test-one, clean. Checked: `make help`, `make -n up`, and `make lint` (passes). The Java targets need JDK 25 from mise on the PATH.
+
 ## Task 3
 
 Add JSDOC like comments on methods, classes and variables to describe their intentional purpose or shape, ingoing and outgoing data. Do NOT describe JAVA internal methods.
