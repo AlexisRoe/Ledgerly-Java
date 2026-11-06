@@ -13,12 +13,18 @@ import org.springframework.boot.test.system.CapturedOutput;
 import org.springframework.boot.test.system.OutputCaptureExtension;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
+import org.springframework.test.context.TestPropertySource;
 
 /**
  * Runs the flows that handle secrets and personal data (log in, refresh, upload, import, invite) with the log output
  * captured, and checks that none of it was written down: no email, password, token, cookie, file name or file
  * content. The audit trail is where "who did what" lives; the log must not become a second copy of the data.
+ *
+ * <p>The property below gives this class its own application context. The console appender is bound to the output
+ * stream that exists when a context starts, so a context cached by an earlier test class would write to a stream the
+ * capture never sees, and the result would depend on the order the classes run in.
  */
+@TestPropertySource(properties = "ledgerly.test.own-context=log-hygiene")
 @ExtendWith(OutputCaptureExtension.class)
 class LogHygieneTest extends OwaspTestBase {
 
