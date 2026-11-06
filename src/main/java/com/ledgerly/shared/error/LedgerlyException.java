@@ -13,7 +13,8 @@ public abstract sealed class LedgerlyException extends RuntimeException
                 Unprocessable,
                 InvalidRequest,
                 PayloadTooLarge,
-                UnsupportedMedia {
+                UnsupportedMedia,
+                TooManyRequests {
 
     private final ErrorCatalogue error;
     private final List<FieldViolation> violations;

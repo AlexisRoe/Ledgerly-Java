@@ -3,6 +3,7 @@ package com.ledgerly.expenses.internal.domain;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import com.ledgerly.expenses.Category;
 import com.ledgerly.expenses.ReceiptSummary;
 import com.ledgerly.shared.id.TeamId;
 import com.ledgerly.shared.id.UserId;

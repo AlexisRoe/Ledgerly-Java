@@ -3,6 +3,7 @@ package com.ledgerly.receipts.internal.application;
 import com.ledgerly.expenses.events.ExpenseDeleted;
 import com.ledgerly.receipts.internal.domain.Receipt;
 import com.ledgerly.receipts.internal.infrastructure.ReceiptRepository;
+import com.ledgerly.shared.storage.ObjectStorage;
 import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,10 +23,10 @@ class ExpenseDeletedCleanup {
     private static final Logger log = LoggerFactory.getLogger(ExpenseDeletedCleanup.class);
 
     private final ReceiptRepository receipts;
-    private final ReceiptStorage storage;
+    private final ObjectStorage storage;
     private final TransactionTemplate newTx;
 
-    ExpenseDeletedCleanup(ReceiptRepository receipts, ReceiptStorage storage, PlatformTransactionManager txManager) {
+    ExpenseDeletedCleanup(ReceiptRepository receipts, ObjectStorage storage, PlatformTransactionManager txManager) {
         this.receipts = receipts;
         this.storage = storage;
         // The original transaction has already committed; database work in this callback needs a new one.

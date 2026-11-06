@@ -6,6 +6,7 @@ import com.ledgerly.shared.error.NotFound;
 import com.ledgerly.shared.id.ExpenseId;
 import com.ledgerly.shared.id.TeamId;
 import com.ledgerly.shared.id.UserId;
+import com.ledgerly.shared.storage.ObjectStorage;
 import java.net.URI;
 import java.time.Clock;
 import java.time.Duration;
@@ -24,10 +25,10 @@ public class DownloadReceipt {
 
     private final ExpensesFacade expenses;
     private final ReceiptRepository receipts;
-    private final ReceiptStorage storage;
+    private final ObjectStorage storage;
     private final Clock clock;
 
-    DownloadReceipt(ExpensesFacade expenses, ReceiptRepository receipts, ReceiptStorage storage, Clock clock) {
+    DownloadReceipt(ExpensesFacade expenses, ReceiptRepository receipts, ObjectStorage storage, Clock clock) {
         this.expenses = expenses;
         this.receipts = receipts;
         this.storage = storage;

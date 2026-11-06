@@ -1,6 +1,5 @@
-package com.ledgerly.receipts.internal.infrastructure;
+package com.ledgerly.shared.storage;
 
-import com.ledgerly.receipts.internal.application.ReceiptStorage;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import java.io.IOException;
@@ -32,15 +31,15 @@ import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignReques
 /** The object store adapter: any S3-compatible service (SeaweedFS locally). The bucket is private. */
 @Component
 @Profile("!test")
-class S3ReceiptStorage implements ReceiptStorage {
+public class S3ObjectStorage implements ObjectStorage {
 
-    private static final Logger log = LoggerFactory.getLogger(S3ReceiptStorage.class);
+    private static final Logger log = LoggerFactory.getLogger(S3ObjectStorage.class);
 
     private final String bucket;
     private final S3Client s3;
     private final S3Presigner presigner;
 
-    S3ReceiptStorage(ReceiptsProperties props) {
+    public S3ObjectStorage(StorageProperties props) {
         var s3Props = props.s3();
         this.bucket = s3Props.bucket();
         var credentials =
@@ -66,7 +65,7 @@ class S3ReceiptStorage implements ReceiptStorage {
     }
 
     @PostConstruct
-    void ensureBucket() {
+    public void ensureBucket() {
         try {
             s3.headBucket(HeadBucketRequest.builder().bucket(bucket).build());
         } catch (NoSuchBucketException e) {
@@ -80,7 +79,7 @@ class S3ReceiptStorage implements ReceiptStorage {
     }
 
     @PreDestroy
-    void close() {
+    public void close() {
         s3.close();
         presigner.close();
     }

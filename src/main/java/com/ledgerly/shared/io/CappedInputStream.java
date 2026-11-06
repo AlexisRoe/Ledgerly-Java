@@ -1,4 +1,4 @@
-package com.ledgerly.receipts.internal.application;
+package com.ledgerly.shared.io;
 
 import com.ledgerly.shared.error.PayloadTooLarge;
 import java.io.FilterInputStream;
@@ -6,12 +6,12 @@ import java.io.IOException;
 import java.io.InputStream;
 
 /** Fails with 413 as soon as more than {@code limit} bytes have been read, however large the client claims to send. */
-final class CappedInputStream extends FilterInputStream {
+public final class CappedInputStream extends FilterInputStream {
 
     private final long limit;
     private long read;
 
-    CappedInputStream(InputStream in, long limit) {
+    public CappedInputStream(InputStream in, long limit) {
         super(in);
         this.limit = limit;
     }

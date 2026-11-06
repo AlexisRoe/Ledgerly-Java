@@ -10,8 +10,8 @@ import com.ledgerly.TestUsers.TestUser;
 import com.ledgerly.TestcontainersConfiguration;
 import com.ledgerly.identity.internal.application.AccessTokenIssuer;
 import com.ledgerly.receipts.internal.application.FakeMalwareScanner;
-import com.ledgerly.receipts.internal.application.FileSystemReceiptStorage;
 import com.ledgerly.receipts.internal.application.ScanReceipt;
+import com.ledgerly.shared.storage.FileSystemObjectStorage;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
@@ -57,7 +57,7 @@ class ReceiptsApiTest {
     AccessTokenIssuer issuer;
 
     @Autowired
-    FileSystemReceiptStorage storage;
+    FileSystemObjectStorage storage;
 
     @Autowired
     FakeMalwareScanner scanner;

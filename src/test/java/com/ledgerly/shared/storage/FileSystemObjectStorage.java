@@ -1,4 +1,4 @@
-package com.ledgerly.receipts.internal.application;
+package com.ledgerly.shared.storage;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -18,14 +18,14 @@ import org.springframework.stereotype.Component;
 /** Test double for the object store: a temp directory, plus a record of the presigned links it handed out. */
 @Component
 @Profile("test")
-public class FileSystemReceiptStorage implements ReceiptStorage {
+public class FileSystemObjectStorage implements ObjectStorage {
 
     public record Presigned(String key, String downloadName, String contentType, Duration ttl, URI url) {}
 
     private final Path root;
     public final List<Presigned> presigned = new CopyOnWriteArrayList<>();
 
-    public FileSystemReceiptStorage() throws IOException {
+    public FileSystemObjectStorage() throws IOException {
         this.root = Files.createTempDirectory("receipt-store-");
     }
 

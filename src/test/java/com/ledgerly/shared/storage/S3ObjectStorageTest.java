@@ -1,4 +1,4 @@
-package com.ledgerly.receipts.internal.infrastructure;
+package com.ledgerly.shared.storage;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -20,10 +20,10 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 
 /** The real S3 adapter against a real S3-compatible store (SeaweedFS), the same one compose.yaml starts. */
 @Testcontainers
-class S3ReceiptStorageTest {
+class S3ObjectStorageTest {
 
     static GenericContainer<?> seaweed;
-    static S3ReceiptStorage storage;
+    static S3ObjectStorage storage;
 
     @BeforeAll
     static void start() {
@@ -32,15 +32,13 @@ class S3ReceiptStorageTest {
                 .withExposedPorts(8333)
                 .waitingFor(Wait.forListeningPort().withStartupTimeout(Duration.ofMinutes(2)));
         seaweed.start();
-        var props = new ReceiptsProperties(
-                new ReceiptsProperties.S3(
-                        "http://" + seaweed.getHost() + ":" + seaweed.getMappedPort(8333),
-                        "us-east-1",
-                        "test-receipts",
-                        "test",
-                        "test-secret"),
-                new ReceiptsProperties.ClamAv("localhost", 3310, Duration.ofSeconds(1), Duration.ofSeconds(1)));
-        storage = new S3ReceiptStorage(props);
+        var props = new StorageProperties(new StorageProperties.S3(
+                "http://" + seaweed.getHost() + ":" + seaweed.getMappedPort(8333),
+                "us-east-1",
+                "test-receipts",
+                "test",
+                "test-secret"));
+        storage = new S3ObjectStorage(props);
         // The store needs a moment after it starts listening before it accepts bucket calls.
         await().atMost(Duration.ofSeconds(60)).ignoreExceptions().until(() -> {
             storage.ensureBucket();

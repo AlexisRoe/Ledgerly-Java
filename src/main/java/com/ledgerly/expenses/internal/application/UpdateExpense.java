@@ -1,7 +1,7 @@
 package com.ledgerly.expenses.internal.application;
 
+import com.ledgerly.expenses.Category;
 import com.ledgerly.expenses.internal.domain.Actor;
-import com.ledgerly.expenses.internal.domain.Category;
 import com.ledgerly.expenses.internal.domain.Expense;
 import com.ledgerly.shared.error.PreconditionFailed;
 import com.ledgerly.shared.id.ExpenseId;

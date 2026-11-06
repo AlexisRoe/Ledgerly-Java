@@ -1,9 +1,7 @@
 package com.ledgerly.expenses.internal.application;
 
-import static com.ledgerly.expenses.internal.infrastructure.ExpenseSpecifications.*;
-
+import com.ledgerly.expenses.Category;
 import com.ledgerly.expenses.internal.domain.Actor;
-import com.ledgerly.expenses.internal.domain.Category;
 import com.ledgerly.expenses.internal.domain.Expense;
 import com.ledgerly.expenses.internal.domain.ExpenseStatus;
 import com.ledgerly.expenses.internal.infrastructure.ExpenseRepository;
@@ -11,7 +9,6 @@ import com.ledgerly.shared.config.LedgerlyLimits;
 import com.ledgerly.shared.error.InvalidRequest;
 import com.ledgerly.shared.id.TeamId;
 import com.ledgerly.shared.id.UserId;
-import com.ledgerly.shared.role.Role;
 import java.time.LocalDate;
 import java.util.Currency;
 import java.util.List;
@@ -83,23 +80,13 @@ public class ListExpenses {
         if (q.size() < 1 || q.size() > limits.maxPageSize()) {
             throw new InvalidRequest("size", "size must be between 1 and " + limits.maxPageSize());
         }
-        if (q.incurredFrom() != null
-                && q.incurredTo() != null
-                && q.incurredFrom().isAfter(q.incurredTo())) {
-            throw new InvalidRequest("incurredFrom", "incurredFrom must not be after incurredTo");
-        }
-        Currency currency = parseCurrency(q.currency());
+        Currency currency = ExpenseFilters.currencyOf(q.currency());
         Sort sort = parseSort(q.sort(), currency != null);
-
-        Specification<Expense> spec = inTeam(q.teamId());
-        // A MEMBER only ever sees their own expenses, whatever filter they send.
-        UserId claimant = actor.role().includes(Role.APPROVER) ? q.claimantId() : actor.id();
-        if (claimant != null) spec = spec.and(claimedBy(claimant));
-        if (q.status() != null) spec = spec.and(hasStatus(q.status()));
-        if (q.category() != null) spec = spec.and(hasCategory(q.category()));
-        if (currency != null) spec = spec.and(inCurrency(currency));
-        if (q.incurredFrom() != null) spec = spec.and(incurredFrom(q.incurredFrom()));
-        if (q.incurredTo() != null) spec = spec.and(incurredTo(q.incurredTo()));
+        Specification<Expense> spec = ExpenseFilters.build(
+                actor,
+                q.teamId(),
+                new ExpenseFilters.Filter(
+                        q.status(), q.category(), q.claimantId(), q.currency(), q.incurredFrom(), q.incurredTo()));
 
         var page = expenses.findAll(spec, PageRequest.of(q.page(), q.size(), sort));
         return new PageResult(
@@ -108,17 +95,6 @@ public class ListExpenses {
                 page.getSize(),
                 page.getTotalElements(),
                 page.getTotalPages());
-    }
-
-    private static @Nullable Currency parseCurrency(@Nullable String code) {
-        if (code == null) {
-            return null;
-        }
-        try {
-            return Currency.getInstance(code);
-        } catch (IllegalArgumentException e) {
-            throw new InvalidRequest("currency", "Unknown currency code");
-        }
     }
 
     private static Sort parseSort(String raw, boolean hasCurrencyFilter) {

@@ -7,6 +7,7 @@ import com.ledgerly.shared.error.NotFound;
 import com.ledgerly.shared.id.ExpenseId;
 import com.ledgerly.shared.id.TeamId;
 import com.ledgerly.shared.id.UserId;
+import com.ledgerly.shared.storage.ObjectStorage;
 import java.time.Clock;
 import java.util.UUID;
 import org.slf4j.Logger;
@@ -22,7 +23,7 @@ public class DeleteReceipt {
 
     private final ExpensesFacade expenses;
     private final ReceiptRepository receipts;
-    private final ReceiptStorage storage;
+    private final ObjectStorage storage;
     private final ApplicationEventPublisher events;
     private final TransactionTemplate tx;
     private final Clock clock;
@@ -30,7 +31,7 @@ public class DeleteReceipt {
     DeleteReceipt(
             ExpensesFacade expenses,
             ReceiptRepository receipts,
-            ReceiptStorage storage,
+            ObjectStorage storage,
             ApplicationEventPublisher events,
             TransactionTemplate tx,
             Clock clock) {

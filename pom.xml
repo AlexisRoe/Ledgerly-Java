@@ -128,6 +128,10 @@
     </dependency>
     <dependency>
       <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-batch-jdbc</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-opentelemetry</artifactId>
     </dependency>
     <dependency>
@@ -187,41 +191,26 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
-        <executions>
-          <!--
-            Null-safety check, kept apart from the real compilation: Error Prone with NullAway compiles the main
-            sources a second time into a throwaway directory. A violation fails the build, but the classes the
-            application runs with always come from the plain compile above. (When Error Prone shared the real
-            compile, class files with unresolved type names turned up now and then.)
-          -->
-          <execution>
-            <id>nullaway</id>
-            <phase>process-classes</phase>
-            <goals>
-              <goal>compile</goal>
-            </goals>
-            <configuration>
-              <outputDirectory>${project.build.directory}/nullaway-classes</outputDirectory>
-              <compilerArgs>
-                <arg>-XDcompilePolicy=simple</arg>
-                <arg>--should-stop=ifError=FLOW</arg>
-                <arg>-Xplugin:ErrorProne -XepDisableAllChecks -Xep:NullAway:ERROR -XepOpt:NullAway:OnlyNullMarked=true -XepOpt:NullAway:JSpecifyMode=true -XepExcludedPaths:.*/generated-sources/.*</arg>
-              </compilerArgs>
-              <annotationProcessorPaths>
-                <path>
-                  <groupId>com.google.errorprone</groupId>
-                  <artifactId>error_prone_core</artifactId>
-                  <version>${errorprone.version}</version>
-                </path>
-                <path>
-                  <groupId>com.uber.nullaway</groupId>
-                  <artifactId>nullaway</artifactId>
-                  <version>${nullaway.version}</version>
-                </path>
-              </annotationProcessorPaths>
-            </configuration>
-          </execution>
-        </executions>
+        <configuration>
+          <compilerArgs>
+            <arg>-XDcompilePolicy=simple</arg>
+            <arg>--should-stop=ifError=FLOW</arg>
+            <!-- NullAway on main sources only. The add-exports flags Error Prone needs live in .mvn/jvm.config. -->
+            <arg>-Xplugin:ErrorProne -XepDisableAllChecks -Xep:NullAway:ERROR -XepOpt:NullAway:OnlyNullMarked=true -XepOpt:NullAway:JSpecifyMode=true -XepExcludedPaths:.*/(src/test/java|generated-sources)/.*</arg>
+          </compilerArgs>
+          <annotationProcessorPaths>
+            <path>
+              <groupId>com.google.errorprone</groupId>
+              <artifactId>error_prone_core</artifactId>
+              <version>${errorprone.version}</version>
+            </path>
+            <path>
+              <groupId>com.uber.nullaway</groupId>
+              <artifactId>nullaway</artifactId>
+              <version>${nullaway.version}</version>
+            </path>
+          </annotationProcessorPaths>
+        </configuration>
       </plugin>
       <plugin>
         <groupId>org.openapitools</groupId>

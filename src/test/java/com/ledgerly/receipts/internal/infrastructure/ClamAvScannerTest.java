@@ -47,7 +47,6 @@ class ClamAvScannerTest {
 
     private static ClamAvScanner scannerFor(int port) {
         var props = new ReceiptsProperties(
-                new ReceiptsProperties.S3("http://x", "r", "b", "a", "s"),
                 new ReceiptsProperties.ClamAv("localhost", port, Duration.ofSeconds(2), Duration.ofSeconds(5)));
         return new ClamAvScanner(props);
     }

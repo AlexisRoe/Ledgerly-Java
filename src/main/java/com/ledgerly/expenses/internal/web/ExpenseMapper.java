@@ -1,13 +1,21 @@
 package com.ledgerly.expenses.internal.web;
 
+import com.ledgerly.expenses.Category;
+import com.ledgerly.expenses.NewExpense;
+import com.ledgerly.expenses.internal.application.BatchCreateExpenses;
 import com.ledgerly.expenses.internal.application.ExpenseView;
 import com.ledgerly.expenses.internal.application.ListExpenses;
-import com.ledgerly.expenses.internal.domain.Category;
+import com.ledgerly.shared.api.model.BatchExpenseItem;
+import com.ledgerly.shared.api.model.BatchItemResult;
+import com.ledgerly.shared.api.model.BatchItemStatus;
+import com.ledgerly.shared.api.model.BatchResponse;
 import com.ledgerly.shared.api.model.ExpenseResponse;
+import com.ledgerly.shared.api.model.ItemProblem;
 import com.ledgerly.shared.error.InvalidRequest;
 import com.ledgerly.shared.money.Money;
 import java.math.BigDecimal;
 import java.util.Currency;
+import java.util.List;
 
 /** DTO ↔ domain translation. Entities never reach this class; only views do. */
 final class ExpenseMapper {
@@ -50,6 +58,39 @@ final class ExpenseMapper {
                 result.size(), result.page(), result.totalElements(), result.totalPages());
         return new com.ledgerly.shared.api.model.ExpensePage(
                 result.items().stream().map(ExpenseMapper::toResponse).toList(), meta);
+    }
+
+    /** One batch item: parsed as far as possible, with parse failures kept as that item's problem. */
+    static BatchCreateExpenses.Candidate toCandidate(BatchExpenseItem item) {
+        Money money;
+        try {
+            money = new Money(
+                    new BigDecimal(item.getMoney().getAmount()),
+                    Currency.getInstance(item.getMoney().getCurrency()));
+        } catch (IllegalArgumentException e) {
+            return new BatchCreateExpenses.Candidate.Unparseable("money", safeMessage(e));
+        }
+        return new BatchCreateExpenses.Candidate.Ready(new NewExpense(
+                money, toDomain(item.getCategory()), item.getIncurredOn(), item.getMerchant(), item.getNote()));
+    }
+
+    static BatchResponse toBatchResponse(BatchCreateExpenses.Result result) {
+        List<BatchItemResult> items = result.results().stream()
+                .map(r -> {
+                    var out = new BatchItemResult(
+                            r.index(), r.id() != null ? BatchItemStatus.CREATED : BatchItemStatus.REJECTED);
+                    if (r.id() != null) {
+                        out.id(r.id());
+                    }
+                    if (r.problem() != null) {
+                        out.problem(
+                                new ItemProblem(r.problem().code(), r.problem().message())
+                                        .field(r.problem().field()));
+                    }
+                    return out;
+                })
+                .toList();
+        return new BatchResponse((int) result.created(), (int) result.rejected(), items);
     }
 
     private static String safeMessage(IllegalArgumentException e) {

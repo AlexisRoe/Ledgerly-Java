@@ -26,6 +26,8 @@ public enum ErrorCatalogue {
     PAYLOAD_TOO_LARGE("payload-too-large", "Request body too large", HttpStatus.CONTENT_TOO_LARGE),
     UNSUPPORTED_MEDIA_TYPE("unsupported-media-type", "Unsupported file type", HttpStatus.UNSUPPORTED_MEDIA_TYPE),
     RECEIPT_DUPLICATE("receipt-duplicate", "This file is already attached to the expense", HttpStatus.CONFLICT),
+    RATE_LIMITED("rate-limited", "Too many requests", HttpStatus.TOO_MANY_REQUESTS),
+    BATCH_REJECTED("batch-rejected", "The batch was rejected as a whole", HttpStatus.UNPROCESSABLE_CONTENT),
     INTERNAL_ERROR("internal-error", "Unexpected error", HttpStatus.INTERNAL_SERVER_ERROR),
     REQUEST_REJECTED("request-rejected", "Request rejected", HttpStatus.BAD_REQUEST);
 

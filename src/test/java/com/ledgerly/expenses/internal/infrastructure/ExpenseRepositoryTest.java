@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.ledgerly.TestcontainersConfiguration;
+import com.ledgerly.expenses.Category;
 import com.ledgerly.expenses.ReceiptSummary;
 import com.ledgerly.expenses.internal.application.GetExpense;
 import com.ledgerly.expenses.internal.domain.*;

@@ -12,6 +12,8 @@ import com.ledgerly.shared.error.UnsupportedMedia;
 import com.ledgerly.shared.id.ExpenseId;
 import com.ledgerly.shared.id.TeamId;
 import com.ledgerly.shared.id.UserId;
+import com.ledgerly.shared.io.CappedInputStream;
+import com.ledgerly.shared.storage.ObjectStorage;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
@@ -48,7 +50,7 @@ public class UploadReceipt {
 
     private final ExpensesFacade expenses;
     private final ReceiptRepository receipts;
-    private final ReceiptStorage storage;
+    private final ObjectStorage storage;
     private final ApplicationEventPublisher events;
     private final TransactionTemplate tx;
     private final LedgerlyLimits limits;
@@ -57,7 +59,7 @@ public class UploadReceipt {
     UploadReceipt(
             ExpensesFacade expenses,
             ReceiptRepository receipts,
-            ReceiptStorage storage,
+            ObjectStorage storage,
             ApplicationEventPublisher events,
             TransactionTemplate tx,
             LedgerlyLimits limits,

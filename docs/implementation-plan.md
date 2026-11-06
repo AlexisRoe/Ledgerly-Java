@@ -35,6 +35,7 @@ audit ──► events packages of identity, teams, expenses, receipts, imports
 ```
 
 - An arrow means "may call the facade of" or "may listen to the events of".
+- Imports also calls the teams facade (to know the caller's role: OWNERs may see every import of the team). That is one more arrow pointing downward, so still no cycle.
 - Nothing points back up, so there are no cycles. The Modulith test from D6 enforces this.
 - Each module's `events` package is a public named interface (`@NamedInterface`). Audit depends on events only, never on facades.
 

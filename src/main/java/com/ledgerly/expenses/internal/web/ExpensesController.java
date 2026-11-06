@@ -1,14 +1,18 @@
 package com.ledgerly.expenses.internal.web;
 
+import com.ledgerly.expenses.internal.application.BatchCreateExpenses;
 import com.ledgerly.expenses.internal.application.CreateExpense;
 import com.ledgerly.expenses.internal.application.DeleteExpense;
 import com.ledgerly.expenses.internal.application.ExpenseView;
+import com.ledgerly.expenses.internal.application.ExportExpenses;
 import com.ledgerly.expenses.internal.application.GetExpense;
 import com.ledgerly.expenses.internal.application.ListExpenses;
 import com.ledgerly.expenses.internal.application.TransitionExpense;
 import com.ledgerly.expenses.internal.application.UpdateExpense;
 import com.ledgerly.expenses.internal.domain.Action;
 import com.ledgerly.shared.api.ExpensesApi;
+import com.ledgerly.shared.api.model.BatchRequest;
+import com.ledgerly.shared.api.model.BatchResponse;
 import com.ledgerly.shared.api.model.Category;
 import com.ledgerly.shared.api.model.CreateExpenseRequest;
 import com.ledgerly.shared.api.model.ExpensePage;
@@ -25,6 +29,10 @@ import java.net.URI;
 import java.time.LocalDate;
 import java.util.UUID;
 import org.jspecify.annotations.Nullable;
+import org.springframework.core.io.InputStreamResource;
+import org.springframework.core.io.Resource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -40,6 +48,8 @@ class ExpensesController implements ExpensesApi {
     private final DeleteExpense delete;
     private final TransitionExpense transition;
     private final ListExpenses list;
+    private final BatchCreateExpenses batch;
+    private final ExportExpenses export;
 
     ExpensesController(
             CurrentUser currentUser,
@@ -48,7 +58,9 @@ class ExpensesController implements ExpensesApi {
             UpdateExpense update,
             DeleteExpense delete,
             TransitionExpense transition,
-            ListExpenses list) {
+            ListExpenses list,
+            BatchCreateExpenses batch,
+            ExportExpenses export) {
         this.currentUser = currentUser;
         this.create = create;
         this.get = get;
@@ -56,6 +68,8 @@ class ExpensesController implements ExpensesApi {
         this.delete = delete;
         this.transition = transition;
         this.list = list;
+        this.batch = batch;
+        this.export = export;
     }
 
     @Override
@@ -101,6 +115,41 @@ class ExpensesController implements ExpensesApi {
                 incurredFrom,
                 incurredTo);
         return ResponseEntity.ok(ExpenseMapper.toPage(list.execute(query)));
+    }
+
+    @Override
+    public ResponseEntity<BatchResponse> batchCreateExpenses(UUID teamId, BatchRequest request, Boolean atomic) {
+        var candidates =
+                request.getItems().stream().map(ExpenseMapper::toCandidate).toList();
+        var result = batch.execute(new TeamId(teamId), currentUser.id(), candidates, Boolean.TRUE.equals(atomic));
+        return ResponseEntity.ok(ExpenseMapper.toBatchResponse(result));
+    }
+
+    @Override
+    public ResponseEntity<Resource> exportExpenses(
+            UUID teamId,
+            @Nullable ExpenseStatus status,
+            @Nullable Category category,
+            @Nullable UUID claimantId,
+            @Nullable String currency,
+            @Nullable LocalDate incurredFrom,
+            @Nullable LocalDate incurredTo) {
+        var result = export.execute(new ExportExpenses.Query(
+                new TeamId(teamId),
+                currentUser.id(),
+                status == null ? null : com.ledgerly.expenses.internal.domain.ExpenseStatus.valueOf(status.name()),
+                category == null ? null : ExpenseMapper.toDomain(category),
+                claimantId == null ? null : new UserId(claimantId),
+                currency,
+                incurredFrom,
+                incurredTo));
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType("text/csv;charset=UTF-8"))
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"expenses.csv\"")
+                .header("X-Total-Count", String.valueOf(result.total()))
+                .header("X-Truncated", String.valueOf(result.truncated()))
+                .header(HttpHeaders.CACHE_CONTROL, "no-store")
+                .body(new InputStreamResource(new LazyCsvInputStream(result.nextPage())));
     }
 
     @Override

@@ -1,4 +1,4 @@
-package com.ledgerly.receipts.internal.application;
+package com.ledgerly.shared.io;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;

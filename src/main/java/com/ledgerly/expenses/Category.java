@@ -1,4 +1,4 @@
-package com.ledgerly.expenses.internal.domain;
+package com.ledgerly.expenses;
 
 public enum Category {
     TRAVEL,

@@ -6,6 +6,7 @@ import com.ledgerly.receipts.internal.domain.ScanStatus;
 import com.ledgerly.receipts.internal.infrastructure.ReceiptRepository;
 import com.ledgerly.shared.id.ExpenseId;
 import com.ledgerly.shared.id.TeamId;
+import com.ledgerly.shared.storage.ObjectStorage;
 import java.io.InputStream;
 import java.time.Clock;
 import java.util.Optional;
@@ -30,7 +31,7 @@ public class ScanReceipt {
     private static final Logger log = LoggerFactory.getLogger(ScanReceipt.class);
 
     private final ReceiptRepository receipts;
-    private final ReceiptStorage storage;
+    private final ObjectStorage storage;
     private final MalwareScanner scanner;
     private final ApplicationEventPublisher events;
     private final TransactionTemplate tx;
@@ -38,7 +39,7 @@ public class ScanReceipt {
 
     ScanReceipt(
             ReceiptRepository receipts,
-            ReceiptStorage storage,
+            ObjectStorage storage,
             MalwareScanner scanner,
             ApplicationEventPublisher events,
             TransactionTemplate tx,

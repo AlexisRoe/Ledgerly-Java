@@ -1,6 +1,6 @@
 package com.ledgerly.expenses.internal.infrastructure;
 
-import com.ledgerly.expenses.internal.domain.Category;
+import com.ledgerly.expenses.Category;
 import com.ledgerly.expenses.internal.domain.Expense;
 import com.ledgerly.expenses.internal.domain.ExpenseStatus;
 import com.ledgerly.shared.id.TeamId;

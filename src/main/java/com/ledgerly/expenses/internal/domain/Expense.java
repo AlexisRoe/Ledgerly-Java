@@ -1,5 +1,6 @@
 package com.ledgerly.expenses.internal.domain;
 
+import com.ledgerly.expenses.Category;
 import com.ledgerly.expenses.ReceiptSummary;
 import com.ledgerly.shared.id.ExpenseId;
 import com.ledgerly.shared.id.TeamId;
@@ -106,6 +107,19 @@ public class Expense {
         validDate(incurredOn, clock);
         return new Expense(
                 ExpenseId.random(), teamId, claimantId, money, category, incurredOn, cleanMerchant, cleanNote);
+    }
+
+    /**
+     * Runs the field rules of a new expense (merchant required and capped, note capped, date not in the future)
+     * without creating anything, so batch and import can check a row before they write it.
+     *
+     * @throws InvalidInput naming the first field that breaks a rule
+     */
+    public static void checkFields(
+            LocalDate incurredOn, @Nullable String merchant, @Nullable String note, Clock clock) {
+        validMerchant(merchant);
+        validNote(note);
+        validDate(incurredOn, clock);
     }
 
     // --- transitions -----------------------------------------------------------------------

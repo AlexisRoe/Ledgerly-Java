@@ -1,4 +1,4 @@
-package com.ledgerly.receipts.internal.application;
+package com.ledgerly.shared.storage;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -6,8 +6,11 @@ import java.net.URI;
 import java.nio.file.Path;
 import java.time.Duration;
 
-/** Port: where receipt files live. The adapter talks to an S3-compatible store; tests use a directory. */
-public interface ReceiptStorage {
+/**
+ * Port: where uploaded files live (receipts under {@code receipts/}, imports under {@code imports/}). The adapter
+ * talks to an S3-compatible store; tests use a directory.
+ */
+public interface ObjectStorage {
 
     void put(String key, Path file, String contentType) throws IOException;
 

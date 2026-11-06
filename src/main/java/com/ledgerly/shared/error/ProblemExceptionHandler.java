@@ -39,7 +39,15 @@ public class ProblemExceptionHandler extends ResponseEntityExceptionHandler {
 
     @ExceptionHandler(LedgerlyException.class)
     ResponseEntity<Object> ledgerly(LedgerlyException e, WebRequest request) {
-        return respond(problems.create(e));
+        ProblemDetail problem = problems.create(e);
+        if (e instanceof TooManyRequests limited) {
+            return ResponseEntity.status(problem.getStatus())
+                    .header(
+                            HttpHeaders.RETRY_AFTER,
+                            String.valueOf(Math.max(1, limited.retryAfter().toSeconds())))
+                    .body(problem);
+        }
+        return respond(problem);
     }
 
     @ExceptionHandler({ObjectOptimisticLockingFailureException.class, jakarta.persistence.OptimisticLockException.class
@@ -89,6 +97,12 @@ public class ProblemExceptionHandler extends ResponseEntityExceptionHandler {
     @Override
     protected ResponseEntity<Object> handleHttpMessageNotReadable(
             HttpMessageNotReadableException ex, HttpHeaders headers, HttpStatusCode status, WebRequest request) {
+        // A body that grew past the cap while being read (chunked uploads have no Content-Length to check).
+        for (Throwable cause = ex; cause != null; cause = cause.getCause()) {
+            if (cause instanceof PayloadTooLarge tooLarge) {
+                return respond(problems.create(tooLarge));
+            }
+        }
         return respond(problems.create(
                 ErrorCatalogue.MALFORMED_REQUEST,
                 "The request body is missing, malformed or contains unknown fields",

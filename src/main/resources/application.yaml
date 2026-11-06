@@ -9,6 +9,13 @@ spring:
       # The app also counts bytes itself (ledgerly.limits.max-upload-size); these cap the request at the door.
       max-file-size: 10MB
       max-request-size: 11MB
+  batch:
+    job:
+      # Jobs are started by the application (an import upload), never at start-up.
+      enabled: false
+    jdbc:
+      # Flyway creates the Batch tables (V6__imports.sql).
+      initialize-schema: never
   jpa:
     open-in-view: false
     hibernate:
