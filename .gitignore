@@ -28,3 +28,15 @@ target/
 
 # Local secrets
 .env
+
+# More local secrets: keys, certificates, keystores, any .env variant except the template
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+*.keystore
+prod.env
+secrets/

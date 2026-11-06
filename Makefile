@@ -2,6 +2,8 @@
 # Needs JDK 25 from mise (see mise.toml): run in a shell with mise activated, or prefix: mise exec -- make test
 .DEFAULT_GOAL := help
 MVN := ./mvnw
+# No install scripts from npm packages (a common way for a poisoned package to run code on your machine).
+export NPM_CONFIG_IGNORE_SCRIPTS := true
 IMAGE := ledgerly:0.0.1-SNAPSHOT
 
 .PHONY: help
@@ -50,20 +52,20 @@ ps: ## Show the running containers
 
 .PHONY: api-test
 api-test: ## Run the Bruno collection in bruno/ against the running app (make up first; needs Node)
-	cd bruno && npx --yes @usebruno/cli@latest run --env local -r
+	cd bruno && npx --yes @usebruno/cli@4.3.0 run --env local -r
 
 # --- quality ------------------------------------------------------------------------------------------------------
 
 .PHONY: format
 format: ## Format Java (Spotless) and config files (Prettier)
 	$(MVN) -q spotless:apply
-	npx --yes prettier@3 --write "**/*.{yml,yaml,json}"
+	npx --yes prettier@3.9.10 --write "**/*.{yml,yaml,json}"
 
 .PHONY: lint
 lint: ## Check formatting (Java: Spotless, config files: Prettier), lint the OpenAPI file
 	$(MVN) -q spotless:check
-	npx --yes prettier@3 --check "**/*.{yml,yaml,json}"
-	npx --yes @redocly/cli@latest lint api/openapi.yaml
+	npx --yes prettier@3.9.10 --check "**/*.{yml,yaml,json}"
+	npx --yes @redocly/cli@2.76.0 lint api/openapi.yaml
 
 .PHONY: test
 test: ## Run all tests (needs Docker for Testcontainers)

@@ -233,6 +233,41 @@
     </resources>
     <plugins>
       <plugin>
+        <!-- Supply chain: the build refuses to run on a wrong toolchain and refuses unreleased or duplicated dependencies. -->
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-enforcer-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>enforce-supply-chain-rules</id>
+            <goals>
+              <goal>enforce</goal>
+            </goals>
+            <configuration>
+              <rules>
+                <requireMavenVersion>
+                  <version>[3.9.11,)</version>
+                </requireMavenVersion>
+                <requireJavaVersion>
+                  <version>[25,)</version>
+                </requireJavaVersion>
+                <banDuplicatePomDependencyVersions/>
+                <requireReleaseDeps>
+                  <message>A -SNAPSHOT dependency can change under you: use a released version.</message>
+                </requireReleaseDeps>
+                <bannedRepositories>
+                  <bannedRepositories>
+                    <bannedRepository>http://*</bannedRepository>
+                  </bannedRepositories>
+                  <bannedPluginRepositories>
+                    <bannedPluginRepository>http://*</bannedPluginRepository>
+                  </bannedPluginRepositories>
+                </bannedRepositories>
+              </rules>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
         <configuration>

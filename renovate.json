@@ -1,12 +1,22 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": ["config:recommended"],
+  "extends": ["config:recommended", "helpers:pinGitHubActionDigests", "docker:pinDigests"],
   "schedule": ["before 6am on monday"],
   "timezone": "Europe/Berlin",
   "labels": ["dependencies"],
   "dependencyDashboard": true,
   "prConcurrentLimit": 5,
   "packageRules": [
+    {
+      "description": "Do not take a version published in the last 3 days: most poisoned releases are found and pulled within hours",
+      "matchPackageNames": ["*"],
+      "minimumReleaseAge": "3 days"
+    },
+    {
+      "description": "The Maven wrapper (with its distribution checksum) and the npm tools pinned in Makefile, ci.yml and pre-commit move as one",
+      "matchManagers": ["maven-wrapper", "npm"],
+      "groupName": "build tooling"
+    },
     {
       "description": "Spring Boot and the libraries whose versions it manages move together",
       "matchPackageNames": ["org.springframework.boot:spring-boot-starter-parent"],
@@ -20,7 +30,10 @@
     {
       "description": "Security fixes are not held back by the weekly schedule",
       "matchCategories": ["java"],
-      "vulnerabilityAlerts": { "schedule": ["at any time"], "labels": ["security"] }
+      "vulnerabilityAlerts": {
+        "schedule": ["at any time"],
+        "labels": ["security"]
+      }
     },
     {
       "description": "Test and tooling containers (compose and Testcontainers images)",
@@ -33,5 +46,9 @@
       "dependencyDashboardApproval": true
     }
   ],
-  "vulnerabilityAlerts": { "enabled": true }
+  "vulnerabilityAlerts": {
+    "enabled": true,
+    "minimumReleaseAge": null
+  },
+  "minimumReleaseAge": "3 days"
 }

@@ -56,3 +56,11 @@ If not already existing, does a /docs endpoint exists for the OpenApiSpecs?
 ## Task 9
 
 Its about hardening the local setup of supply-chain-attacks, secrets and such
+
+**Status: DONE, mostly verified; two open points below.** Details and how each item was checked: `docs/local-hardening.md`.
+- Found and fixed: Postgres, the object store, ClamAV, Keycloak and Grafana were published on all network interfaces with development passwords. Now `127.0.0.1` only (verified from the LAN address: refused). Images pinned by digest. App container read-only, no capabilities, no-new-privileges (Bruno 47/47 against it).
+- Supply chain: Maven distribution checksum (good sum installs, wrong sum refused), `--strict-checksums`, Maven Enforcer rules (a SNAPSHOT dependency fails the build), npm tools pinned to exact versions and run without install scripts, GitHub Actions pinned to commit SHAs, Renovate waits 3 days and pins digests.
+- Secrets: broader `.gitignore`, `.gitleaks.toml` and a fingerprint-based `.gitleaksignore`. Scanned all 27 commits and the working tree with gitleaks 8.28: no real secret, 6 false positives (fake test values). A generated token in test code is still caught.
+- **Open point 1:** `trivy-action` is pinned to `v0.28.0` (`915b19b…`), but that action has had re-published tags and an advisory in 2026; I could not verify the commit is clean. The old `@0.28.0` reference did not exist as a tag, so that CI step could not have resolved. Please check it before the first CI run.
+- **Open point 2:** GitHub Actions and the new CI settings could not run here; the first pull request will show them.
+
