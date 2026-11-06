@@ -1,0 +1,15 @@
+# Known false positives (fake passwords and idempotency keys in tests, an empty template line).
+# Each entry is commit:file:rule:line, so only these exact findings are ignored.
+4b6209ba93abfd2e19d267fe3ff671183683c973:src/test/java/com/ledgerly/expenses/internal/web/ExpensesApiTest.java:generic-api-key:400
+4b6209ba93abfd2e19d267fe3ff671183683c973:src/test/java/com/ledgerly/expenses/internal/web/ExpensesApiTest.java:generic-api-key:402
+712a3b57abb1fd569c7d15097345efe047b3c560:src/test/java/com/ledgerly/owasp/Api2BrokenAuthenticationTest.java:generic-api-key:19
+712a3b57abb1fd569c7d15097345efe047b3c560:src/test/java/com/ledgerly/owasp/LogHygieneTest.java:generic-api-key:25
+94ca718ec9d305170085a3e263bd6028c0568ed3:.env.example:generic-api-key:18
+a5e89ca7390fa3abf37bd16ac8361b8072e98e9f:src/test/java/com/ledgerly/identity/internal/web/AuthApiTest.java:generic-api-key:46
+# The same lines in the current files (working-tree and pre-commit scans have no commit). If a line moves, the
+# finding comes back: check it is still the fake value, then update the number.
+src/test/java/com/ledgerly/expenses/internal/web/ExpensesApiTest.java:generic-api-key:416
+src/test/java/com/ledgerly/expenses/internal/web/ExpensesApiTest.java:generic-api-key:418
+src/test/java/com/ledgerly/identity/internal/web/AuthApiTest.java:generic-api-key:46
+src/test/java/com/ledgerly/owasp/Api2BrokenAuthenticationTest.java:generic-api-key:19
+src/test/java/com/ledgerly/owasp/LogHygieneTest.java:generic-api-key:25

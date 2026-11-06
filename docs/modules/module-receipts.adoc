@@ -1,0 +1,13 @@
+[%autowidth.stretch, cols="h,a"]
+|===
+|Base package
+|`com.ledgerly.receipts`
+|Bean references
+|* `c.l.e.ExpensesFacade` (in Expenses)
+* `c.l.s.storage.ObjectStorage` (in Shared)
+* `c.l.s.config.LedgerlyLimits` (in Shared)
+* `c.l.s.security.CurrentUser` (in Shared)
+|Events listened to
+|* `c.l.e.events.ExpenseEvent.Deleted` (async) 
+
+|===

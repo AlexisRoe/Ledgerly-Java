@@ -1,0 +1,11 @@
+[%autowidth.stretch, cols="h,a"]
+|===
+|Base package
+|`com.ledgerly.imports`
+|Bean references
+|* `c.l.t.TeamsFacade` (in Teams)
+* `c.l.e.ExpensesFacade` (in Expenses)
+* `c.l.s.storage.ObjectStorage` (in Shared)
+* `c.l.s.config.LedgerlyLimits` (in Shared)
+* `c.l.s.security.CurrentUser` (in Shared)
+|===

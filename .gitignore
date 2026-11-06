@@ -22,3 +22,21 @@
 # virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
 hs_err_pid*
 replay_pid*
+
+# Build
+target/
+
+# Local secrets
+.env
+
+# More local secrets: keys, certificates, keystores, any .env variant except the template
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+*.keystore
+prod.env
+secrets/

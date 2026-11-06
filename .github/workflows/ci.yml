@@ -1,0 +1,73 @@
+name: CI
+
+# Every pull request into main runs all of this; the same jobs run again on the merge commit that lands on main.
+# Make them required: Settings > Branches > main > "Require status checks to pass" (verify, openapi-lint,
+# format-config, gitleaks, image), and require a pull request, so nothing reaches main unchecked.
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# A new push to the same pull request replaces the run that is still going.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+# Third-party actions are pinned to a commit, not a tag: a tag can be moved to different code after the fact.
+# Renovate proposes new commits (see renovate.json). Read-only token; npm install scripts are off for tools run here.
+permissions:
+  contents: read
+
+env:
+  NPM_CONFIG_IGNORE_SCRIPTS: "true"
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4
+        with:
+          distribution: temurin
+          java-version: "25"
+          cache: maven
+      # Unit and integration tests (Testcontainers needs Docker, which the runner has), Spotless, NullAway.
+      - run: ./mvnw -B verify
+      # The reports of a failed run, to read what failed without re-running it.
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: failure()
+        with:
+          name: surefire-reports
+          path: target/surefire-reports/
+          retention-days: 7
+
+  openapi-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - run: npx --yes @redocly/cli@2.76.0 lint api/openapi.yaml
+
+  # Prettier for the configuration files (YAML, JSON). Java is formatted by Spotless inside `verify`.
+  format-config:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - run: npx --yes prettier@3.9.10 --check "**/*.{yml,yaml,json}"
+
+  gitleaks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: gitleaks/gitleaks-action@ff98106e4c7b2bc287b24eaf42907196329070c7 # v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

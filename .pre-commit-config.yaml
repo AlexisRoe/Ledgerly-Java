@@ -1,0 +1,24 @@
+repos:
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.28.0
+    hooks:
+      - id: gitleaks
+  - repo: local
+    hooks:
+      - id: spotless
+        name: spotless
+        entry: ./mvnw -q spotless:apply
+        language: system
+        types: [java]
+        pass_filenames: false
+      - id: prettier
+        name: prettier (yaml, json)
+        entry: npx --yes prettier@3.9.10 --write
+        language: system
+        files: \.(ya?ml|json)$
+      - id: openapi-lint
+        name: openapi lint
+        entry: npx --yes @redocly/cli@2.76.0 lint api/openapi.yaml
+        language: system
+        files: ^(api/openapi\.yaml|redocly\.yaml)$
+        pass_filenames: false

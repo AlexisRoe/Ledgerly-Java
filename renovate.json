@@ -1,0 +1,54 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended", "helpers:pinGitHubActionDigests", "docker:pinDigests"],
+  "schedule": ["before 6am on monday"],
+  "timezone": "Europe/Berlin",
+  "labels": ["dependencies"],
+  "dependencyDashboard": true,
+  "prConcurrentLimit": 5,
+  "packageRules": [
+    {
+      "description": "Do not take a version published in the last 3 days: most poisoned releases are found and pulled within hours",
+      "matchPackageNames": ["*"],
+      "minimumReleaseAge": "3 days"
+    },
+    {
+      "description": "The Maven wrapper (with its distribution checksum) and the npm tools pinned in Makefile, ci.yml and pre-commit move as one",
+      "matchManagers": ["maven-wrapper", "npm"],
+      "groupName": "build tooling"
+    },
+    {
+      "description": "Spring Boot and the libraries whose versions it manages move together",
+      "matchPackageNames": ["org.springframework.boot:spring-boot-starter-parent"],
+      "groupName": "spring boot"
+    },
+    {
+      "description": "Spring Modulith is versioned separately but must match the Boot line",
+      "matchPackageNames": ["org.springframework.modulith:spring-modulith-bom"],
+      "groupName": "spring modulith"
+    },
+    {
+      "description": "Security fixes are not held back by the weekly schedule",
+      "matchCategories": ["java"],
+      "vulnerabilityAlerts": {
+        "schedule": ["at any time"],
+        "labels": ["security"]
+      }
+    },
+    {
+      "description": "Test and tooling containers (compose and Testcontainers images)",
+      "matchManagers": ["docker-compose"],
+      "groupName": "compose images"
+    },
+    {
+      "description": "A pre-release is never proposed for the main branch except for the planned Boot upgrade",
+      "matchUpdateTypes": ["major"],
+      "dependencyDashboardApproval": true
+    }
+  ],
+  "vulnerabilityAlerts": {
+    "enabled": true,
+    "minimumReleaseAge": null
+  },
+  "minimumReleaseAge": "3 days"
+}

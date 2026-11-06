@@ -1,0 +1,10 @@
+# Used by the gitleaks pre-commit hook and the CI job: the default rules plus the intentional, public demo values.
+# Individual known false positives are listed by fingerprint in .gitleaksignore, so a real secret in the same
+# folder is still found.
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Development-only values that are documented as such (docs/deployment.md, Demo data)"
+regexTarget = "line"
+regexes = ['''correct-horse-battery''', '''ledgerly-secret''', '''(alice|bob)-password''']

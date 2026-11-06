@@ -1,0 +1,12 @@
+[%autowidth.stretch, cols="h,a"]
+|===
+|Base package
+|`com.ledgerly.teams`
+|Spring components
+|_Services_
+
+* `c.l.t.TeamsFacade` (via `c.l.t.internal.application.TeamsFacadeImpl`)
+|Bean references
+|* `c.l.i.IdentityFacade` (in Identity)
+* `c.l.s.security.CurrentUser` (in Shared)
+|===

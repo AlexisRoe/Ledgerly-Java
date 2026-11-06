@@ -1,0 +1,15 @@
+[%autowidth.stretch, cols="h,a"]
+|===
+|Base package
+|`com.ledgerly.expenses`
+|Spring components
+|_Services_
+
+* `c.l.e.ExpensesFacade` (via `c.l.e.internal.application.ExpensesFacadeImpl`)
+|Bean references
+|* `c.l.s.config.LedgerlyLimits` (in Shared)
+* `c.l.s.idempotency.IdempotencyStore` (in Shared)
+* `c.l.t.TeamsFacade` (in Teams)
+* `c.l.s.error.ProblemFactory` (in Shared)
+* `c.l.s.security.CurrentUser` (in Shared)
+|===
