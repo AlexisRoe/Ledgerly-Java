@@ -1,0 +1,53 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Lesson 3: Loops</title>
+<meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="../assets/style.css"></head><body>
+<h1>Lesson 3: Loops</h1>
+<p class="meta"><a href="index.html">&larr; All lessons</a> &middot; About 12 minutes. Builds on <a href="0002-if-else-and-conditions.html">Lesson 2</a>.</p>
+
+<h2>The one idea</h2>
+<p>Java has three loop shapes. You will meet all of them in backend code.</p>
+<pre><code>for (int i = 0; i &lt; 3; i++) { ... }        // counted: init; test; step
+for (String item : items) { ... }            // for-each: every element
+while (condition) { ... }                    // test first</code></pre>
+<p>The <code>for</code> header has three parts: initialization runs once, the termination test is checked before each pass, and the increment runs after each pass. A variable declared in the header lives only inside the loop (<a href="https://docs.oracle.com/javase/tutorial/java/nutsandbolts/for.html">Oracle: for</a>). Oracle recommends the for-each form "whenever possible".</p>
+<p><code>do { ... } while (condition);</code> tests at the bottom, so its body always runs at least once; <code>while</code> may never run (<a href="https://docs.oracle.com/javase/tutorial/java/nutsandbolts/while.html">Oracle: while and do-while</a>).</p>
+
+<h2>Read real code</h2>
+<ol>
+<li><strong>For-each</strong>, <a href="../src/main/java/com/ledgerly/shared/config/ProductionEnvironmentCheck.java"><code>ProductionEnvironmentCheck</code></a> line 45:
+<pre><code>for (String property : REQUIRED) { ... }</code></pre>
+Read the colon as "in": for each <code>property</code> in <code>REQUIRED</code>. A <code>continue</code> inside skips to the next property.</li>
+<li><strong>Counted</strong>, <a href="../src/main/java/com/ledgerly/expenses/internal/web/CsvCells.java"><code>CsvCells.row</code></a> line 37:
+<pre><code>for (int i = 0; i &lt; cells.length; i++) {
+    if (i &gt; 0) line.append(',');
+    ...
+}</code></pre>
+It needs the index <code>i</code> (no comma before the first cell), so for-each does not fit. Note the brace-less <code>if</code> on one line: legal, but Lesson 2 explained the risk.</li>
+<li><strong>While</strong>, <a href="../src/main/java/com/ledgerly/receipts/internal/infrastructure/ClamAvScanner.java"><code>ClamAvScanner</code></a> line 73:
+<pre><code>while ((read = content.read(buffer)) != -1) { ... }</code></pre>
+Inside the condition: read into <code>buffer</code>, store the count in <code>read</code>, then compare with -1 (end of stream). We loop because we do not know in advance how many chunks there are.</li>
+</ol>
+
+<h2>Check yourself</h2>
+<div class="quiz" data-answer="b"><p>How often does <code>for (int i = 0; i &lt; 3; i++)</code> run its body?</p>
+<button data-k="a" data-why="i takes 0, 1 and 2: that is three values, not two.">Two times</button>
+<button data-k="b" data-why="i = 0, 1, 2. When i is 3 the test fails.">Three times</button>
+<button data-k="c" data-why="The test i &lt; 3 stops the loop at 3.">Four times</button>
+<button data-k="d" data-why="The test is true at the start, so the body runs.">Zero times</button><div class="fb"></div></div>
+
+<div class="quiz" data-answer="c"><p>Which loop runs its body once even if the condition starts false?</p>
+<button data-k="a" data-why="while tests before the body.">while loop</button>
+<button data-k="b" data-why="for tests before the body.">for loop</button>
+<button data-k="c" data-why="do-while tests after the body, so one pass is guaranteed.">do-while loop</button>
+<button data-k="d" data-why="for-each over an empty collection runs zero times.">for-each loop</button><div class="fb"></div></div>
+
+<div class="quiz" data-answer="d"><p>You need every element of <code>REQUIRED</code> and no index. Which header fits?</p>
+<button data-k="a" data-why="You cannot compare an int with a collection like that.">for (int i = 0; i &lt; REQUIRED; i++)</button>
+<button data-k="b" data-why="while needs a boolean, not a collection.">while (REQUIRED) { ... }</button>
+<button data-k="c" data-why="That is not valid Java syntax.">do REQUIRED while (property)</button>
+<button data-k="d" data-why="For-each: type, name, colon, collection.">for (String property : REQUIRED)</button><div class="fb"></div></div>
+
+<h2>Next</h2>
+<p>Reference: <a href="../reference/control-flow.html">Control flow</a>. Next: <a href="0004-switch.html">Lesson 4: switch</a>.</p>
+<p><strong>Read:</strong> <a href="https://docs.oracle.com/javase/tutorial/java/nutsandbolts/for.html">The Java Tutorials: The for Statement</a>.</p>
+<p class="note">Questions? Ask me. Try asking why <code>BatchCreateExpenses</code> uses both for-each and counted loops.</p>
+<script src="../assets/quiz.js"></script></body></html>

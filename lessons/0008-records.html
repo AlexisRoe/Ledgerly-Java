@@ -1,0 +1,52 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Lesson 8: Records</title>
+<meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="../assets/style.css"></head><body>
+<h1>Lesson 8: Records</h1>
+<p class="meta"><a href="index.html">&larr; All lessons</a> &middot; About 12 minutes. Builds on <a href="0007-classes-and-objects.html">Lesson 7</a>.</p>
+<h2>The one idea</h2>
+<p>A record is a class for plain data. You list the components and the compiler writes the rest.</p>
+<pre><code>public record UserSummary(UserId id, String email, boolean verified) {}</code></pre>
+<p>From <a href="https://docs.oracle.com/en/java/javase/21/language/records.html">Oracle: Records</a>: the compiler generates a private final field and a public accessor per component, a canonical constructor, and <code>equals</code>, <code>hashCode</code> and <code>toString</code>. Records are final and immutable ("simple data carrier"). The accessor for <code>email</code> is <code>email()</code>, not <code>getEmail()</code>.</p>
+<p>Two records are equal when they have the same type and equal component values.</p>
+
+<h2>Read real code</h2>
+<p><a href="../src/main/java/com/ledgerly/identity/UserSummary.java"><code>UserSummary</code></a> is the whole record: one line.</p>
+<p><a href="../src/main/java/com/ledgerly/shared/money/Money.java"><code>Money</code></a> adds a <strong>compact constructor</strong> (no parameter list) to validate:</p>
+<pre><code>public Money {
+    Objects.requireNonNull(amount, "amount");
+    if (amount.signum() &lt;= 0) { throw new IllegalArgumentException(...); }
+    ...
+    amount = amount.setScale(digits);
+}</code></pre>
+<p>At its end, the (possibly reassigned) parameters are stored in the fields. So the last line normalises the amount before it is kept. Records can also have static methods (<code>Money.of</code>) and instance methods (<code>plus</code>).</p>
+<p><strong>Record or class?</strong> <code>Money</code> is a value: two Money of 12.50 EUR are the same thing. <code>Expense</code> has identity and changes, so it is a class.</p>
+
+<h2>Check yourself</h2>
+<div class="quiz" data-answer="d"><p>What does the compiler give <code>UserSummary</code> for free?</p>
+<button data-k="a" data-why="Records have no setters; fields are final.">Setters, getters, and a builder</button>
+<button data-k="b" data-why="Much is generated for you.">Nothing; you must write everything</button>
+<button data-k="c" data-why="More than a constructor is generated, and no setters.">Only the constructor and setters</button>
+<button data-k="d" data-why="Matches Oracle's list of generated members.">Fields, accessors, equals, hashCode, toString</button><div class="fb"></div></div>
+
+<div class="quiz" data-answer="b"><p>How do you read the email of a <code>UserSummary u</code>?</p>
+<button data-k="a" data-why="The field is private.">u.email</button>
+<button data-k="b" data-why="Accessors share the component name.">u.email()</button>
+<button data-k="c" data-why="Records use plain component names.">u.getEmail()</button>
+<button data-k="d" data-why="No such method exists.">u.get(email)</button><div class="fb"></div></div>
+
+<div class="quiz" data-answer="c"><p>In <code>Money</code>'s compact constructor, <code>amount = amount.setScale(digits);</code> runs last. What is stored?</p>
+<button data-k="a" data-why="The reassigned parameter is what gets stored.">The old value</button>
+<button data-k="b" data-why="Reassigning a parameter is allowed here.">A compile error</button>
+<button data-k="c" data-why="Oracle: at the end the parameters are assigned to the fields.">The scaled value</button>
+<button data-k="d" data-why="The field is always assigned at the end.">A null field</button><div class="fb"></div></div>
+
+<div class="quiz" data-answer="a"><p>Why is <code>Expense</code> a class and not a record?</p>
+<button data-k="a" data-why="Per its class comment: identity and change over time. Record fields are final.">It changes and has identity</button>
+<button data-k="b" data-why="Records can hold Strings.">Records cannot contain Strings</button>
+<button data-k="c" data-why="Speed is not the reason.">Records run much slower</button>
+<button data-k="d" data-why="Imports are unrelated.">Classes need fewer imports</button><div class="fb"></div></div>
+
+<h2>Next</h2>
+<p>You now have the core syntax: variables, conditions, loops, switch, methods, classes, records. Reference: <a href="../reference/classes-and-records.html">Classes and records</a>. Possible next topics: collections (<code>List</code>, <code>Map</code>), exceptions, interfaces, then Spring. Tell me which feels most useful for interviews.</p>
+<p><strong>Read:</strong> <a href="https://docs.oracle.com/en/java/javase/21/language/records.html">Oracle: Record Classes</a>.</p>
+<p class="note">Questions? Ask me.</p>
+<script src="../assets/quiz.js"></script></body></html>

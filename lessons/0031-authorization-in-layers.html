@@ -1,0 +1,71 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Lesson 31: Authorization in layers</title>
+<meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="../assets/style.css"></head><body>
+<h1>Lesson 31: Authorization in layers</h1>
+<p class="meta"><a href="index.html">&larr; All lessons</a> &middot; About 15 minutes. Builds on <a href="0030-who-is-calling.html">Lesson 30</a>.</p>
+<h2>The one idea</h2>
+<p>Authentication says <em>who</em>; authorization says <em>what they may do</em>. Ledgerly checks it in <strong>three layers</strong>, each answering a different question.</p>
+<table><tr><th>Layer</th><th>Question</th><th>Where</th></tr>
+<tr><td>Filter chain</td><td>Is there a valid token?</td><td><code>anyRequest().authenticated()</code> (Lesson 29)</td></tr>
+<tr><td>Use case</td><td>Is the caller in this team, and with which role?</td><td><code>ExpenseAccess.actor(teamId, userId)</code></td></tr>
+<tr><td>Domain</td><td>May this role do this to this expense?</td><td><code>Expense.requireDecider</code>, <code>isVisibleTo</code></td></tr></table>
+<h2>Read real code</h2>
+<pre><code>// ExpenseAccess.java
+Actor actor(TeamId teamId, UserId userId) {
+    return new Actor(userId, memberships.roleOf(teamId, userId).orElseThrow(NotFound::new));   // not a teammate: 404
+}
+
+// Actor.java  (Lesson 8)
+public record Actor(UserId id, Role role) {}
+
+// Role.java
+public enum Role { MEMBER, APPROVER, OWNER;
+    public boolean includes(Role other) { return compareTo(other) &gt;= 0; } }
+
+// Expense.java
+private void requireDecider(Actor actor, Role minimum, Action action) {
+    if (!actor.role().includes(minimum)) throw new NotAllowed("Role " + actor.role() + " may not " + action);
+    if (actor.id().equals(claimantId))   throw new SelfDealing(action);   // no approving your own expense
+}
+public boolean isVisibleTo(Actor actor) {
+    return actor.id().equals(claimantId) || actor.role().includes(Role.APPROVER);
+}</code></pre>
+<ul>
+<li>The use case looks up the role and hands the domain an <code>Actor</code>; "the domain receives the role; it never looks it up". That keeps rules testable without a database (Lesson 26).</li>
+<li>A non-member, or an expense they may not see, gets <strong>404</strong>, not 403, so the existence of teams and expenses is not revealed. A teammate with too low a role gets a refusal (<code>NotAllowed</code>).</li>
+<li><code>Role</code> is an <code>enum</code> ranked by declaration order, so <code>includes</code> is one comparison (Lesson 4's enum).</li>
+</ul>
+<h2>Method security</h2>
+<p><code>@EnableMethodSecurity</code> (on <code>SecurityConfig</code>) turns on <code>@PreAuthorize</code>: the expression is checked before the method runs, and a failed check throws <code>AccessDeniedException</code>, typically a 403 (<a href="https://docs.spring.io/spring-security/reference/servlet/authorization/method-security.html">Spring Security: method security</a>). Ledgerly's controllers use a bean call:</p>
+<pre><code>@PreAuthorize("@teamAuthorization.anyOf(#teamId, 'OWNER')")
+public ResponseEntity&lt;AuditEventPage&gt; listAuditEvents(UUID teamId, ...) { ... }</code></pre>
+<p><code>@teamAuthorization</code> is the bean <a href="$R/teams/internal/application/TeamAuthorization.java"><code>TeamAuthorization</code></a>; <code>#teamId</code> is the method parameter. The bean reads the caller's role from the database on every call and throws <code>NotFound</code> (not a teammate) or <code>Forbidden</code> (wrong role). Used in <code>AuditController</code> and <code>TeamsController</code>.</p>
+<div class="note">Rule for extending: when you add an endpoint, decide the answer to "who may call this?" before writing it. Team-scoped? Start the use case with <code>access.actor(...)</code>. Role-restricted? Add a rule in the domain or a <code>@PreAuthorize</code>. Then write a test for the forbidden case (see the <code>owasp/</code> tests).</div>
+<h2>Check yourself</h2>
+<div class="quiz" data-answer="c"><p>A user who is not a teammate requests an expense in that team. What status results?</p>
+<button data-k="a" data-why="403 would reveal that the team exists.">403, because access is refused</button>
+<button data-k="b" data-why="The token was valid.">401, because no token was sent</button>
+<button data-k="c" data-why="ExpenseAccess throws NotFound.">404, so existence stays hidden</button>
+<button data-k="d" data-why="Nothing is returned for strangers.">200, with an empty body</button>
+<div class="fb"></div></div>
+<div class="quiz" data-answer="b"><p>What does <code>Role.OWNER.includes(Role.MEMBER)</code> return?</p>
+<button data-k="a" data-why="Higher ranks include lower ones.">false</button>
+<button data-k="b" data-why="OWNER is above MEMBER on the ladder.">true</button>
+<button data-k="c" data-why="It returns a boolean.">null</button>
+<button data-k="d" data-why="It only compares ranks.">an exception</button>
+<div class="fb"></div></div>
+<div class="quiz" data-answer="d"><p>Why can an approver not approve their own expense?</p>
+<button data-k="a" data-why="They have it; that is not the check.">Approvers lack the APPROVER role there</button>
+<button data-k="b" data-why="The database is not involved.">The database forbids updating own rows</button>
+<button data-k="c" data-why="The rule is in the domain.">Method security blocks the controller call</button>
+<button data-k="d" data-why="It compares the actor id with the claimant id.">requireDecider throws SelfDealing for the claimant</button>
+<div class="fb"></div></div>
+<div class="quiz" data-answer="c"><p>When does <code>@PreAuthorize</code> run its check?</p>
+<button data-k="a" data-why="That would be @PostAuthorize.">After the method returns a value</button>
+<button data-k="b" data-why="It is checked per call.">Only when the build starts up</button>
+<button data-k="c" data-why="Docs: the method is invoked only if the expression passes.">Before the method body runs</button>
+<button data-k="d" data-why="Return type is irrelevant.">Only for methods returning void</button>
+<div class="fb"></div></div>
+<h2>Next</h2><p><a href="0032-specifications.html">Lesson 32: Specifications</a>.</p>
+<p><strong>Read:</strong> <a href="https://docs.spring.io/spring-security/reference/servlet/authorization/method-security.html">Spring Security: Method Security</a> (only the first part was read).</p>
+<p class="note">Questions? Ask me to trace "bob approves" from <code>bruno/03-lifecycle</code> through all three layers.</p>
+<script src="../assets/quiz.js"></script></body></html>

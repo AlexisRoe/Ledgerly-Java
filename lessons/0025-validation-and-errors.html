@@ -1,0 +1,62 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Lesson 25: Validation and error handling</title>
+<meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="../assets/style.css"></head><body>
+<h1>Lesson 25: Validation and error handling</h1>
+<p class="meta"><a href="index.html">&larr; All lessons</a> &middot; About 14 minutes. Builds on <a href="0024-entities-and-repositories.html">Lesson 24</a>.</p>
+<h2>The one idea</h2>
+<p>Invalid requests are caught at <strong>two layers</strong>, and a third piece turns every failure into one error format.</p>
+<table><tr><th>Layer</th><th>Catches</th><th>In Ledgerly</th></tr>
+<tr><td>Contract (Bean Validation)</td><td>Wrong shape: missing field, too long</td><td>Generated <code>@NotNull @Size(min = 1, max = 200)</code> on <code>merchant</code>, from <code>openapi.yaml</code></td></tr>
+<tr><td>Domain rules</td><td>Business rules</td><td><code>Expense.validMerchant</code> throws <code>InvalidInput("merchant", ...)</code></td></tr>
+<tr><td>Error handler</td><td>Translating exceptions into responses</td><td><code>@RestControllerAdvice</code> classes</td></tr></table>
+<p><strong>Bean Validation.</strong> <code>@Valid</code> on a <code>@RequestBody</code> parameter validates its constraints; a failure raises <code>MethodArgumentNotValidException</code>. Constraints placed directly on method parameters trigger method validation and <code>HandlerMethodValidationException</code> (<a href="https://docs.spring.io/spring-framework/reference/web/webmvc/mvc-controller/ann-validation.html">Spring: validation</a>). The generated <code>createExpense</code> already has <code>@Valid @RequestBody</code>, which you saw in Lesson 22.</p>
+<p><strong>Central error handling.</strong> An <code>@ExceptionHandler</code> method handles exceptions thrown by controllers; in a <code>@ControllerAdvice</code> class it applies across controllers (<a href="https://docs.spring.io/spring-framework/reference/web/webmvc/mvc-controller/ann-exceptionhandler.html">Spring: exceptions</a>). It can return a <code>ProblemDetail</code>, the RFC 9457 error body with media type <code>application/problem+json</code> (<a href="https://docs.spring.io/spring-framework/reference/web/webmvc/mvc-ann-rest-exceptions.html">Spring: error responses</a>).</p>
+<h2>Read real code</h2>
+<pre><code>// ExpenseDomainExceptionHandler.java
+@RestControllerAdvice
+@Order(Ordered.HIGHEST_PRECEDENCE)
+class ExpenseDomainExceptionHandler {
+    @ExceptionHandler(ExpenseException.class)
+    ResponseEntity&lt;ProblemDetail&gt; handle(ExpenseException e) {
+        ProblemDetail problem = switch (e) {      // Lesson 16: sealed, exhaustive
+            case InvalidTransition t -&gt; problems.create(ErrorCatalogue.EXPENSE_INVALID_TRANSITION, ...);
+            case InvalidInput i      -&gt; problems.create(ErrorCatalogue.VALIDATION_FAILED, ..., List.of(new FieldViolation(...)));
+            ...
+        };
+        return ResponseEntity.status(problem.getStatus()).body(problem);
+    }
+}</code></pre>
+<ul>
+<li>The use case just throws (Lesson 10). Nobody catches in between; the exception travels up to this advice, and the client receives a JSON problem with a stable <code>code</code> from <a href="$R/shared/error/ErrorCatalogue.java"><code>ErrorCatalogue</code></a>.</li>
+<li><a href="$R/shared/error/ProblemExceptionHandler.java"><code>ProblemExceptionHandler</code></a> extends <code>ResponseEntityExceptionHandler</code> for the framework's own errors such as <code>MethodArgumentNotValidException</code>.</li>
+<li>The same limit exists twice on purpose: <code>maxLength: 200</code> in the contract and <code>MAX_MERCHANT = 200</code> in <code>Expense</code>.</li>
+<li><strong>Extending:</strong> a new business rule means a new exception in the sealed <code>ExpenseException</code> hierarchy; the compiler then forces you to map it in this switch.</li>
+</ul>
+<h2>Check yourself</h2>
+<div class="quiz" data-answer="b"><p>What does <code>@ExceptionHandler</code> on a method in a <code>@RestControllerAdvice</code> do?</p>
+<button data-k="a" data-why="No retry happens.">Retries the failed controller method call</button>
+<button data-k="b" data-why="It turns the exception into a response.">Handles that exception type for controllers</button>
+<button data-k="c" data-why="It builds a response instead.">Logs the exception and ignores it</button>
+<button data-k="d" data-why="Not its purpose.">Converts the exception into a checked one</button>
+<div class="fb"></div></div>
+<div class="quiz" data-answer="c"><p>Which media type does <code>ProblemDetail</code> use with Jackson?</p>
+<button data-k="a" data-why="Reversed; not a real type.">application/json+problem</button>
+<button data-k="b" data-why="Not used.">text/problem</button>
+<button data-k="c" data-why="RFC 9457 media type.">application/problem+json</button>
+<button data-k="d" data-why="Not used.">application/error+json</button>
+<div class="fb"></div></div>
+<div class="quiz" data-answer="d"><p>Why does a domain <code>InvalidInput</code> need no try/catch in the use case?</p>
+<button data-k="a" data-why="It does not.">Java ignores exceptions inside records</button>
+<button data-k="b" data-why="Repositories are not involved.">Spring catches it inside the repository</button>
+<button data-k="c" data-why="They do not.">Controllers always swallow exceptions silently</button>
+<button data-k="d" data-why="RuntimeException subclass: it reaches the advice.">It is unchecked and travels upward</button>
+<div class="fb"></div></div>
+<div class="quiz" data-answer="a"><p>A request has a 300-character merchant. Which layer rejects it first?</p>
+<button data-k="a" data-why="Bean Validation runs before the controller method.">The generated @Size contract check</button>
+<button data-k="b" data-why="That runs later, in the use case.">The Expense domain class here</button>
+<button data-k="c" data-why="Last line of defence.">The database column constraint itself</button>
+<button data-k="d" data-why="Migrations run at startup only.">The Flyway migration script run</button>
+<div class="fb"></div></div>
+<h2>Next</h2><p><a href="0026-testing.html">Lesson 26: Testing</a>.</p>
+<p><strong>Read:</strong> <a href="https://docs.spring.io/spring-framework/reference/web/webmvc/mvc-ann-rest-exceptions.html">Spring Framework: Error Responses</a>.</p>
+<p class="note">Questions? Ask me to show you the JSON a bad request produces (the Bruno collection in <code>bruno/</code> has examples).</p>
+<script src="../assets/quiz.js"></script></body></html>

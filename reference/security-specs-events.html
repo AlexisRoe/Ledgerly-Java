@@ -1,0 +1,25 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Reference: Security, Specifications, Events</title><link rel="stylesheet" href="../assets/style.css"></head><body>
+<h1>Security, Specifications, Events (Ledgerly)</h1><p class="meta">Sources in <a href="../RESOURCES.md">RESOURCES.md</a>; lessons 29 to 35.</p>
+<h2>Who may do what: three layers</h2>
+<table><tr><th>Layer</th><th>Code</th><th>Failure</th></tr>
+<tr><td>Filter chain (SecurityConfig)</td><td><code>anyRequest().authenticated()</code> + JWT</td><td>401 problem+json</td></tr>
+<tr><td>Use case</td><td><code>access.actor(teamId, userId)</code> then <code>Actor(id, role)</code></td><td>404 (not a teammate)</td></tr>
+<tr><td>Domain</td><td><code>requireClaimant</code>, <code>requireDecider</code>, <code>isVisibleTo</code></td><td>NotAllowed / SelfDealing</td></tr>
+<tr><td>Method security</td><td><code>@PreAuthorize("@teamAuthorization.anyOf(#teamId, 'OWNER')")</code></td><td>404 or 403</td></tr></table>
+<p>Caller identity: <code>CurrentUser.id()</code> (token <code>sub</code>), never from the request body. Roles: MEMBER &lt; APPROVER &lt; OWNER, <code>role.includes(other)</code>.</p>
+<h2>Specification</h2>
+<pre><code>static Specification&lt;Expense&gt; hasStatus(ExpenseStatus s) { return (root, query, cb) -&gt; cb.equal(root.get("status"), s); }
+Specification&lt;Expense&gt; spec = inTeam(teamId);            // always first
+if (status != null) spec = spec.and(hasStatus(status));
+repository.findAll(spec, PageRequest.of(page, size, sort));</code></pre>
+<h2>Events</h2>
+<pre><code>events.publishEvent(new ExpenseEvent.Created(teamId, id, actorId, clock.instant()));   // inside @Transactional
+
+@ApplicationModuleListener            // = @Async + @Transactional(REQUIRES_NEW) + @TransactionalEventListener
+void on(ExpenseEvent.Deleted e) { ... }   // idempotent; throw on real failure so it is re-delivered</code></pre>
+<p>Plain <code>@EventListener</code>: synchronous. <code>@TransactionalEventListener</code>: AFTER_COMMIT by default, skipped if no transaction. Events carry ids and field names only.</p>
+<h2>Adding something: where it goes</h2>
+<ul><li>New endpoint: openapi.yaml, controller method, use case starting with <code>access.actor</code></li>
+<li>New filter: Specification factory, nullable field, <code>and</code> in <code>ExpenseFilters.build</code></li>
+<li>New reaction: new event record in <code>permits</code>, publish in the use case, <code>@ApplicationModuleListener</code></li></ul>
+</body></html>

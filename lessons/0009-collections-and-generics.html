@@ -1,0 +1,66 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Lesson 9: Collections and generics</title>
+<meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="../assets/style.css"></head><body>
+<h1>Lesson 9: Collections and generics</h1>
+<p class="meta"><a href="index.html">&larr; All lessons</a> &middot; About 12 minutes. Builds on <a href="0008-records.html">Lesson 8</a>.</p>
+<h2>Warm-up (from Lesson 6)</h2>
+<p>Method anatomy was shaky, so retrieve it first. The method is in <a href="../src/main/java/com/ledgerly/receipts/internal/application/UploadReceipt.java"><code>UploadReceipt.java</code></a>: <code>private static MessageDigest newDigest()</code>.</p>
+<div class="quiz" data-answer="c"><p>Which word is the return type?</p>
+<button data-k="a" data-why="private is an access modifier.">private</button>
+<button data-k="b" data-why="static is a modifier too.">static</button>
+<button data-k="c" data-why="The return type sits right before the method name.">MessageDigest</button>
+<button data-k="d" data-why="newDigest is the method name.">newDigest</button><div class="fb"></div></div>
+<div class="quiz" data-answer="b"><p>Could <code>private static String newDigest()</code> sit in the same class too?</p>
+<button data-k="a" data-why="The compiler ignores return types when telling methods apart.">Yes, the return types differ</button>
+<button data-k="b" data-why="Same name and same parameter types: a compile error.">No, same name and parameters</button>
+<button data-k="c" data-why="Bodies do not make methods different.">Yes, they have different bodies</button>
+<button data-k="d" data-why="Static methods can be overloaded normally.">No, static methods cannot overload</button><div class="fb"></div></div>
+
+<h2>The one idea</h2>
+<p>Three collection interfaces cover most backend work (<a href="https://docs.oracle.com/javase/tutorial/collections/interfaces/index.html">Oracle: Collection interfaces</a>):</p>
+<table><tr><th>Interface</th><th>Oracle's description</th></tr>
+<tr><td><code>List</code></td><td>An ordered collection; can contain duplicates; access by integer index.</td></tr>
+<tr><td><code>Set</code></td><td>A collection that cannot contain duplicate elements.</td></tr>
+<tr><td><code>Map</code></td><td>Maps keys to values; no duplicate keys, each key maps to at most one value.</td></tr></table>
+<p>The type in angle brackets is a <strong>generic</strong> type argument: <code>List&lt;String&gt;</code> is a list of strings. The compiler then enforces the element type and removes casts (<a href="https://docs.oracle.com/javase/tutorial/java/generics/why.html">Oracle: Why use generics?</a>).</p>
+
+<h2>Read real code</h2>
+<pre><code>// UploadReceipt.java line 43
+static final Set&lt;String&gt; ALLOWED_TYPES = Set.of("application/pdf", "image/jpeg", "image/png");
+// line 94
+if (!ALLOWED_TYPES.contains(staged.type())) { ... }
+
+// FileNames.java
+private static final Map&lt;String, String&gt; EXTENSIONS =
+        Map.of("application/pdf", "pdf", "image/jpeg", "jpg", "image/png", "png");
+
+// BatchCreateExpenses.java
+List&lt;NewExpense&gt; valid = new ArrayList&lt;&gt;();
+valid.add(ready.expense());   items.get(i)   items.size()</code></pre>
+<ul>
+<li><code>Set</code> fits "is this type allowed?" membership tests: <code>contains</code>.</li>
+<li><code>Map&lt;String, String&gt;</code> pairs a MIME type (key) with an extension (value).</li>
+<li>The variable's type is the interface (<code>List</code>); the object is a concrete class (<code>new ArrayList&lt;&gt;()</code>). Lesson 11 returns to why.</li>
+</ul>
+
+<h2>Check yourself</h2>
+<div class="quiz" data-answer="b"><p>You need a sequence where values may repeat and index access works.</p>
+<button data-k="a" data-why="A Set forbids duplicates.">A Set</button>
+<button data-k="b" data-why="List: ordered, duplicates allowed, indexed.">A List</button>
+<button data-k="c" data-why="A Map pairs keys with values.">A Map</button>
+<button data-k="d" data-why="A Queue is about processing order, not index access.">A Queue</button><div class="fb"></div></div>
+<div class="quiz" data-answer="c"><p>With the <code>EXTENSIONS</code> map, what would looking up <code>"image/png"</code> give?</p>
+<button data-k="a" data-why="That is the value for image/jpeg.">jpg</button>
+<button data-k="b" data-why="That is the value for application/pdf.">pdf</button>
+<button data-k="c" data-why="The key image/png is paired with png.">png</button>
+<button data-k="d" data-why="That is the key itself, not its value.">image/png</button><div class="fb"></div></div>
+<div class="quiz" data-answer="d"><p>What does <code>Set&lt;String&gt;</code> tell the compiler?</p>
+<button data-k="a" data-why="Generics restrict the element type.">Elements may be any type</button>
+<button data-k="b" data-why="A Set holds many elements.">The set holds one string</button>
+<button data-k="c" data-why="Sorting is not implied by the type argument.">The set sorts strings alphabetically</button>
+<button data-k="d" data-why="The compiler enforces the element type.">Only String elements are allowed</button><div class="fb"></div></div>
+
+<h2>Next</h2>
+<p><a href="0010-exceptions.html">Lesson 10: Exceptions</a>. Reference: <a href="../reference/collections-exceptions-interfaces.html">Collections, exceptions, interfaces</a>.</p>
+<p><strong>Read:</strong> <a href="https://docs.oracle.com/javase/tutorial/collections/interfaces/index.html">The Java Tutorials: Interfaces (Collections)</a>.</p>
+<p class="note">Questions? Ask me, for instance why <code>valid</code> is a <code>List</code> and not an array.</p>
+<script src="../assets/quiz.js"></script></body></html>

@@ -1,0 +1,64 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Lesson 40: Batch imports with Spring Batch</title>
+<meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="../assets/style.css"></head><body>
+<h1>Lesson 40: Batch imports with Spring Batch</h1>
+<p class="meta"><a href="index.html">&larr; All lessons</a> &middot; About 15 minutes. Builds on <a href="0039-logs-metrics-traces.html">Lesson 39</a>.</p>
+<h2>The one idea</h2>
+<p><strong>Spring Batch</strong> runs large jobs reliably. A <code>Job</code> is a container of <code>Step</code>s; a step in <em>chunk-oriented</em> style has an <code>ItemReader</code> (one item per call, <code>null</code> at the end), an optional <code>ItemProcessor</code>, and an <code>ItemWriter</code> that receives a whole chunk. Items are read until the <em>commit interval</em> is reached, the chunk is written, and "the transaction is committed" (<a href="https://docs.spring.io/spring-batch/reference/step/chunk-oriented-processing.html">Spring Batch: chunk-oriented processing</a>). So a failure rolls back only the current chunk; earlier chunks stay.</p>
+<p>A <code>JobInstance</code> is the <code>Job</code> plus its <em>identifying</em> <code>JobParameters</code>. Each attempt is a <code>JobExecution</code>; a failed instance can be run again with the same parameters and resumes "from where you left off" (<a href="https://docs.spring.io/spring-batch/reference/domain.html">Spring Batch: domain</a>). The <code>JobRepository</code> keeps this state in <code>BATCH_*</code> tables.</p>
+<h2>Read real code</h2>
+<p><a href="$R/imports/internal/infrastructure/ImportJobConfig.java"><code>ImportJobConfig</code></a> builds the CSV import:</p>
+<pre><code>new StepBuilder("importStep", repository)
+    .&lt;RawRow, NewExpense&gt;chunk(limits.maxBatchSize(), transactionManager)   // 100 per transaction
+    .reader(importReader)        // FlatFileItemReader over the uploaded file in object storage
+    .processor(processor)        // RawRow -&gt; NewExpense, or throw RowRejected
+    .writer(importWriter)        // expenses.createDrafts(team, user, items)  (the facade, ADR 0003)
+    .faultTolerant()
+    .skip(RowRejected.class).skip(FlatFileParseException.class)
+    .skipLimit(limits.maxImportRows())
+    .listener(importSkipListener)
+    .build();</code></pre>
+<ul>
+<li><strong>Bad rows are skipped and reported</strong>, up to a limit; anything else, such as a database failure, stops the job. The writer calls <code>ExpensesFacade.createDrafts</code> (Lesson 11), so imported rows get the same validation as API creates.</li>
+<li>The beans marked <code>@StepScope</code> read <code>jobParameters['storageKey']</code>, <code>teamId</code>, <code>userId</code> through <code>@Value</code>: the job is generic, the parameters say which file and for whom.</li>
+<li><a href="$R/imports/internal/infrastructure/ImportRunner.java"><code>ImportRunner</code></a> starts it. Recall Lesson 34: <code>@Async @TransactionalEventListener(AFTER_COMMIT) on(ImportQueued)</code>, as a tracked listener. <code>run</code> switches on the stored status (<code>"QUEUED"</code> starts, <code>"FAILED"</code> restarts, otherwise nothing: Lesson 4 and 16).</li>
+<li><code>parameters(importId)</code> marks only <code>importId</code> as identifying, so a restart finds the same <code>JobInstance</code> and "resumes a FAILED import from the last committed chunk: lines already imported are not read or written again".</li>
+<li>Configuration (Lesson 36): <code>spring.batch.job.enabled: false</code> so jobs start only on an upload, not at start-up; <code>initialize-schema: never</code> because Flyway creates the Batch tables in <code>V6__imports.sql</code> (Lesson 24).</li>
+<li>The user-visible status lives in the app's own <code>import_jobs</code> table, kept in step by <code>ImportJobListener</code>.</li>
+</ul>
+<div class="note">Extending: a new bulk job is a new <code>Job</code> bean with reader, processor, writer and skip policy; keep the writer going through the owning module's facade, and keep chunk and skip limits in <code>LedgerlyLimits</code>.</div>
+<h2>Check yourself</h2>
+<div class="quiz" data-answer="c"><p>In chunk-oriented processing, when does the transaction commit?</p>
+<button data-k="a" data-why="The commit interval is the chunk size.">After every single item is read</button>
+<button data-k="b" data-why="Each chunk has its own transaction.">Once, when the whole job ends</button>
+<button data-k="c" data-why="Read up to the interval, write, commit.">After each chunk has been written</button>
+<button data-k="d" data-why="That ends the step; commits happen per chunk.">Only when the reader returns null</button>
+<div class="fb"></div></div>
+<div class="quiz" data-answer="d"><p>A CSV line has an invalid amount and the processor throws <code>RowRejected</code>. What happens?</p>
+<button data-k="a" data-why="RowRejected is in the skip list.">The whole job fails at once</button>
+<button data-k="b" data-why="Invalid rows are not saved.">The line is saved as a draft</button>
+<button data-k="c" data-why="No restart happens.">The reader restarts from line one</button>
+<button data-k="d" data-why="Skipped up to the limit and recorded by the skip listener.">The line is skipped and reported</button>
+<div class="fb"></div></div>
+<div class="quiz" data-answer="b"><p>Which parameter identifies the <code>JobInstance</code> of an import?</p>
+<button data-k="a" data-why="Passed as non-identifying information.">teamId</button>
+<button data-k="b" data-why="Only the import id is marked identifying.">importId</button>
+<button data-k="c" data-why="Non-identifying information.">userId</button>
+<button data-k="d" data-why="Non-identifying information.">storageKey</button>
+<div class="fb"></div></div>
+<div class="quiz" data-answer="c"><p>After a database failure halfway through, how does <code>restart</code> continue?</p>
+<button data-k="a" data-why="Committed chunks are not repeated.">From the first line again</button>
+<button data-k="b" data-why="The same instance can be restarted.">Only after a brand new upload</button>
+<button data-k="c" data-why="Earlier chunks stay committed; the job resumes after them.">From the last committed chunk</button>
+<button data-k="d" data-why="It resumes at the chunk boundary.">From the line that failed only</button>
+<div class="fb"></div></div>
+<div class="quiz" data-answer="a"><p>Why is <code>spring.batch.job.enabled</code> set to <code>false</code>?</p>
+<button data-k="a" data-why="The application launches them, never at start-up.">Jobs start only on an upload</button>
+<button data-k="b" data-why="They are supported.">Batch jobs are unsupported in Boot</button>
+<button data-k="c" data-why="Flyway creates them.">The database has no batch tables</button>
+<button data-k="d" data-why="No schedule is involved.">Jobs would otherwise run twice daily</button>
+<div class="fb"></div></div>
+<h2>Where to go next</h2>
+<p>Back to the <a href="index.html">lesson index</a>. You have now met every part of this repository. The most valuable next step is practice: do the <a href="0028-capstone-add-a-field.html">Lesson 28 checklist</a> for real on a branch, then add a role-restricted endpoint with a Bruno test. Ask me to review your diff against the standards in this repo.</p>
+<p><strong>Read:</strong> <a href="https://docs.spring.io/spring-batch/reference/domain.html">Spring Batch: The Domain Language of Batch</a>.</p>
+<p class="note">Questions? Ask me, for example how skip counts end up in the import report.</p>
+<script src="../assets/quiz.js"></script></body></html>

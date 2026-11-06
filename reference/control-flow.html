@@ -1,0 +1,21 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Reference: Control flow</title><link rel="stylesheet" href="../assets/style.css"></head><body>
+<h1>Control flow</h1><p class="meta">Sources: <a href="https://docs.oracle.com/javase/tutorial/java/nutsandbolts/flow.html">Oracle Java Tutorials</a>, <a href="https://docs.oracle.com/en/java/javase/21/language/switch-expressions-and-statements.html">Switch expressions</a></p>
+<h2>Conditions</h2>
+<pre><code>if (a &gt; 0 &amp;&amp; b != null) { ... } else if (a == 0) { ... } else { ... }
+int x = cond ? 1 : 2;      // ternary</code></pre>
+<p><code>==</code> compares, <code>=</code> assigns. <code>&amp;&amp;</code> and <code>||</code> short-circuit. <code>!</code> negates. Always use braces.</p>
+<h2>Loops</h2>
+<pre><code>for (int i = 0; i &lt; n; i++) { ... }   // counted
+for (String s : list) { ... }          // for-each
+while (cond) { ... }                   // test first
+do { ... } while (cond);               // at least once</code></pre>
+<h2>switch</h2>
+<pre><code>switch (x) { case 1: ...; break; default: ...; }   // classic, falls through without break
+
+String s = switch (x) {                            // modern expression
+    case 1, 2 -&gt; "low";
+    case 3    -&gt; { yield "mid"; }
+    default   -&gt; throw new IllegalArgumentException();
+};</code></pre>
+<p>Expressions must be exhaustive. An enum covering all constants needs no <code>default</code>.</p>
+</body></html>

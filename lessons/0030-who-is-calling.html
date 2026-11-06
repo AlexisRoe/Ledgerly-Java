@@ -1,0 +1,56 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Lesson 30: Who is calling? Authentication in code</title>
+<meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="../assets/style.css"></head><body>
+<h1>Lesson 30: Who is calling? Authentication in code</h1>
+<p class="meta"><a href="index.html">&larr; All lessons</a> &middot; About 12 minutes. Builds on <a href="0029-spring-security-filter-chain.html">Lesson 29</a>.</p>
+<h2>The one idea</h2>
+<p>After the JWT is validated, Spring Security stores the result where any code on the same thread can read it. The <code>SecurityContextHolder</code> holds a <code>SecurityContext</code>, which holds an <code>Authentication</code> with a <code>principal</code>, <code>credentials</code> and <code>authorities</code>. By default it uses a <code>ThreadLocal</code> (<a href="https://docs.spring.io/spring-security/reference/servlet/authentication/architecture.html">Spring Security: authentication architecture</a>). For a JWT the object is a <code>JwtAuthenticationToken</code>, and its name maps to the token's <code>sub</code> claim (<a href="https://docs.spring.io/spring-security/reference/servlet/oauth2/resource-server/jwt.html">JWT resource server</a>).</p>
+<h2>Read real code</h2>
+<pre><code>// shared/security/CurrentUser.java
+public interface CurrentUser { UserId id(); }
+
+// shared/security/JwtCurrentUser.java
+@Component
+public class JwtCurrentUser implements CurrentUser {
+    public UserId id() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (!(authentication instanceof JwtAuthenticationToken token)) {   // Lesson 16
+            throw new Unauthenticated();
+        }
+        return new UserId(UUID.fromString(token.getToken().getSubject()));
+    }
+}</code></pre>
+<ul>
+<li>The only code that touches Spring Security's static holder is <a href="$R/shared/security/JwtCurrentUser.java"><code>JwtCurrentUser</code></a>. Every controller asks the <code>CurrentUser</code> interface (Lesson 11), as <code>ExpensesController</code> does with <code>currentUser.id()</code>.</li>
+<li>The user id is the validated token's subject, parsed into a <code>UserId</code>. It never comes from the request body, so a client cannot claim to be someone else.</li>
+<li>Two different failures: <strong>401</strong> means not authenticated (<code>Unauthenticated</code>), <strong>403</strong> means authenticated but not allowed (<code>Forbidden</code>, Lesson 31).</li>
+<li><strong>Threads:</strong> the context is thread-bound. An <code>@Async</code> listener runs elsewhere, and Spring notes that ThreadLocals and logging context are not propagated to async listeners by default (<a href="https://docs.spring.io/spring-framework/reference/core/beans/context-introduction.html">Spring: events</a>). That is why events such as <code>ExpenseEvent</code> carry <code>actorId</code>: they cannot ask who is logged in. Lesson 34 returns to it.</li>
+</ul>
+<h2>Check yourself</h2>
+<div class="quiz" data-answer="b"><p>Where does Spring Security keep the current <code>Authentication</code>?</p>
+<button data-k="a" data-why="Entities know nothing of it.">In a static field of Expense</button>
+<button data-k="b" data-why="SecurityContextHolder, thread-bound by default.">In a thread-local security context</button>
+<button data-k="c" data-why="Nothing is stored there.">In the HTTP response body</button>
+<button data-k="d" data-why="Unrelated to security.">In the Flyway migration table</button>
+<div class="fb"></div></div>
+<div class="quiz" data-answer="c"><p>What does <code>JwtCurrentUser</code> turn into a <code>UserId</code>?</p>
+<button data-k="a" data-why="No passwords are involved here.">The password sent with the request</button>
+<button data-k="b" data-why="The IP address is not identity.">The client's IP address value</button>
+<button data-k="c" data-why="The validated JWT&#x27;s sub claim.">The subject claim of the token</button>
+<button data-k="d" data-why="Roles are looked up per team.">The role claim of the token</button>
+<div class="fb"></div></div>
+<div class="quiz" data-answer="c"><p>Why do controllers use <code>CurrentUser</code> and not <code>SecurityContextHolder</code>?</p>
+<button data-k="a" data-why="They may import.">Controllers are not allowed any imports</button>
+<button data-k="b" data-why="Speed is not the reason.">Interfaces always run faster than classes</button>
+<button data-k="c" data-why="One class knows the framework; the rest use the contract.">The interface hides Spring Security details</button>
+<button data-k="d" data-why="Not required.">Annotations need an interface to work</button>
+<div class="fb"></div></div>
+<div class="quiz" data-answer="b"><p>An <code>@Async</code> listener runs on another thread. Does it see the request's security context?</p>
+<button data-k="a" data-why="ThreadLocals are not propagated by default.">Yes, Spring copies it automatically</button>
+<button data-k="b" data-why="The context belongs to the request thread.">No, thread-local data stays behind</button>
+<button data-k="c" data-why="The method is irrelevant.">Yes, but only for GET requests</button>
+<button data-k="d" data-why="It is called, just elsewhere.">No, the listener is never called</button>
+<div class="fb"></div></div>
+<h2>Next</h2><p><a href="0031-authorization-in-layers.html">Lesson 31: Authorization in layers</a>.</p>
+<p><strong>Read:</strong> <a href="https://docs.spring.io/spring-security/reference/servlet/authentication/architecture.html">Spring Security: Authentication Architecture</a>.</p>
+<p class="note">Questions? Ask me how a request for a different team's expense ends up as a 404.</p>
+<script src="../assets/quiz.js"></script></body></html>

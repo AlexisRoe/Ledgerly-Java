@@ -1,0 +1,65 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Lesson 39: Logs, metrics and traces</title>
+<meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="../assets/style.css"></head><body>
+<h1>Lesson 39: Logs, metrics and traces</h1>
+<p class="meta"><a href="index.html">&larr; All lessons</a> &middot; About 14 minutes. Builds on <a href="0038-docker-compose-and-ci.html">Lesson 38</a>.</p>
+<h2>The one idea</h2>
+<p>When something breaks in production you have three clues: <strong>logs</strong> (what happened), <strong>metrics</strong> (how much, how often), <strong>traces</strong> (where time went across calls). Ledgerly sends all three to the Grafana stack in compose.</p>
+<h3>Logs</h3>
+<ul>
+<li>Production logs are structured JSON (<code>logging.structured.format.console: ecs</code>); the <code>local</code> profile switches to readable text (Lesson 36).</li>
+<li>The MDC (a per-thread map that logging adds to every line) carries context: <a href="$R/shared/security/MdcUserFilter.java"><code>MdcUserFilter</code></a> puts the caller's <code>userId</code> (never the email) on every line of the request, and <code>MdcTeamFilter</code> the <code>teamId</code> from the URL. Both use <code>try { chain.doFilter(...) } finally { MDC.remove(KEY) }</code> (Lesson 13) so the context never leaks to the next request on that thread. The filters are registered in the security chain (Lesson 29).</li>
+<li>Log messages in the code avoid secrets and personal data (<code>e.getClass().getSimpleName()</code> instead of messages); <code>LogHygieneTest</code> checks it.</li>
+</ul>
+<h3>Metrics</h3>
+<p>Actuator exposes operational endpoints; here only <code>health,info,prometheus</code>, on <strong>port 8081</strong>, separate from the API port (<a href="https://docs.spring.io/spring-boot/reference/actuator/endpoints.html">Spring Boot: actuator endpoints</a>). Health probes are served at <code>/actuator/health/liveness</code> and <code>/readiness</code>. Spring Boot auto-configures a <code>MeterRegistry</code> that you can inject; <code>/actuator/prometheus</code> serves a Prometheus scrape (<a href="https://docs.spring.io/spring-boot/reference/actuator/metrics.html">Spring Boot: metrics</a>).</p>
+<pre><code>// ScanReceipt.java
+metrics.counter("ledgerly.receipts.quarantined").increment();     // one more infected file
+// TransitionExpense counts transitions by action tag; MetricsTest checks "submit" +1, a refused approve not counted</code></pre>
+<h3>Traces and observations</h3>
+<p>An <strong>Observation</strong> is one instrumented unit of work; handlers turn one instrumentation into a timer <em>and</em> a trace span. Key values are <em>low cardinality</em> (bounded, fine for metrics) or <em>high cardinality</em> (unbounded, for traces) (<a href="https://docs.micrometer.io/micrometer/reference/observation/introduction.html">Micrometer: introduction</a>, <a href="https://docs.micrometer.io/micrometer/reference/observation/instrumenting.html">instrumenting</a>).</p>
+<pre><code>// ClamAvScanner.scan
+Observation observation = Observation.createNotStarted("ledgerly.clamav.scan", observations).start();
+try (Observation.Scope scope = observation.openScope()) {
+    Result result = scanOnce(content);
+    observation.lowCardinalityKeyValue("outcome", result instanceof Result.Clean ? "clean" : "infected");
+    return result;
+} catch (IOException | RuntimeException e) {
+    observation.lowCardinalityKeyValue("outcome", "error");  observation.error(e);  throw e;
+} finally { observation.stop(); }</code></pre>
+<p>Lessons 10, 13 and 16 in one method: try-with-resources for the scope, multi-catch, <code>instanceof</code> pattern, <code>finally</code> to stop. The comment says it records "the outcome, never the content". <code>management.tracing.sampling.probability: 1.0</code> traces every request, and compose sets the OTLP endpoint so traces reach <code>lgtm</code>; Grafana is at <code>http://localhost:3000</code> (admin/admin). (The README notes that traces reaching Grafana were not verified in the learning log.)</p>
+<div class="note">Extending: log with ids, not values; count business events with a counter and low-cardinality tags (action, outcome), never ids or emails as tags.</div>
+<h2>Check yourself</h2>
+<div class="quiz" data-answer="c"><p>What does <code>MdcUserFilter</code> put on every log line of a request?</p>
+<button data-k="a" data-why="Emails are deliberately never logged.">The caller's email address too</button>
+<button data-k="b" data-why="Bodies may hold personal data.">The raw request body text</button>
+<button data-k="c" data-why="The user id, never the email.">The caller's user id only</button>
+<button data-k="d" data-why="Tokens are secrets.">The complete JWT access token</button>
+<div class="fb"></div></div>
+<div class="quiz" data-answer="b"><p>Why does the actuator listen on port 8081?</p>
+<button data-k="a" data-why="Speed is not the reason.">Port 8081 is faster than 8080</button>
+<button data-k="b" data-why="Not published with the API in production.">Keeps operational endpoints off the API</button>
+<button data-k="c" data-why="One port also works.">Spring Boot requires two server ports</button>
+<button data-k="d" data-why="It can.">Tomcat cannot serve metrics otherwise</button>
+<div class="fb"></div></div>
+<div class="quiz" data-answer="c"><p>Which key value belongs in an observation as low cardinality?</p>
+<button data-k="a" data-why="Unbounded: high cardinality.">The caller's raw user id</button>
+<button data-k="b" data-why="Unbounded: high cardinality.">The full request URL</button>
+<button data-k="c" data-why="A small bounded set.">The outcome: clean, infected, error</button>
+<button data-k="d" data-why="Unbounded: high cardinality.">The uploaded file name</button>
+<div class="fb"></div></div>
+<div class="quiz" data-answer="a"><p>How does one Observation serve both metrics and traces?</p>
+<button data-k="a" data-why="Handlers react to its lifecycle.">Handlers produce a timer and span</button>
+<button data-k="b" data-why="It does not write files.">It writes identical data to files</button>
+<button data-k="c" data-why="It runs once.">Spring runs it twice per request</button>
+<button data-k="d" data-why="Not how it works.">Prometheus later converts logs into spans</button>
+<div class="fb"></div></div>
+<div class="quiz" data-answer="b"><p>Why is <code>MDC.remove(KEY)</code> placed in a <code>finally</code> block?</p>
+<button data-k="a" data-why="Unrelated to speed.">To make the filter run faster</button>
+<button data-k="b" data-why="finally runs on any exit; threads are reused.">So the context cannot leak onward</button>
+<button data-k="c" data-why="MDC is just a thread map.">Because MDC itself needs a transaction</button>
+<button data-k="d" data-why="finally does not catch.">To catch the exception it throws</button>
+<div class="fb"></div></div>
+<h2>Next</h2><p><a href="0040-batch-imports.html">Lesson 40: Batch imports</a>.</p>
+<p><strong>Read:</strong> <a href="https://docs.micrometer.io/micrometer/reference/observation/introduction.html">Micrometer Observation: Introduction</a>.</p>
+<p class="note">Questions? Ask me to find the metric names the code registers, or to open Grafana with you.</p>
+<script src="../assets/quiz.js"></script></body></html>

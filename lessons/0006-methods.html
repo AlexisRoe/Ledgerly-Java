@@ -1,0 +1,43 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Lesson 6: Methods</title>
+<meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="../assets/style.css"></head><body>
+<h1>Lesson 6: Methods</h1>
+<p class="meta"><a href="index.html">&larr; All lessons</a> &middot; About 12 minutes. Builds on the recap in <a href="0005-recap-reading-submit.html">Lesson 5</a>.</p>
+<h2>The one idea</h2>
+<p>A method declaration reads left to right: modifiers, return type, name, parameters, body.</p>
+<pre><code>public long version() { return version; }
+public Money plus(Money other) { ... }
+public void approve(Actor actor) { ... }</code></pre>
+<p>Oracle lists six components (modifiers, return type, name, parameter list, exception list, body). Only return type, name, parentheses and body are required. <code>void</code> means nothing is returned. The <strong>signature</strong> is the name plus the parameter types: <code>plus(Money)</code> (<a href="https://docs.oracle.com/javase/tutorial/java/javaOO/methods.html">Oracle: Defining Methods</a>). Method names are lowercase verbs in camelCase.</p>
+
+<h2>Read real code</h2>
+<ul>
+<li><a href="../src/main/java/com/ledgerly/shared/money/Money.java"><code>Money.plus</code></a> takes one <code>Money</code> and returns a new <code>Money</code>. It never changes the original.</li>
+<li><a href="../src/main/java/com/ledgerly/expenses/internal/domain/Expense.java"><code>Expense.approve</code></a> is <code>void</code>: it works by changing <code>status</code> and returns nothing. Methods that answer a question return a value (<code>canDelete</code> returns <code>boolean</code>); methods that act return <code>void</code>.</li>
+<li><code>Money.of("12.50", "EUR")</code> is called on the class, not on an object, because it is declared <code>static</code>. Instance methods like <code>plus</code> need an object first: <code>a.plus(b)</code>.</li>
+</ul>
+<p><strong>Overloading:</strong> methods may share a name if their parameter lists differ. Return type does not count, and Oracle advises using overloading sparingly.</p>
+
+<h2>Check yourself</h2>
+<div class="quiz" data-answer="b"><p>In <code>public long version()</code>, what is the return type?</p>
+<button data-k="a" data-why="public is a modifier.">public</button>
+<button data-k="b" data-why="The type sits right before the name.">long</button>
+<button data-k="c" data-why="version is the method name.">version</button>
+<button data-k="d" data-why="Parentheses hold the parameters, here none.">()</button><div class="fb"></div></div>
+
+<div class="quiz" data-answer="b"><p>What is the signature of <code>public Money plus(Money other)</code>?</p>
+<button data-k="a" data-why="Parameter names are not part of the signature.">plus(Money other)</button>
+<button data-k="b" data-why="Oracle: name plus parameter types.">plus(Money)</button>
+<button data-k="c" data-why="The return type is not part of the signature.">Money plus()</button>
+<button data-k="d" data-why="Modifiers are not part of the signature.">public plus(Money)</button><div class="fb"></div></div>
+
+<div class="quiz" data-answer="d"><p>Can one class declare <code>int f(int a)</code> and <code>long f(int b)</code>?</p>
+<button data-k="a" data-why="The compiler ignores return types when telling methods apart.">Yes, return types differ</button>
+<button data-k="b" data-why="Parameter names do not distinguish methods.">Yes, parameter names differ</button>
+<button data-k="c" data-why="long is a normal return type.">No, long is forbidden</button>
+<button data-k="d" data-why="Same name and same parameter types: a compile error.">No, same name and parameters</button><div class="fb"></div></div>
+
+<h2>Next</h2>
+<p><a href="0007-classes-and-objects.html">Lesson 7: Classes and objects</a>. Reference: <a href="../reference/classes-and-records.html">Classes and records</a>.</p>
+<p><strong>Read:</strong> <a href="https://docs.oracle.com/javase/tutorial/java/javaOO/methods.html">The Java Tutorials: Defining Methods</a>.</p>
+<p class="note">Questions? Ask me, for instance why <code>plus</code> returns a new object.</p>
+<script src="../assets/quiz.js"></script></body></html>

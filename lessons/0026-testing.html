@@ -1,0 +1,66 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Lesson 26: Testing</title>
+<meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="../assets/style.css"></head><body>
+<h1>Lesson 26: Testing</h1>
+<p class="meta"><a href="index.html">&larr; All lessons</a> &middot; About 14 minutes. Builds on <a href="0025-validation-and-errors.html">Lesson 25</a>.</p>
+<h2>The one idea</h2>
+<p>Tests are classes whose <code>@Test</code> methods the build runs (<code>make test</code> or <code>make verify</code>). A JUnit test method must not be <code>private</code> or <code>abstract</code> and must not return a value; <code>@BeforeEach</code>/<code>@AfterEach</code> run around each test (<a href="https://docs.junit.org/current/writing-tests/test-classes-and-methods.html">JUnit: test classes and methods</a>).</p>
+<p>JUnit ships <code>assertEquals</code> and <code>assertThrows</code>; the JUnit team recommends third-party assertion libraries such as AssertJ (<a href="https://docs.junit.org/current/writing-tests/assertions.html">JUnit: assertions</a>), which this repo uses: <code>assertThat(x).isEqualTo(y)</code>, <code>assertThatThrownBy(...)</code>.</p>
+<h2>A unit test</h2>
+<pre><code>// MoneyTest.java
+class MoneyTest {
+    @ParameterizedTest
+    @ValueSource(strings = {"0", "0.00", "-1", "-0.01"})
+    void rejectsZeroAndNegativeAmounts(String amount) {
+        assertThatThrownBy(() -&gt; Money.of(amount, "EUR")).isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void equalsAndHashCodeIgnoreInputScale() {
+        var a = Money.of("10.0", "EUR");
+        var b = Money.of("10.00", "EUR");
+        assertThat(a).isEqualTo(b).hasSameHashCodeAs(b);
+    }
+}</code></pre>
+<p><a href="../src/test/java/com/ledgerly/shared/money/MoneyTest.java"><code>MoneyTest</code></a> needs no Spring: just Lesson 8's record. <code>@ValueSource</code> feeds each value to the method in turn (<a href="https://docs.junit.org/current/writing-tests/parameterized-classes-and-tests.html">JUnit: parameterized tests</a>). The lambda in <code>assertThatThrownBy</code> is Lesson 17. Test names read as sentences: what the code <em>should</em> do.</p>
+<h2>An integration test</h2>
+<pre><code>// TeamsApiTest.java
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, properties = "management.server.port=0")
+@Import(TestcontainersConfiguration.class)
+class TeamsApiTest {
+    @LocalServerPort int port;
+    @Autowired JdbcClient jdbc;
+    RestTestClient client;
+
+    @BeforeEach
+    void setUp() { client = RestTestClient.bindToServer().baseUrl("http://localhost:" + port).build(); ... }</code></pre>
+<p><code>@SpringBootTest</code> "loads the full application context"; the default web environment is a mock one where embedded servers are not started, while <code>RANDOM_PORT</code> starts a real server on a free port (<a href="https://docs.spring.io/spring-boot/reference/testing/spring-boot-applications.html">Spring Boot: testing</a>). The test then calls the real HTTP API with <code>RestTestClient</code>. The <code>@Import</code> brings a Testcontainers configuration: a real Postgres in Docker, which is why <code>make test</code> needs Docker running. <code>@Autowired</code> lets the test ask Spring for beans.</p>
+<p>Time in tests: <a href="../src/test/java/com/ledgerly/MutableClock.java"><code>MutableClock</code></a> lets a test move time forward (Lesson 27).</p>
+<h2>Check yourself</h2>
+<div class="quiz" data-answer="b"><p><code>@ValueSource(strings = {"0", "0.00", "-1", "-0.01"})</code> on a parameterized test runs the method...</p>
+<button data-k="a" data-why="One invocation per value.">Once, with all four values</button>
+<button data-k="b" data-why="Each value becomes one invocation.">Four times, once per value</button>
+<button data-k="c" data-why="Not how it works.">Twice, for positives and negatives</button>
+<button data-k="d" data-why="The framework calls it.">Never until called by hand</button>
+<div class="fb"></div></div>
+<div class="quiz" data-answer="b"><p>Which test method signature is valid in JUnit?</p>
+<button data-k="a" data-why="Test methods cannot be private.">private void rejectsNulls()</button>
+<button data-k="b" data-why="Package-private, void, not abstract: valid.">void rejectsNulls()</button>
+<button data-k="c" data-why="Test methods must not return a value.">int rejectsNulls()</button>
+<button data-k="d" data-why="Test methods cannot be abstract.">abstract void rejectsNulls()</button>
+<div class="fb"></div></div>
+<div class="quiz" data-answer="d"><p>What does <code>RANDOM_PORT</code> change compared with the default <code>@SpringBootTest</code>?</p>
+<button data-k="a" data-why="It changes the web environment.">Nothing; it is only a label</button>
+<button data-k="b" data-why="Unrelated to the database.">A mocked database without any SQL</button>
+<button data-k="c" data-why="The full context still loads.">Faster startup by skipping most beans</button>
+<button data-k="d" data-why="The default MOCK environment starts no server.">A real server on any port</button>
+<div class="fb"></div></div>
+<div class="quiz" data-answer="b"><p>Why does <code>make test</code> need Docker running?</p>
+<button data-k="a" data-why="Maven runs on the host.">Maven is packaged as an image</button>
+<button data-k="b" data-why="The integration tests use it.">Testcontainers starts a real Postgres database</button>
+<button data-k="c" data-why="javac does that on the host.">Docker compiles all the Java sources</button>
+<button data-k="d" data-why="Lint is separate.">Needed only for the lint step</button>
+<div class="fb"></div></div>
+<h2>Next</h2><p><a href="0027-bigdecimal-and-time.html">Lesson 27: BigDecimal and time</a>.</p>
+<p><strong>Read:</strong> <a href="https://docs.spring.io/spring-boot/reference/testing/spring-boot-applications.html">Spring Boot: Testing Spring Boot Applications</a>.</p>
+<p class="note">Tip: run <code>make help</code> to see <code>test-one</code>, then run a single test. Questions? Ask me.</p>
+<script src="../assets/quiz.js"></script></body></html>

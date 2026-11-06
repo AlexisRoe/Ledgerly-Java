@@ -1,0 +1,61 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Lesson 10: Exceptions</title>
+<meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="../assets/style.css"></head><body>
+<h1>Lesson 10: Exceptions</h1>
+<p class="meta"><a href="index.html">&larr; All lessons</a> &middot; About 12 minutes. Builds on <a href="0009-collections-and-generics.html">Lesson 9</a>.</p>
+<h2>The one idea</h2>
+<p>An exception is an event that disrupts normal flow. Code <strong>throws</strong> an exception object; the runtime searches the call stack, caller after caller, for a matching <strong>handler</strong> (<a href="https://docs.oracle.com/javase/tutorial/essential/exceptions/definition.html">Oracle: What is an exception?</a>).</p>
+<pre><code>try {
+    ...
+} catch (IOException e) {
+    ...
+}</code></pre>
+<p>A <code>catch</code> matches when the thrown object can be assigned to its parameter type. One <code>catch</code> can list several types with <code>|</code> (<a href="https://docs.oracle.com/javase/tutorial/essential/exceptions/catch.html">Oracle: catching</a>).</p>
+
+<h2>Checked vs. unchecked</h2>
+<p><strong>Checked</strong> exceptions must be caught or declared by the compiler's rules. <strong>Unchecked</strong> ones (<code>RuntimeException</code>, <code>Error</code> and subclasses) need not be. Oracle's guideline: "If a client can reasonably be expected to recover from an exception, make it a checked exception. If a client cannot do anything to recover from the exception, make it an unchecked exception." (<a href="https://docs.oracle.com/javase/tutorial/essential/exceptions/runtime.html">Oracle: unchecked exceptions</a>)</p>
+
+<h2>Read real code</h2>
+<pre><code>// Expense.java, line 324
+private void requireStatus(ExpenseStatus expected, Action action) {
+    if (status != expected) {
+        throw new InvalidTransition(status, action);
+    }
+}
+
+// ExpenseException.java
+public abstract sealed class ExpenseException extends RuntimeException { ... }
+
+// UploadReceipt.java, line 160
+try {
+    return MessageDigest.getInstance("SHA-256");
+} catch (NoSuchAlgorithmException e) {
+    throw new IllegalStateException(e);
+}</code></pre>
+<ul>
+<li><code>throw</code> ends the method at once; the caller (or a handler further up) takes over. Every guard clause you met in Lesson 2 does this.</li>
+<li>Every domain refusal extends <code>ExpenseException</code>, which extends <code>RuntimeException</code>: unchecked, because a caller cannot meaningfully recover from, say, an illegal state change.</li>
+<li>The last snippet <em>translates</em>: SHA-256 is always available, so the checked exception "cannot happen" and is turned into an unchecked one.</li>
+</ul>
+
+<h2>Check yourself</h2>
+<div class="quiz" data-answer="a"><p>After <code>throw new InvalidTransition(...)</code> runs, what happens?</p>
+<button data-k="a" data-why="throw leaves the method; a handler up the call stack may catch it.">The method stops at once</button>
+<button data-k="b" data-why="Nothing after a throw in that path runs.">The next line still runs</button>
+<button data-k="c" data-why="Java does not retry automatically.">Java retries the same line</button>
+<button data-k="d" data-why="Unhandled exceptions end the program; they are not ignored.">The exception is silently ignored</button><div class="fb"></div></div>
+<div class="quiz" data-answer="c"><p><code>ExpenseException</code> extends <code>RuntimeException</code>. What does that mean?</p>
+<button data-k="a" data-why="Checked exceptions do not extend RuntimeException.">Checked, so handling is mandatory</button>
+<button data-k="b" data-why="Error is a separate branch.">Neither; it is an error</button>
+<button data-k="c" data-why="RuntimeException and subclasses are unchecked.">Unchecked, so handling is optional</button>
+<button data-k="d" data-why="Visibility does not decide checked status.">Checked, but only when public</button><div class="fb"></div></div>
+<div class="quiz" data-answer="a"><p>Oracle says callers can reasonably recover from it. Make it...</p>
+<button data-k="a" data-why="Recoverable: checked.">checked</button>
+<button data-k="b" data-why="Unchecked is for unrecoverable cases.">unchecked</button>
+<button data-k="c" data-why="Error is not used for application rules.">an Error</button>
+<button data-k="d" data-why="Records are not exceptions.">a record</button><div class="fb"></div></div>
+
+<h2>Next</h2>
+<p><a href="0011-interfaces.html">Lesson 11: Interfaces</a>.</p>
+<p><strong>Read:</strong> <a href="https://docs.oracle.com/javase/tutorial/essential/exceptions/runtime.html">The Java Tutorials: Unchecked Exceptions, the Controversy</a>.</p>
+<p class="note">Questions? Ask me what <code>sealed</code> and <code>permits</code> in <code>ExpenseException</code> do.</p>
+<script src="../assets/quiz.js"></script></body></html>

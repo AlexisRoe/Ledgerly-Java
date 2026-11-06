@@ -1,0 +1,16 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Reference: Variables and types</title><link rel="stylesheet" href="../assets/style.css"></head><body>
+<h1>Variables and types</h1><p class="meta">Source: <a href="https://docs.oracle.com/javase/tutorial/java/nutsandbolts/datatypes.html">Oracle Java Tutorials</a></p>
+<pre><code>Type name = value;
+int digits = 2;
+final int MAX = 100;   // cannot be reassigned</code></pre>
+<table><tr><th>Primitive</th><th>Size</th><th>Field default</th></tr>
+<tr><td>byte</td><td>8-bit</td><td>0</td></tr><tr><td>short</td><td>16-bit</td><td>0</td></tr>
+<tr><td>int</td><td>32-bit</td><td>0</td></tr><tr><td>long</td><td>64-bit (literal ends in L)</td><td>0L</td></tr>
+<tr><td>float</td><td>32-bit (literal ends in f)</td><td>0.0f</td></tr><tr><td>double</td><td>64-bit</td><td>0.0d</td></tr>
+<tr><td>boolean</td><td>true / false</td><td>false</td></tr><tr><td>char</td><td>16-bit Unicode, single quotes</td><td>'\u0000'</td></tr></table>
+<h2>Kinds of variable</h2>
+<table><tr><th>Kind</th><th>Where</th></tr><tr><td>Local</td><td>inside a method or constructor; no default value</td></tr>
+<tr><td>Parameter</td><td>in the signature</td></tr><tr><td>Instance field</td><td>class body, one per object</td></tr><tr><td>Static field</td><td>class body with <code>static</code>, one per class</td></tr></table>
+<h2>Naming</h2><p><code>camelCase</code> variables, <code>PascalCase</code> classes, <code>UPPER_SNAKE</code> constants. Not a keyword, not starting with a digit.</p>
+<p>String and other classes are references and can be <code>null</code>; primitives cannot.</p>
+</body></html>

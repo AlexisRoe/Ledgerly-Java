@@ -1,0 +1,63 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Lesson 38: Docker Compose and CI</title>
+<meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="../assets/style.css"></head><body>
+<h1>Lesson 38: Docker Compose and CI</h1>
+<p class="meta"><a href="index.html">&larr; All lessons</a> &middot; About 14 minutes. Builds on <a href="0037-api-tests-with-bruno.html">Lesson 37</a>.</p>
+<h2>The one idea</h2>
+<p><strong>Docker Compose</strong> describes an application as <em>services</em> (each a container from an image), with networks and volumes for connectivity and persistent data (<a href="https://docs.docker.com/compose/intro/compose-application-model/">Docker: Compose model</a>). <a href="../compose.yaml"><code>compose.yaml</code></a> runs everything the app depends on locally.</p>
+<table><tr><th>Service</th><th>Why</th></tr>
+<tr><td><code>postgres</code></td><td>the database (Lesson 24)</td></tr>
+<tr><td><code>seaweedfs</code></td><td>S3-compatible storage for receipts and imports</td></tr>
+<tr><td><code>clamav</code></td><td>the malware scanner (Lesson 11, 34)</td></tr>
+<tr><td><code>lgtm</code></td><td>Grafana stack that receives logs, metrics and traces (Lesson 39)</td></tr>
+<tr><td><code>keycloak</code></td><td>optional external login (<code>keycloak</code> profile)</td></tr>
+<tr><td><code>app</code></td><td>Ledgerly itself, only with the compose profile <code>app</code></td></tr></table>
+<ul>
+<li>Every port is published as <code>127.0.0.1:PORT:PORT</code>: reachable from your machine only, because these services have development passwords or none. Images are pinned by <em>digest</em>, since a tag can be moved to different content (<a href="../docs/local-hardening.md">local-hardening.md</a>).</li>
+<li>The app container gets its settings from environment variables (Lesson 36) and is locked down: <code>read_only: true</code>, <code>cap_drop: ALL</code>, <code>no-new-privileges</code>. <code>depends_on</code> with <code>condition: service_healthy</code> waits for Postgres' <code>healthcheck</code> before starting the app.</li>
+<li><a href="../Makefile"><code>Makefile</code></a> wraps it: <code>make deps</code> (dependencies only, for running the app from your IDE), <code>make up</code> (image, then everything), <code>make down</code> (keep data), <code>make reset</code> (<code>-v</code>: also delete the data), <code>make logs</code>, <code>make ps</code>. <code>make image</code> builds the container with <code>spring-boot:build-image</code>, so there is no Dockerfile to maintain.</li>
+</ul>
+<h2>CI: GitHub Actions</h2>
+<p>A workflow's <code>on</code> picks the triggers; <code>jobs</code> run in parallel by default and <code>needs</code> orders them; <code>concurrency</code> limits runs per group and <code>cancel-in-progress</code> drops superseded ones; <code>permissions</code> restricts the <code>GITHUB_TOKEN</code> to least privilege (<a href="https://docs.github.com/en/actions/writing-workflows/workflow-syntax-for-github-actions">GitHub: workflow syntax</a>). <a href="../.github/workflows/ci.yml"><code>ci.yml</code></a> runs on every pull request to <code>main</code> and on pushes to it:</p>
+<table><tr><th>Job</th><th>Runs</th></tr>
+<tr><td><code>verify</code></td><td><code>./mvnw -B verify</code>: all tests (Testcontainers needs Docker, which the runner has), Spotless formatting, NullAway</td></tr>
+<tr><td><code>openapi-lint</code></td><td>lints <code>api/openapi.yaml</code> (the contract of Lesson 22)</td></tr>
+<tr><td><code>format-config</code></td><td>Prettier on YAML and JSON</td></tr>
+<tr><td><code>gitleaks</code></td><td>scans for committed secrets</td></tr>
+<tr><td><code>image</code></td><td>builds the container image</td></tr></table>
+<p>Supply-chain care is visible: third-party actions are pinned to a commit hash ("a tag can be moved to different code after the fact"), the token is read-only, npm install scripts are disabled. Locally, <code>make verify</code> runs what <code>verify</code> runs, so run it before you push.</p>
+<div class="note">Extending: a change is not done until CI is green. Failing <code>format-config</code> is fixed by <code>make format</code>; a failing <code>verify</code> uploads the surefire reports as an artifact.</div>
+<h2>Check yourself</h2>
+<div class="quiz" data-answer="d"><p>Why are the compose ports published as <code>127.0.0.1:5432:5432</code>?</p>
+<button data-k="a" data-why="It does not.">Postgres requires the loopback address</button>
+<button data-k="b" data-why="Speed is not the reason.">Docker then runs faster on macOS</button>
+<button data-k="c" data-why="Docker still sees it.">It hides the container from Docker</button>
+<button data-k="d" data-why="Development passwords must not face the network.">Only this machine can reach them</button>
+<div class="fb"></div></div>
+<div class="quiz" data-answer="b"><p>What does <code>make reset</code> do beyond <code>make down</code>?</p>
+<button data-k="a" data-why="That is make image.">It rebuilds the container image</button>
+<button data-k="b" data-why="It runs compose down with -v.">It also deletes the stored data</button>
+<button data-k="c" data-why="It stops everything.">It restarts only the Postgres service</button>
+<button data-k="d" data-why="That is make test.">It runs the test suite again</button>
+<div class="fb"></div></div>
+<div class="quiz" data-answer="d"><p>Which CI job runs the tests?</p>
+<button data-k="a" data-why="That lints the contract.">openapi-lint</button>
+<button data-k="b" data-why="That checks formatting of configs.">format-config</button>
+<button data-k="c" data-why="That scans for secrets.">gitleaks</button>
+<button data-k="d" data-why="./mvnw -B verify runs tests, Spotless and NullAway.">verify</button>
+<div class="fb"></div></div>
+<div class="quiz" data-answer="a"><p>Why are CI actions pinned to a commit hash instead of a tag?</p>
+<button data-k="a" data-why="Tags can be moved to different code.">A tag can point elsewhere later</button>
+<button data-k="b" data-why="Speed is not the reason.">Commit hashes download much faster</button>
+<button data-k="c" data-why="They are allowed.">Tags are not allowed on GitHub</button>
+<button data-k="d" data-why="They are longer.">Hashes are shorter to type out</button>
+<div class="fb"></div></div>
+<div class="quiz" data-answer="c"><p>How do the jobs in a workflow run by default?</p>
+<button data-k="a" data-why="That needs needs.">One after another always</button>
+<button data-k="b" data-why="The on section decides triggers.">Only on the main branch</button>
+<button data-k="c" data-why="GitHub runs jobs in parallel unless needs is set.">In parallel by default</button>
+<button data-k="d" data-why="needs orders them; the default is parallel.">Only when needs is set</button>
+<div class="fb"></div></div>
+<h2>Next</h2><p><a href="0039-logs-metrics-traces.html">Lesson 39: Logs, metrics and traces</a>.</p>
+<p><strong>Read:</strong> <a href="https://docs.docker.com/compose/intro/compose-application-model/">Docker: The Compose application model</a> (it does not cover depends_on or profiles; see the repo's compose.yaml and docs/deployment.md).</p>
+<p class="note">Questions? Ask me to walk through <code>docs/deployment.md</code> or the <code>image</code> job.</p>
+<script src="../assets/quiz.js"></script></body></html>

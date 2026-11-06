@@ -1,0 +1,49 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Lesson 18: Streams</title>
+<meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="../assets/style.css"></head><body>
+<h1>Lesson 18: Streams</h1>
+<p class="meta"><a href="index.html">&larr; All lessons</a> &middot; About 12 minutes. Builds on <a href="0017-lambdas-and-method-references.html">Lesson 17</a>.</p>
+<h2>The one idea</h2>
+<p>A <strong>stream</strong> carries values from a source through a <strong>pipeline</strong> of operations: source, then intermediate operations (each returns a new stream), then one terminal operation that produces the result (<a href="https://docs.oracle.com/javase/tutorial/collections/streams/index.html">Oracle: Streams</a>).</p>
+<pre><code>roster.stream()                         // source
+      .filter(p -&gt; p.isMale())          // intermediate
+      .mapToInt(Person::getAge)         // intermediate
+      .average()                        // terminal</code></pre>
+<p>Oracle: "unlike a collection, it is not a data structure that stores elements". Iteration is internal: you say <em>what</em> to do, the JDK decides <em>how</em>. The operations take the lambdas and method references from Lesson 17.</p>
+<h2>Read real code</h2>
+<pre><code>// ExpenseDeletedCleanup.java line 38
+List&lt;String&gt; keys = found.stream().map(Receipt::storageKey).toList();
+
+// BatchCreateExpenses.java, Result.created()
+return results.stream().filter(r -&gt; r.id() != null).count();
+
+// BatchCreateExpenses.java line 83
+if (atomic &amp;&amp; problems.stream().anyMatch(p -&gt; p != null)) { ... }</code></pre>
+<ul>
+<li>First: take each receipt, map it to its storage key, collect a list. The same job as a <code>for</code> loop (Lesson 3) with an <code>add</code>, in one line. (<code>toList()</code> and <code>anyMatch</code> are used in the repo; Oracle's page covers <code>filter</code>, <code>mapToInt</code> and <code>average</code>.)</li>
+<li>Second: keep results that have an id, then count them.</li>
+<li>Third: is any problem non-null? Stops at the first hit.</li>
+</ul>
+<div class="note">Loops are fine too. Streams shine for "filter, transform, collect" and are not always clearer. The repo mixes both.</div>
+<h2>Check yourself</h2>
+<div class="quiz" data-answer="c"><p>In <code>found.stream().map(Receipt::storageKey).toList()</code>, which is the intermediate operation?</p>
+<button data-k="a" data-why="That is the source collection.">found</button>
+<button data-k="b" data-why="That obtains the stream from the source.">stream()</button>
+<button data-k="c" data-why="map returns another stream: intermediate.">map(Receipt::storageKey)</button>
+<button data-k="d" data-why="That ends the pipeline: terminal.">toList()</button>
+<div class="fb"></div></div>
+<div class="quiz" data-answer="c"><p>How does Oracle say a stream differs from a collection?</p>
+<button data-k="a" data-why="Streams do not sort by themselves.">It sorts all elements on creation</button>
+<button data-k="b" data-why="No copying is implied.">It copies each list into arrays</button>
+<button data-k="c" data-why="It is not a data structure that stores elements.">It carries values through a pipeline</button>
+<button data-k="d" data-why="Collections store; streams do not.">It stores elements in a table</button>
+<div class="fb"></div></div>
+<div class="quiz" data-answer="d"><p>What does <code>results.stream().filter(r -&gt; r.id() != null).count()</code> return?</p>
+<button data-k="a" data-why="filter keeps non-null ids.">Number of results without any id</button>
+<button data-k="b" data-why="count counts, it does not sum.">Sum of all numeric ids</button>
+<button data-k="c" data-why="count returns a number.">The list of ids themselves</button>
+<button data-k="d" data-why="Keep those with an id, then count them.">Number of results with an id</button>
+<div class="fb"></div></div>
+<h2>Next</h2><p><a href="0019-spring-annotations-and-beans.html">Lesson 19: Spring annotations and beans</a>.</p>
+<p><strong>Read:</strong> <a href="https://docs.oracle.com/javase/tutorial/collections/streams/index.html">The Java Tutorials: Aggregate Operations</a>.</p>
+<p class="note">Questions? Ask me to rewrite a stream as a loop, or the reverse.</p>
+<script src="../assets/quiz.js"></script></body></html>

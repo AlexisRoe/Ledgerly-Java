@@ -1,0 +1,47 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Lesson 15: Sealed types</title>
+<meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="../assets/style.css"></head><body>
+<h1>Lesson 15: Sealed types</h1>
+<p class="meta"><a href="index.html">&larr; All lessons</a> &middot; About 10 minutes. Builds on <a href="0014-optional.html">Lesson 14</a>.</p>
+<h2>The one idea</h2>
+<p>A <strong>sealed</strong> type lists exactly who may extend or implement it, using <code>permits</code>. It models a fixed set of possibilities.</p>
+<pre><code>public sealed interface Shape permits Circle, Square {}</code></pre>
+<p>Each permitted subtype must be exactly one of <code>final</code>, <code>sealed</code> or <code>non-sealed</code>. A record counts as <code>final</code> already (<a href="https://docs.oracle.com/en/java/javase/21/language/sealed-classes-and-interfaces.html">Oracle: Sealed Classes</a>). Because the compiler knows every case, a <code>switch</code> over the type can be checked for completeness (Lesson 16).</p>
+
+<h2>Read real code</h2>
+<pre><code>// MalwareScanner.java line 10
+sealed interface Result permits Result.Clean, Result.Infected {
+    record Clean() implements Result {}
+    record Infected(String signature) implements Result {}
+}
+
+// ExpenseException.java
+public abstract sealed class ExpenseException extends RuntimeException
+        permits InvalidTransition, SelfDealing, NotAllowed, RuleViolated, InvalidInput, NotDraft {</code></pre>
+<ul>
+<li>A malware scan has exactly two outcomes, so <a href="$R/receipts/internal/application/MalwareScanner.java"><code>Result</code></a> is sealed with two records. <code>Infected</code> carries data (the signature); <code>Clean</code> carries none. This is a typed "either or".</li>
+<li><a href="$R/expenses/internal/domain/ExpenseException.java"><code>ExpenseException</code></a> seals Lesson 10's exceptions: every kind of domain refusal is named in one place.</li>
+<li><a href="$R/expenses/internal/application/BatchCreateExpenses.java"><code>BatchCreateExpenses.Candidate</code></a> (line 29) is another: <code>Ready</code> or <code>Unparseable</code>.</li>
+</ul>
+<h2>Check yourself</h2>
+<div class="quiz" data-answer="d"><p>What does <code>permits</code> do in a sealed declaration?</p>
+<button data-k="a" data-why="It lists subtypes, not methods.">Names methods callable from outside</button>
+<button data-k="b" data-why="Unrelated to abstractness.">Marks the class as abstract</button>
+<button data-k="c" data-why="Unrelated to field access.">Grants access to private fields</button>
+<button data-k="d" data-why="Exactly: nothing else may extend or implement it.">Lists the only allowed subtypes</button>
+<div class="fb"></div></div>
+<div class="quiz" data-answer="d"><p>Which modifier may a permitted subclass NOT use?</p>
+<button data-k="a" data-why="Allowed: cannot be extended further.">final</button>
+<button data-k="b" data-why="Allowed: only its own permitted subclasses.">sealed</button>
+<button data-k="c" data-why="Allowed: open to unknown subclasses.">non-sealed</button>
+<button data-k="d" data-why="Oracle lists only final, sealed and non-sealed.">private</button>
+<div class="fb"></div></div>
+<div class="quiz" data-answer="c"><p>Why are the records <code>Clean</code> and <code>Infected</code> written without <code>final</code>?</p>
+<button data-k="a" data-why="The rule applies; it is simply met.">The compiler skips that rule here</button>
+<button data-k="b" data-why="Oracle says a record can be listed in permits.">Records cannot be permitted subtypes</button>
+<button data-k="c" data-why="Records are implicitly final, so the rule holds.">Records are implicitly final already</button>
+<button data-k="d" data-why="Exactly one modifier is required, for classes.">Final is optional for all classes</button>
+<div class="fb"></div></div>
+<h2>Next</h2><p><a href="0016-pattern-matching.html">Lesson 16: Pattern matching</a>.</p>
+<p><strong>Read:</strong> <a href="https://docs.oracle.com/en/java/javase/21/language/sealed-classes-and-interfaces.html">Oracle: Sealed Classes and Interfaces</a>.</p>
+<p class="note">Questions? Ask me why <code>Result</code> is nested inside <code>MalwareScanner</code>.</p>
+<script src="../assets/quiz.js"></script></body></html>

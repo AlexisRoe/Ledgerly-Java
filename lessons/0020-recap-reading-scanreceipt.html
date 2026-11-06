@@ -1,0 +1,57 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Lesson 20: Recap, reading ScanReceipt</title>
+<meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="../assets/style.css"></head><body>
+<h1>Lesson 20: Recap, reading ScanReceipt</h1>
+<p class="meta"><a href="index.html">&larr; All lessons</a> &middot; About 12 minutes. Mixed retrieval practice on Lessons 13 to 19.</p>
+<h2>Try before you look</h2>
+<p>Open <a href="$R/receipts/internal/application/ScanReceipt.java"><code>ScanReceipt.java</code></a>, method <code>scan</code> (lines 75 to 95). Everything in it comes from the last eight lessons.</p>
+<pre><code>Optional&lt;Receipt&gt; found = tx.execute(s -&gt; receipts.findById(receiptId));
+if (found == null || found.isEmpty() || found.get().scanStatus() != ScanStatus.PENDING_SCAN) {
+    return;
+}
+Receipt receipt = found.get();
+MalwareScanner.Result result;
+try (InputStream content = storage.open(receipt.storageKey())) {
+    result = scanner.scan(content);
+} catch (Exception e) {
+    log.warn(...);
+    throw new IllegalStateException("Scan of receipt " + receiptId + " failed", e);
+}
+switch (result) {
+    case MalwareScanner.Result.Clean clean -&gt; markAccepted(receipt);
+    case MalwareScanner.Result.Infected infected -&gt; quarantine(receipt, infected.signature());
+}</code></pre>
+<div class="quiz" data-answer="b"><p>(Lesson 14) Why is <code>found.get()</code> safe on the third line of the if?</p>
+<button data-k="a" data-why="get throws when the Optional is empty.">get never throws an exception</button>
+<button data-k="b" data-why="|| short-circuits: reaching get() means found is not empty.">Earlier tests already ruled out empty</button>
+<button data-k="c" data-why="It does no such thing.">Optional converts null into zero</button>
+<button data-k="d" data-why="Nothing is inserted automatically.">The compiler inserts a null check</button>
+<div class="fb"></div></div>
+<div class="quiz" data-answer="b"><p>(Lesson 13) When is <code>content</code> closed?</p>
+<button data-k="a" data-why="Also on exceptions.">Only if the scan finishes normally</button>
+<button data-k="b" data-why="Try-with-resources closes on normal or abrupt exit.">Whenever the try block is exited</button>
+<button data-k="c" data-why="It needs no finally.">Only when finally is written</button>
+<button data-k="d" data-why="Closing is deterministic.">When the garbage collector runs</button>
+<div class="fb"></div></div>
+<div class="quiz" data-answer="d"><p>(Lessons 15 and 16) Why does the <code>switch</code> have no <code>default</code>?</p>
+<button data-k="a" data-why="They allow it; it is just unnecessary.">Switch statements never allow any default label</button>
+<button data-k="b" data-why="Not true.">Default is only valid for String switches</button>
+<button data-k="c" data-why="Coverage is proven at compile time.">The compiler adds one at run time</button>
+<button data-k="d" data-why="The compiler checks exhaustiveness over sealed types.">Result is sealed and both are covered</button>
+<div class="fb"></div></div>
+<div class="quiz" data-answer="b"><p>(Lesson 17) What does the lambda <code>s -&gt; receipts.findById(receiptId)</code> rely on?</p>
+<button data-k="a" data-why="Locals cannot be static.">receiptId being declared static</button>
+<button data-k="b" data-why="Captured locals must be final or effectively final.">receiptId being effectively final</button>
+<button data-k="c" data-why="The type does not matter here.">receiptId being a primitive int</button>
+<button data-k="d" data-why="That would break the rule.">receiptId being assigned twice</button>
+<div class="fb"></div></div>
+<div class="quiz" data-answer="c"><p>(Lesson 19) What does <code>@Component</code> on <code>ScanReceipt</code> do?</p>
+<button data-k="a" data-why="Unrelated.">Turns it into a sealed interface</button>
+<button data-k="b" data-why="That is try-with-resources.">Closes it after every single call</button>
+<button data-k="c" data-why="Component scanning registers it.">Spring finds it and manages it</button>
+<button data-k="d" data-why="Not the meaning.">Limits it to test code only</button>
+<div class="fb"></div></div>
+<div class="note">Missed one? Reread the matching lesson tomorrow and retry.</div>
+<h2>Next</h2>
+<p>Back to the <a href="index.html">lesson index</a>. You can now read most of this repo's non-Spring Java. Possible next topics: <code>@Transactional</code> and JPA entities, Spring MVC controllers and validation, testing with JUnit, generics in depth, <code>BigDecimal</code> and <code>Clock</code>/time. Tell me which matters most for your job search.</p>
+<p class="note">Questions? Ask me about anything that still feels fuzzy.</p>
+<script src="../assets/quiz.js"></script></body></html>

@@ -1,0 +1,54 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Lesson 16: Pattern matching</title>
+<meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="../assets/style.css"></head><body>
+<h1>Lesson 16: Pattern matching</h1>
+<p class="meta"><a href="index.html">&larr; All lessons</a> &middot; About 12 minutes. Builds on <a href="0015-sealed-types.html">Lesson 15</a>.</p>
+<h2>The one idea</h2>
+<p>Pattern matching tests a type and extracts the value in one step.</p>
+<p><strong><code>instanceof</code> pattern.</strong> <code>shape instanceof Rectangle r</code> tests and declares <code>r</code>, already of type <code>Rectangle</code>, usable only where the test is known true: no separate cast (<a href="https://docs.oracle.com/en/java/javase/21/language/pattern-matching-instanceof-operator.html">Oracle: instanceof patterns</a>).</p>
+<p><strong><code>switch</code> patterns.</strong> <code>case String s -&gt; ...</code> binds a typed variable; <code>case Integer i when i &gt; 100 -&gt; ...</code> adds a guard. Labels are tested in order; the compiler rejects a label that an earlier one always matches ("dominance"). A switch over a sealed type that covers every subtype needs no <code>default</code> (<a href="https://docs.oracle.com/en/java/javase/21/language/pattern-matching-switch.html">Oracle: switch patterns</a>).</p>
+<h2>Read real code</h2>
+<pre><code>// BatchCreateExpenses.java line 100
+if (problems.get(i) == null &amp;&amp; items.get(i) instanceof Candidate.Ready ready) {
+    valid.add(ready.expense());
+}
+
+// ScanReceipt.java line 91
+switch (result) {
+    case MalwareScanner.Result.Clean clean -&gt; markAccepted(receipt);
+    case MalwareScanner.Result.Infected infected -&gt; quarantine(receipt, infected.signature());
+}
+
+// ExpenseDomainExceptionHandler.java line 36
+ProblemDetail problem = switch (e) {
+    case InvalidTransition t -&gt; ...;
+    case SelfDealing s -&gt; ...;
+    ...six cases, no default...
+};</code></pre>
+<ul>
+<li>In the first, <code>ready</code> is only usable inside the <code>if</code>, and it is a <code>Ready</code>, so <code>ready.expense()</code> works with no cast.</li>
+<li>In the second, <code>infected.signature()</code> reads the record's accessor (Lesson 8). Two sealed cases, both handled, no <code>default</code>.</li>
+<li>In the third, the repo comment says it: "ExpenseException is sealed, so this switch must cover every case." Add a seventh exception to <code>permits</code> and this switch stops compiling until you handle it. The compiler finds the places you forgot.</li>
+</ul>
+<h2>Check yourself</h2>
+<div class="quiz" data-answer="b"><p>In <code>x instanceof Candidate.Ready ready</code>, what is <code>ready</code> inside the if?</p>
+<button data-k="a" data-why="The test is the boolean; ready is the value.">A boolean showing whether x matched</button>
+<button data-k="b" data-why="The pattern variable is typed Ready, no cast needed.">A variable already cast to Ready</button>
+<button data-k="c" data-why="It is the same object, not a copy.">A brand new Ready object copy</button>
+<button data-k="d" data-why="It is a local pattern variable.">A static field called ready now</button>
+<div class="fb"></div></div>
+<div class="quiz" data-answer="d"><p>A seventh subclass is added to <code>ExpenseException</code>. What happens to the handler's switch?</p>
+<button data-k="a" data-why="The compiler does not allow silent gaps.">It silently skips the new case</button>
+<button data-k="b" data-why="Nothing is added automatically.">A default case gets added automatically</button>
+<button data-k="c" data-why="It can be thrown; the switch must cover it.">The new class cannot be thrown</button>
+<button data-k="d" data-why="Exhaustiveness over a sealed type is checked at compile time.">Compile error until a case exists</button>
+<div class="fb"></div></div>
+<div class="quiz" data-answer="c"><p>Why must <code>case Integer i when i &gt; 100</code> come before plain <code>case Integer i</code>?</p>
+<button data-k="a" data-why="Speed is not the reason.">Guards run faster when placed first</button>
+<button data-k="b" data-why="Cases are tested in written order.">Java sorts cases by length</button>
+<button data-k="c" data-why="Oracle: a label that can never match is a compile error.">The plain case would dominate it</button>
+<button data-k="d" data-why="Not required; this is about dominance.">Unguarded cases need a default</button>
+<div class="fb"></div></div>
+<h2>Next</h2><p><a href="0017-lambdas-and-method-references.html">Lesson 17: Lambdas and method references</a>.</p>
+<p><strong>Read:</strong> <a href="https://docs.oracle.com/en/java/javase/21/language/pattern-matching-switch.html">Oracle: Pattern Matching for switch</a>.</p>
+<p class="note">Questions? Ask me. Also revisit <a href="0004-switch.html">Lesson 4</a>: this is the same switch with smarter labels.</p>
+<script src="../assets/quiz.js"></script></body></html>

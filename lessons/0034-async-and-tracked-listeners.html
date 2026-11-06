@@ -1,0 +1,57 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Lesson 34: Async and tracked listeners</title>
+<meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="../assets/style.css"></head><body>
+<h1>Lesson 34: Async and tracked listeners</h1>
+<p class="meta"><a href="index.html">&larr; All lessons</a> &middot; About 14 minutes. Builds on <a href="0033-events.html">Lesson 33</a>.</p>
+<h2>The one idea</h2>
+<p><code>@EnableAsync</code> plus <code>@Async</code> makes a method return immediately while it runs "in a task that has been submitted to a Spring <code>TaskExecutor</code>". Allowed returns: <code>void</code>, <code>Future</code>, <code>CompletableFuture</code>. For a <code>void</code> method an exception "is uncaught and cannot be transmitted" (by default just logged), and calling an <code>@Async</code> method on <code>this</code> runs synchronously because only proxy calls are intercepted (<a href="https://docs.spring.io/spring-framework/reference/integration/scheduling.html">Spring: task execution</a>), the same limit as Lesson 23.</p>
+<p><strong>The risk:</strong> with plain <code>@Async</code> + <code>@TransactionalEventListener</code>, a failing listener can lose the event. Spring Modulith's answer is <code>@ApplicationModuleListener</code>, a shortcut for <code>@Async</code> + <code>@Transactional(propagation = REQUIRES_NEW)</code> + <code>@TransactionalEventListener</code>. Its <strong>event publication registry</strong> writes a log entry in the same transaction as the business change, marks it complete when the listener succeeds, and leaves it open if the listener fails, so it can be re-delivered (<a href="https://docs.spring.io/spring-modulith/reference/events.html">Spring Modulith: events</a>).</p>
+<h2>Read real code</h2>
+<pre><code>// ScanReceipt.java line 62: upload commits, then the scan starts on another thread
+@Async
+@TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+public void on(ReceiptUploaded event) { scan(event.receiptId()); }
+
+// ExpenseDeletedCleanup.java: react to a deleted expense
+@ApplicationModuleListener
+void on(ExpenseEvent.Deleted event) { ... delete receipt rows and files ... }
+
+// AuditListeners.java: one @ApplicationModuleListener per event type
+@ApplicationModuleListener
+void on(UserRegistered e) { audit.record(e.eventId(), "USER_REGISTERED", ...); }</code></pre>
+<ul>
+<li>The class comment of <a href="$R/receipts/internal/application/ScanReceipt.java"><code>ScanReceipt</code></a> describes the guarantee: Modulith stores a publication in the same transaction as the upload, completes it when the method returns normally, and re-delivers it after a restart if the scan did not finish. The receipt stays <code>PENDING_SCAN</code> meanwhile, which is why <code>Expense.submit</code> refuses while scans are pending (Lesson 5).</li>
+<li>That is also why <code>scan</code> <em>throws</em> <code>IllegalStateException</code> when the scanner is unreachable (Lesson 13): "swallowing it would mark the event as handled".</li>
+<li><code>application.yaml</code> sets <code>republish-outstanding-events-on-restart: true</code> and <a href="$R/shared/config/EventMaintenance.java"><code>EventMaintenance</code></a> resubmits listeners that failed while the app kept running.</li>
+<li><a href="$R/audit/internal/application/AuditListeners.java"><code>AuditListeners</code></a> records the audit trail this way, <em>idempotently on <code>eventId</code></em>, because delivery can happen twice. Write listeners so that running twice is harmless.</li>
+<li><code>@Async</code> listeners run on virtual threads here (<code>spring.threads.virtual.enabled</code>).</li>
+</ul>
+<div class="note">Extending: a new reaction is a new <code>@ApplicationModuleListener</code> method taking the event type. Make it idempotent, and let real failures throw so the registry can retry.</div>
+<h2>Check yourself</h2>
+<div class="quiz" data-answer="b"><p>A <code>void</code> <code>@Async</code> method throws an exception. What reaches the caller?</p>
+<button data-k="a" data-why="The caller already returned.">The exception rethrown on caller thread</button>
+<button data-k="b" data-why="Docs: it cannot be transmitted; by default merely logged.">Nothing; it is logged by default</button>
+<button data-k="c" data-why="The caller is not involved.">A rollback of the caller's transaction</button>
+<button data-k="d" data-why="Only for Future return types.">A CompletableFuture that holds the error</button>
+<div class="fb"></div></div>
+<div class="quiz" data-answer="c"><p>What does <code>@ApplicationModuleListener</code> combine?</p>
+<button data-k="a" data-why="Those are stereotypes.">@Service, @Component, @Repository</button>
+<button data-k="b" data-why="Unrelated annotations.">@PreAuthorize, @Valid, @RestController</button>
+<button data-k="c" data-why="Exactly the Modulith shortcut.">@Async, @Transactional(REQUIRES_NEW), @TransactionalEventListener</button>
+<button data-k="d" data-why="Those are JUnit annotations.">@Test, @BeforeEach, @AfterEach</button>
+<div class="fb"></div></div>
+<div class="quiz" data-answer="b"><p>A scan listener fails because the scanner is down. What does the event publication registry do?</p>
+<button data-k="a" data-why="It keeps unfinished entries.">Deletes the event and logs nothing</button>
+<button data-k="b" data-why="A failed listener leaves the entry untouched.">Keeps it open for later re-delivery</button>
+<button data-k="c" data-why="Only success completes it.">Marks it as completed anyway too</button>
+<button data-k="d" data-why="The upload already committed.">Rolls back the whole original upload</button>
+<div class="fb"></div></div>
+<div class="quiz" data-answer="d"><p>Why must event listeners be idempotent?</p>
+<button data-k="a" data-why="It does not.">Because Java forbids repeated method calls</button>
+<button data-k="b" data-why="Entries are kept until completed.">Because events are deleted after reading</button>
+<button data-k="c" data-why="Modulith listeners run asynchronously.">Because listeners run on the request thread</button>
+<button data-k="d" data-why="Re-delivery after restart or failure.">Because delivery can happen more than once</button>
+<div class="fb"></div></div>
+<h2>Next</h2><p><a href="0035-recap-reading-the-security-and-event-flow.html">Lesson 35: Recap</a>.</p>
+<p><strong>Read:</strong> <a href="https://docs.spring.io/spring-modulith/reference/events.html">Spring Modulith: Working with Application Events</a>.</p>
+<p class="note">Questions? Ask me to walk through what happens if the app crashes between upload and scan.</p>
+<script src="../assets/quiz.js"></script></body></html>

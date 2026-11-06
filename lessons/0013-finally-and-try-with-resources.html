@@ -1,0 +1,50 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Lesson 13: finally and try-with-resources</title>
+<meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="../assets/style.css"></head><body>
+<h1>Lesson 13: finally and try-with-resources</h1>
+<p class="meta"><a href="index.html">&larr; All lessons</a> &middot; About 12 minutes. Builds on <a href="0010-exceptions.html">Lesson 10</a>.</p>
+<h2>The one idea</h2>
+<p>Two tools for cleanup that must happen no matter how code exits.</p>
+<p><code>finally</code> runs "always ... when the <code>try</code> block exits", whether it finishes normally, throws, or leaves through <code>return</code>, <code>continue</code> or <code>break</code>. It may not run if the JVM exits meanwhile (<a href="https://docs.oracle.com/javase/tutorial/essential/exceptions/finally.html">Oracle: finally</a>).</p>
+<pre><code>try {
+    ...
+} catch (IOException e) {
+    ...
+} finally {
+    cleanup();
+}</code></pre>
+<p><strong>try-with-resources</strong> declares resources in parentheses. Anything implementing <code>AutoCloseable</code> is closed automatically when the block ends, normally or not, in <em>reverse order</em> of declaration. Oracle recommends it over a manual <code>finally</code> for closing, because a failing <code>close()</code> in <code>finally</code> can hide the original exception (<a href="https://docs.oracle.com/javase/tutorial/essential/exceptions/tryResourceClose.html">Oracle: try-with-resources</a>).</p>
+<pre><code>try (FileReader fr = new FileReader(path);
+     BufferedReader br = new BufferedReader(fr)) {
+    return br.readLine();
+}   // br closes first, then fr</code></pre>
+
+<h2>Read real code</h2>
+<ul>
+<li><a href="$R/receipts/internal/infrastructure/ClamAvScanner.java"><code>ClamAvScanner.scanOnce</code></a> line 65: <code>try (Socket socket = new Socket()) { ... }</code>. The network connection is always closed.</li>
+<li><a href="$R/receipts/internal/application/ScanReceipt.java"><code>ScanReceipt.scan</code></a> line 82: <code>try (InputStream content = storage.open(...)) { ... }</code>, plus a <code>catch</code> that logs and rethrows.</li>
+<li><a href="$R/shared/security/MdcUserFilter.java"><code>MdcUserFilter</code></a> line 31: <code>try { chain.doFilter(...) } finally { MDC.remove(KEY) }</code>. Not a resource, but the logging context must be cleared even if the request fails. That is a job for <code>finally</code>.</li>
+<li><code>ClamAvScanner</code> line 59 combines Lesson 10's multi-catch <code>catch (IOException | RuntimeException e)</code> with <code>finally { observation.stop(); }</code>.</li>
+</ul>
+<h2>Check yourself</h2>
+<div class="quiz" data-answer="b"><p>When does a <code>finally</code> block run?</p>
+<button data-k="a" data-why="A try that throws also triggers finally.">Only after a normal try completion</button>
+<button data-k="b" data-why="Normal end, throw, return, break or continue: all run it.">Whenever the try block is exited</button>
+<button data-k="c" data-why="finally is independent of catch.">Only when a catch block runs</button>
+<button data-k="d" data-why="Exceptions trigger finally too.">Only when the method returns normally</button>
+<div class="fb"></div></div>
+<div class="quiz" data-answer="c"><p>What does Oracle recommend instead of a manual <code>finally</code> for closing files?</p>
+<button data-k="a" data-why="That is a record feature.">Compact constructor body</button>
+<button data-k="b" data-why="Unrelated to closing resources.">Static initializer block</button>
+<button data-k="c" data-why="It closes resources automatically and avoids masked exceptions.">Try-with-resources statement</button>
+<button data-k="d" data-why="Unrelated to closing resources.">Sealed interface clause</button>
+<div class="fb"></div></div>
+<div class="quiz" data-answer="b"><p>In <code>try (A a = open(); B b = open()) {...}</code>, which resource closes first?</p>
+<button data-k="a" data-why="Closing is in reverse order of declaration.">a closes first, then b</button>
+<button data-k="b" data-why="Reverse order: last declared closes first.">b closes first, then a</button>
+<button data-k="c" data-why="The order is defined, not random.">Both close in random order</button>
+<button data-k="d" data-why="They close automatically.">Neither; you must call close</button>
+<div class="fb"></div></div>
+<h2>Next</h2><p><a href="0014-optional.html">Lesson 14: Optional</a>.</p>
+<p><strong>Read:</strong> <a href="https://docs.oracle.com/javase/tutorial/essential/exceptions/tryResourceClose.html">The Java Tutorials: The try-with-resources Statement</a>.</p>
+<p class="note">Questions? Ask me, for instance why the <code>UploadReceipt</code> <code>finally</code> deletes a temp file.</p>
+<script src="../assets/quiz.js"></script></body></html>

@@ -1,0 +1,55 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Lesson 32: Specifications and dynamic queries</title>
+<meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="../assets/style.css"></head><body>
+<h1>Lesson 32: Specifications and dynamic queries</h1>
+<p class="meta"><a href="index.html">&larr; All lessons</a> &middot; About 12 minutes. Builds on <a href="0031-authorization-in-layers.html">Lesson 31</a>.</p>
+<h2>The one idea</h2>
+<p>A <strong>Specification</strong> is a reusable predicate over an entity, built with the JPA Criteria API; combine them with <code>and</code>/<code>or</code> and pass the result to a repository (<a href="https://docs.spring.io/spring-data/jpa/reference/jpa/specifications.html">Spring Data: Specifications</a>). In lambda form it has three parameters:</p>
+<pre><code>Specification&lt;Expense&gt; hasStatus(ExpenseStatus status) {
+    return (root, query, cb) -&gt; cb.equal(root.get("status"), status);
+}   // root = the entity, cb = CriteriaBuilder building the condition</code></pre>
+<p>This is how optional filters work without a method per combination (<code>findByStatusAndCategoryAndClaimant...</code> would explode).</p>
+<h2>Read real code</h2>
+<p><a href="$R/expenses/internal/infrastructure/ExpenseSpecifications.java"><code>ExpenseSpecifications</code></a> has one small factory per filter (<code>inTeam</code>, <code>hasStatus</code>, <code>claimedBy</code>, <code>incurredFrom</code>...). <a href="$R/expenses/internal/application/ExpenseFilters.java"><code>ExpenseFilters.build</code></a> composes them:</p>
+<pre><code>Specification&lt;Expense&gt; spec = inTeam(teamId);                 // always first
+UserId claimant = actor.role().includes(Role.APPROVER) ? f.claimantId() : actor.id();
+if (claimant != null) spec = spec.and(claimedBy(claimant));
+if (f.status() != null) spec = spec.and(hasStatus(f.status()));
+if (f.category() != null) spec = spec.and(hasCategory(f.category()));
+...
+return spec;</code></pre>
+<ul>
+<li><code>null</code> means "no filter on this" (the <code>@Nullable</code> fields of the query record, Lesson 8).</li>
+<li><strong>Security lives in the query.</strong> It always starts with <code>inTeam</code>, and a plain MEMBER is forced to their own expenses "whatever claimant they ask for".</li>
+<li>The paged list and the CSV export both call <code>ExpenseFilters.build</code>, so "they can never disagree".</li>
+<li><a href="$R/expenses/internal/application/ListExpenses.java"><code>ListExpenses</code></a> then runs <code>expenses.findAll(spec, PageRequest.of(page, size, sort))</code>. The repository declares that method itself (Lesson 24) instead of extending <code>JpaSpecificationExecutor</code>, so there is still no un-scoped finder.</li>
+</ul>
+<div class="note">Extending: a new filter is one new factory in <code>ExpenseSpecifications</code>, one nullable field in <code>Filter</code>, one <code>if</code> in <code>build</code>, plus the query parameter in <code>openapi.yaml</code> (Lesson 22).</div>
+<h2>Check yourself</h2>
+<div class="quiz" data-answer="b"><p>What does a <code>Specification</code> represent?</p>
+<button data-k="a" data-why="Pages come from findAll with a Pageable.">A prebuilt page of query results</button>
+<button data-k="b" data-why="A condition you can combine with and/or.">A reusable predicate over an entity</button>
+<button data-k="c" data-why="Migrations are SQL files.">A migration that adds a column</button>
+<button data-k="d" data-why="Specifications are Java objects.">A generated SQL view definition</button>
+<div class="fb"></div></div>
+<div class="quiz" data-answer="c"><p>In <code>ExpenseFilters.build</code>, what happens when the status filter is null?</p>
+<button data-k="a" data-why="A null filter is valid.">The query fails with an error</button>
+<button data-k="b" data-why="No default status is applied.">Only DRAFT rows are returned</button>
+<button data-k="c" data-why="The if-statement skips it.">No status condition is added</button>
+<button data-k="d" data-why="Each filter is independent.">The other filters are dropped too</button>
+<div class="fb"></div></div>
+<div class="quiz" data-answer="b"><p>Why does <code>build</code> always start with <code>inTeam</code>?</p>
+<button data-k="a" data-why="Not the reason.">It makes the database index faster</button>
+<button data-k="b" data-why="Every query is scoped to the caller&#x27;s team first.">Queries can never reach other teams</button>
+<button data-k="c" data-why="No such rule.">Specification objects must begin with it</button>
+<button data-k="d" data-why="Hibernate has no such requirement.">Hibernate requires a team condition always</button>
+<div class="fb"></div></div>
+<div class="quiz" data-answer="d"><p>A MEMBER passes someone else's <code>claimantId</code> in the list request. What happens?</p>
+<button data-k="a" data-why="The code prevents that.">They see that user's expenses anyway</button>
+<button data-k="b" data-why="No failure occurs.">The request fails with a 500</button>
+<button data-k="c" data-why="Only their own request is affected.">Their filter is ignored for everyone</button>
+<button data-k="d" data-why="Non-approvers are forced to their own expenses.">Their own id replaces the filter</button>
+<div class="fb"></div></div>
+<h2>Next</h2><p><a href="0033-events.html">Lesson 33: Events</a>.</p>
+<p><strong>Read:</strong> <a href="https://docs.spring.io/spring-data/jpa/reference/jpa/specifications.html">Spring Data JPA: Specifications</a>.</p>
+<p class="note">Questions? Ask me how the sort parameter and the id tie-breaker combine with the specification.</p>
+<script src="../assets/quiz.js"></script></body></html>

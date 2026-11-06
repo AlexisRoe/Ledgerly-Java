@@ -1,0 +1,59 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Lesson 19: Spring annotations and beans</title>
+<meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="../assets/style.css"></head><body>
+<h1>Lesson 19: Spring annotations and beans</h1>
+<p class="meta"><a href="index.html">&larr; All lessons</a> &middot; About 12 minutes. Builds on <a href="0018-streams.html">Lesson 18</a>.</p>
+<h2>The one idea</h2>
+<p>An <strong>annotation</strong> (<code>@Something</code>) is metadata written on a class, method or field. Spring reads them. A class marked <code>@Component</code> is a <em>stereotype</em> that Spring finds by <strong>component scanning</strong> and manages as a <strong>bean</strong>: Spring creates the object for you. <code>@Service</code>, <code>@Repository</code> and <code>@Controller</code> are specialisations of <code>@Component</code> for the service, persistence and web layers; <code>@RestController</code> combines <code>@Controller</code> and <code>@ResponseBody</code> (<a href="https://docs.spring.io/spring-framework/reference/core/beans/classpath-scanning.html">Spring: Classpath Scanning</a>).</p>
+<ul>
+<li>The default bean name is the uncapitalised class name (<code>SimpleMovieLister</code> becomes <code>simpleMovieLister</code>).</li>
+<li>The default scope is <code>singleton</code>: one shared instance.</li>
+<li><strong>Constructor injection:</strong> the constructor lists what the class needs; Spring supplies the arguments. The docs' own example has a constructor taking <code>MovieFinder</code> and no further annotation. Fields can be <code>final</code> (<a href="https://docs.spring.io/spring-framework/reference/core/beans/annotation-config.html">Spring: Annotation-based configuration</a>).</li>
+</ul>
+<h2>Read real code</h2>
+<pre><code>// DownloadReceipt.java line 19
+@Service
+public class DownloadReceipt {
+    private final ExpensesFacade expenses;
+    private final ReceiptRepository receipts;
+    private final ObjectStorage storage;
+    private final Clock clock;
+
+    DownloadReceipt(ExpensesFacade expenses, ReceiptRepository receipts,
+                    ObjectStorage storage, Clock clock) {
+        this.expenses = expenses; ...
+    }</code></pre>
+<ul>
+<li>The Lesson 7 shape: <code>private final</code> fields, a constructor assigning them with <code>this.x = x</code>. The constructor is the dependency list.</li>
+<li>The fields are mostly interfaces (<code>ExpensesFacade</code>, Lesson 11). The class never calls <code>new</code> on them.</li>
+<li><a href="$R/receipts/internal/web/ReceiptsController.java"><code>ReceiptsController</code></a> is <code>@RestController</code> with <code>@RequestMapping("/api/v1")</code> and takes the use cases in its constructor. <a href="$R/receipts/internal/application/ScanReceipt.java"><code>ScanReceipt</code></a> is a plain <code>@Component</code>.</li>
+<li>Other annotations here (<code>@Transactional</code>, <code>@Async</code>, <code>@Override</code>) are for later; the idea is the same: metadata that the framework acts on.</li>
+</ul>
+<h2>Check yourself</h2>
+<div class="quiz" data-answer="b"><p>Which annotation is <code>@Service</code> itself meta-annotated with?</p>
+<button data-k="a" data-why="That marks a factory method.">@Bean</button>
+<button data-k="b" data-why="Spring: @Service is meta-annotated with @Component.">@Component</button>
+<button data-k="c" data-why="Unrelated to Spring stereotypes.">@Override</button>
+<button data-k="d" data-why="That is a sibling, not the parent.">@Repository</button>
+<div class="fb"></div></div>
+<div class="quiz" data-answer="c"><p>What is the default bean name of class <code>DownloadReceipt</code>?</p>
+<button data-k="a" data-why="Spring lowercases the first letter.">DownloadReceipt</button>
+<button data-k="b" data-why="Spring does not use underscores.">download_receipt</button>
+<button data-k="c" data-why="The uncapitalised class name.">downloadReceipt</button>
+<button data-k="d" data-why="That is constant style.">DOWNLOAD_RECEIPT</button>
+<div class="fb"></div></div>
+<div class="quiz" data-answer="d"><p>How does <code>DownloadReceipt</code> get its <code>ExpensesFacade</code>?</p>
+<button data-k="a" data-why="It never constructs it.">The class calls new itself</button>
+<button data-k="b" data-why="Dependencies come via the constructor.">A static field fills it in</button>
+<button data-k="c" data-why="Not how injection works.">It is read from a file</button>
+<button data-k="d" data-why="Constructor injection: Spring supplies the arguments.">Spring passes it to the constructor</button>
+<div class="fb"></div></div>
+<div class="quiz" data-answer="c"><p>What is the default scope of a Spring bean?</p>
+<button data-k="a" data-why="Not the default.">request</button>
+<button data-k="b" data-why="Only if you set it.">prototype</button>
+<button data-k="c" data-why="One shared instance by default.">singleton</button>
+<button data-k="d" data-why="Not the default.">session</button>
+<div class="fb"></div></div>
+<h2>Next</h2><p><a href="0020-recap-reading-scanreceipt.html">Lesson 20: Recap</a>.</p>
+<p><strong>Read:</strong> <a href="https://docs.spring.io/spring-framework/reference/core/beans/classpath-scanning.html">Spring Framework: Classpath Scanning and Managed Components</a>.</p>
+<p class="note">Questions? Ask me. This is the doorway to the Spring Boot part of the repo.</p>
+<script src="../assets/quiz.js"></script></body></html>
