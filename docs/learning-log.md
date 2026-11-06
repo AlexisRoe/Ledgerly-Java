@@ -10,3 +10,8 @@
 - **Tooling notes:** Boot 4.1.2 does not manage Spring Modulith, so its BOM is imported (2.1.2). `@NullMarked` applies per package, so every package needs a `package-info.java`; NullAway runs on main sources only. Docker Compose support is skipped in tests by default, so tests need no Docker yet.
 - **Not verified here:** the OTLP traces and logs reaching Grafana (`docker compose up`, open http://localhost:3000). Run the app with `SPRING_PROFILES_ACTIVE=local` and check.
 - **Explain it back (yours to write):** what you built, why Spring needed records / annotations / reflection for it, one thing still unclear.
+
+## M2 · Persist expenses
+
+- **Tooling notes:** Hibernate does not allow `AttributeConverter`s on `@Id`, so `ExpenseId` is an `@Embeddable` record used as `@EmbeddedId`; `TeamId` and `UserId` use auto-applied converters. `Money` is an embeddable record; its `char(3)` currency column needs `@JdbcTypeCode(SqlTypes.CHAR)` to pass schema validation. `ExpenseRepository` extends `Repository`, so no un-scoped `findById` exists.
+- **Explain it back (yours to write):** what you built, entity identity vs value equality, one thing still unclear.

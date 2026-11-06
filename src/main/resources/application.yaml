@@ -3,6 +3,8 @@ spring:
     name: ledgerly
   jpa:
     open-in-view: false
+    hibernate:
+      ddl-auto: validate
 
 logging:
   structured:

@@ -5,34 +5,66 @@ import com.ledgerly.shared.id.TeamId;
 import com.ledgerly.shared.id.UserId;
 import com.ledgerly.shared.money.Money;
 import com.ledgerly.shared.role.Role;
+import jakarta.persistence.*;
 import java.time.Clock;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 import org.jspecify.annotations.Nullable;
 
 /**
  * A single amount spent on behalf of a team. It has an identity (its id) and changes over time, so it
  * is a class, not a record: two expenses with the same field values are still different expenses.
  */
-public final class Expense {
+@Entity
+@Table(name = "expenses")
+public class Expense {
 
     public static final int MAX_MERCHANT = 200;
     public static final int MAX_NOTE = 2000;
     public static final int MAX_REASON = 1000;
 
-    private final ExpenseId id;
-    private final TeamId teamId;
-    private final UserId claimantId;
+    @EmbeddedId
+    private ExpenseId id;
+
+    private TeamId teamId;
+    private UserId claimantId;
+
+    @Embedded
     private Money money;
+
+    @Enumerated(EnumType.STRING)
     private Category category;
+
     private LocalDate incurredOn;
     private String merchant;
     private @Nullable String note;
+
+    @Enumerated(EnumType.STRING)
     private ExpenseStatus status;
-    private final List<Rejection> rejections = new ArrayList<>();
+
+    @ElementCollection
+    @CollectionTable(name = "expense_rejections", joinColumns = @JoinColumn(name = "expense_id"))
+    @OrderColumn(name = "position")
+    private List<Rejection> rejections = new ArrayList<>();
+
+    @Version
+    private long version;
+
+    @CreationTimestamp
+    private @Nullable Instant createdAt;
+
+    @UpdateTimestamp
+    private @Nullable Instant updatedAt;
+
+    /** For JPA only. */
+    @SuppressWarnings("NullAway.Init")
+    protected Expense() {}
 
     private Expense(
             ExpenseId id,
@@ -169,6 +201,10 @@ public final class Expense {
     }
 
     // --- accessors -------------------------------------------------------------------------
+
+    public long version() {
+        return version;
+    }
 
     public ExpenseId id() {
         return id;

@@ -5,3 +5,12 @@ services:
       - "3000:3000"   # Grafana (admin/admin)
       - "4317:4317"   # OTLP gRPC
       - "4318:4318"   # OTLP HTTP
+
+  postgres:
+    image: postgres:17
+    environment:
+      POSTGRES_DB: ledgerly
+      POSTGRES_USER: ledgerly
+      POSTGRES_PASSWORD: ledgerly
+    ports:
+      - "5432:5432"
