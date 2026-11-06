@@ -17,6 +17,12 @@ jobs:
           cache: maven
       - run: ./mvnw -B verify
 
+  openapi-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: npx --yes @redocly/cli@latest lint api/openapi.yaml
+
   gitleaks:
     runs-on: ubuntu-latest
     steps:

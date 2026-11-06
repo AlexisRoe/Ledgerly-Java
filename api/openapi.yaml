@@ -1,0 +1,380 @@
+openapi: 3.1.0
+info:
+  title: Ledgerly API
+  version: 1.0.0
+  description: Expense tracking and approval for small teams.
+  license:
+    name: See LICENSE
+    url: https://github.com/AlexisRoe/teach-me-java-backend/blob/main/LICENSE
+servers:
+  - url: /api/v1
+tags:
+  - name: expenses
+    description: Create, edit and move expenses through the approval workflow.
+security:
+  - bearerAuth: []
+
+paths:
+  /teams/{teamId}/expenses:
+    post:
+      tags: [expenses]
+      operationId: createExpense
+      summary: Create a draft expense
+      description: >
+        Creates a draft expense with the caller as claimant. Send an `Idempotency-Key` to make retries safe:
+        the same key with the same body returns the original result, the same key with a different body is
+        rejected with 422.
+      parameters:
+        - $ref: "#/components/parameters/TeamId"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateExpenseRequest"
+            examples:
+              lunch:
+                value:
+                  money: { amount: "12.50", currency: EUR }
+                  category: MEALS
+                  incurredOn: "2026-11-05"
+                  merchant: Cafe Central
+                  note: Team lunch
+      responses:
+        "201":
+          description: Created
+          headers:
+            Location:
+              schema: { type: string }
+            ETag:
+              schema: { type: string }
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExpenseResponse"
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/Unprocessable" }
+        "500": { $ref: "#/components/responses/InternalError" }
+
+  /teams/{teamId}/expenses/{expenseId}:
+    parameters:
+      - $ref: "#/components/parameters/TeamId"
+      - $ref: "#/components/parameters/ExpenseId"
+    get:
+      tags: [expenses]
+      operationId: getExpense
+      summary: Read an expense
+      responses:
+        "200":
+          description: The expense
+          headers:
+            ETag:
+              schema: { type: string }
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExpenseResponse"
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "500": { $ref: "#/components/responses/InternalError" }
+    patch:
+      tags: [expenses]
+      operationId: updateExpense
+      summary: Edit a draft expense
+      description: Only the claimant may edit, and only while the expense is a draft. `If-Match` is required.
+      parameters:
+        - $ref: "#/components/parameters/IfMatch"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateExpenseRequest"
+      responses:
+        "200":
+          description: Updated
+          headers:
+            ETag:
+              schema: { type: string }
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExpenseResponse"
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "412": { $ref: "#/components/responses/PreconditionFailed" }
+        "428": { $ref: "#/components/responses/PreconditionRequired" }
+        "500": { $ref: "#/components/responses/InternalError" }
+    delete:
+      tags: [expenses]
+      operationId: deleteExpense
+      summary: Delete a draft expense
+      parameters:
+        - $ref: "#/components/parameters/IfMatch"
+      responses:
+        "204": { description: Deleted }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "412": { $ref: "#/components/responses/PreconditionFailed" }
+        "428": { $ref: "#/components/responses/PreconditionRequired" }
+        "500": { $ref: "#/components/responses/InternalError" }
+
+  /teams/{teamId}/expenses/{expenseId}:submit:
+    post:
+      tags: [expenses]
+      operationId: submitExpense
+      summary: Submit a draft for approval (claimant)
+      description: Needs at least one accepted receipt and no receipt still being scanned.
+      parameters: &transition-params
+        - $ref: "#/components/parameters/TeamId"
+        - $ref: "#/components/parameters/ExpenseId"
+      responses: &transition-responses
+        "200":
+          description: The expense after the transition
+          headers:
+            ETag:
+              schema: { type: string }
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExpenseResponse"
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "422": { $ref: "#/components/responses/Unprocessable" }
+        "500": { $ref: "#/components/responses/InternalError" }
+
+  /teams/{teamId}/expenses/{expenseId}:withdraw:
+    post:
+      tags: [expenses]
+      operationId: withdrawExpense
+      summary: Pull a submitted expense back to draft (claimant)
+      parameters: *transition-params
+      responses: *transition-responses
+
+  /teams/{teamId}/expenses/{expenseId}:approve:
+    post:
+      tags: [expenses]
+      operationId: approveExpense
+      summary: Approve a submitted expense (APPROVER or OWNER, not the claimant)
+      parameters: *transition-params
+      responses: *transition-responses
+
+  /teams/{teamId}/expenses/{expenseId}:reject:
+    post:
+      tags: [expenses]
+      operationId: rejectExpense
+      summary: Reject a submitted expense (APPROVER or OWNER, not the claimant)
+      parameters: *transition-params
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RejectRequest"
+      responses:
+        "200":
+          description: The rejected expense
+          headers:
+            ETag:
+              schema: { type: string }
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExpenseResponse"
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "500": { $ref: "#/components/responses/InternalError" }
+
+  /teams/{teamId}/expenses/{expenseId}:reopen:
+    post:
+      tags: [expenses]
+      operationId: reopenExpense
+      summary: Turn a rejected expense back into a draft (claimant)
+      parameters: *transition-params
+      responses: *transition-responses
+
+  /teams/{teamId}/expenses/{expenseId}:reimburse:
+    post:
+      tags: [expenses]
+      operationId: reimburseExpense
+      summary: Record an approved expense as paid back (OWNER, not the claimant)
+      parameters: *transition-params
+      responses: *transition-responses
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    TeamId:
+      name: teamId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    ExpenseId:
+      name: expenseId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    IfMatch:
+      name: If-Match
+      in: header
+      required: true
+      description: The ETag from the last read of this expense.
+      schema: { type: string, maxLength: 64 }
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: false
+      schema: { type: string, minLength: 8, maxLength: 128 }
+
+  schemas:
+    Money:
+      type: object
+      description: >
+        An amount and its currency. `amount` is a decimal string so no float ever touches it, and it must not
+        have more decimals than the currency allows.
+      required: [amount, currency]
+      additionalProperties: false
+      properties:
+        amount:
+          type: string
+          pattern: '^[0-9]{1,15}(\.[0-9]{1,4})?$'
+          examples: ["12.50"]
+        currency:
+          type: string
+          pattern: "^[A-Z]{3}$"
+          examples: [EUR]
+    Category:
+      type: string
+      enum: [TRAVEL, MEALS, OFFICE, SOFTWARE, OTHER]
+    ExpenseStatus:
+      type: string
+      enum: [DRAFT, SUBMITTED, APPROVED, REJECTED, REIMBURSED]
+    CreateExpenseRequest:
+      type: object
+      required: [money, category, incurredOn, merchant]
+      additionalProperties: false
+      properties:
+        money: { $ref: "#/components/schemas/Money" }
+        category: { $ref: "#/components/schemas/Category" }
+        incurredOn: { type: string, format: date }
+        merchant: { type: string, minLength: 1, maxLength: 200 }
+        note: { type: string, maxLength: 2000 }
+    UpdateExpenseRequest:
+      type: object
+      description: Absent fields stay unchanged. An empty `note` clears the note.
+      additionalProperties: false
+      minProperties: 1
+      properties:
+        money: { $ref: "#/components/schemas/Money" }
+        category: { $ref: "#/components/schemas/Category" }
+        incurredOn: { type: string, format: date }
+        merchant: { type: string, minLength: 1, maxLength: 200 }
+        note: { type: string, maxLength: 2000 }
+    RejectRequest:
+      type: object
+      required: [reason]
+      additionalProperties: false
+      properties:
+        reason: { type: string, minLength: 1, maxLength: 1000 }
+    ExpenseResponse:
+      type: object
+      required: [id, teamId, claimantId, money, category, incurredOn, merchant, status, rejectionReasons]
+      properties:
+        id: { type: string, format: uuid }
+        teamId: { type: string, format: uuid }
+        claimantId: { type: string, format: uuid }
+        money: { $ref: "#/components/schemas/Money" }
+        category: { $ref: "#/components/schemas/Category" }
+        incurredOn: { type: string, format: date }
+        merchant: { type: string }
+        note: { type: string }
+        status: { $ref: "#/components/schemas/ExpenseStatus" }
+        rejectionReasons:
+          type: array
+          items: { type: string }
+    FieldError:
+      type: object
+      required: [field, message]
+      properties:
+        field: { type: string }
+        message: { type: string }
+    Problem:
+      type: object
+      description: RFC 9457 problem details with Ledgerly extensions.
+      required: [type, title, status, code]
+      properties:
+        type: { type: string, format: uri, examples: ["https://ledgerly.dev/problems/invalid-transition"] }
+        title: { type: string }
+        status: { type: integer }
+        detail: { type: string }
+        instance: { type: string }
+        code: { type: string, examples: [EXPENSE_INVALID_TRANSITION] }
+        traceId: { type: string, examples: ["4bf92f3577b34da6a3ce929d0e0e4736"] }
+        errors:
+          type: array
+          items: { $ref: "#/components/schemas/FieldError" }
+
+  responses:
+    BadRequest:
+      description: Malformed or invalid request. Field problems are listed in `errors`.
+      content:
+        application/problem+json:
+          schema: { $ref: "#/components/schemas/Problem" }
+    Unauthorized:
+      description: Missing or invalid credentials.
+      content:
+        application/problem+json:
+          schema: { $ref: "#/components/schemas/Problem" }
+    Forbidden:
+      description: The caller's role does not allow this action.
+      content:
+        application/problem+json:
+          schema: { $ref: "#/components/schemas/Problem" }
+    NotFound:
+      description: No such resource, or the caller may not know it exists.
+      content:
+        application/problem+json:
+          schema: { $ref: "#/components/schemas/Problem" }
+    Conflict:
+      description: Illegal workflow transition or self-dealing.
+      content:
+        application/problem+json:
+          schema: { $ref: "#/components/schemas/Problem" }
+    PreconditionFailed:
+      description: The `If-Match` ETag is stale.
+      content:
+        application/problem+json:
+          schema: { $ref: "#/components/schemas/Problem" }
+    PreconditionRequired:
+      description: The `If-Match` header is missing.
+      content:
+        application/problem+json:
+          schema: { $ref: "#/components/schemas/Problem" }
+    Unprocessable:
+      description: A business rule is not met, or an idempotency key was reused with a different body.
+      content:
+        application/problem+json:
+          schema: { $ref: "#/components/schemas/Problem" }
+    InternalError:
+      description: Unexpected failure. Only the `traceId` is revealed.
+      content:
+        application/problem+json:
+          schema: { $ref: "#/components/schemas/Problem" }

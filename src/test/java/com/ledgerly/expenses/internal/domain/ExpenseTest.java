@@ -3,6 +3,7 @@ package com.ledgerly.expenses.internal.domain;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import com.ledgerly.expenses.ReceiptSummary;
 import com.ledgerly.shared.id.TeamId;
 import com.ledgerly.shared.id.UserId;
 import com.ledgerly.shared.money.Money;
@@ -84,7 +85,7 @@ class ExpenseTest {
                             "x",
                             null,
                             CLOCK))
-                    .isInstanceOf(RuleViolated.class);
+                    .isInstanceOf(InvalidInput.class);
         }
 
         @Test
@@ -104,7 +105,7 @@ class ExpenseTest {
                             merchant,
                             null,
                             CLOCK))
-                    .isInstanceOf(RuleViolated.class);
+                    .isInstanceOf(InvalidInput.class);
         }
 
         @Test
@@ -118,7 +119,7 @@ class ExpenseTest {
                             "m".repeat(Expense.MAX_MERCHANT + 1),
                             null,
                             CLOCK))
-                    .isInstanceOf(RuleViolated.class);
+                    .isInstanceOf(InvalidInput.class);
             assertThatThrownBy(() -> Expense.draft(
                             TeamId.random(),
                             CLAIMANT_ID,
@@ -128,7 +129,7 @@ class ExpenseTest {
                             "m",
                             "n".repeat(Expense.MAX_NOTE + 1),
                             CLOCK))
-                    .isInstanceOf(RuleViolated.class);
+                    .isInstanceOf(InvalidInput.class);
         }
     }
 
@@ -266,14 +267,14 @@ class ExpenseTest {
         @ValueSource(strings = {"", "  "})
         void rejectNeedsAReason(String reason) {
             assertThatThrownBy(() -> inStatus(ExpenseStatus.SUBMITTED).reject(APPROVER, reason))
-                    .isInstanceOf(RuleViolated.class);
+                    .isInstanceOf(InvalidInput.class);
         }
 
         @Test
         void rejectReasonIsCapped() {
             assertThatThrownBy(() ->
                             inStatus(ExpenseStatus.SUBMITTED).reject(APPROVER, "r".repeat(Expense.MAX_REASON + 1)))
-                    .isInstanceOf(RuleViolated.class);
+                    .isInstanceOf(InvalidInput.class);
         }
 
         @Test
@@ -319,7 +320,7 @@ class ExpenseTest {
                                     "Bahn",
                                     null,
                                     CLOCK))
-                    .isInstanceOf(RuleViolated.class);
+                    .isInstanceOf(InvalidInput.class);
         }
 
         @Test
@@ -336,7 +337,7 @@ class ExpenseTest {
         void editOutsideDraftIsRefused(ExpenseStatus status) {
             assertThatThrownBy(() -> inStatus(status)
                             .edit(CLAIMANT, Money.of("20", "EUR"), Category.TRAVEL, TODAY, "Bahn", null, CLOCK))
-                    .isInstanceOf(RuleViolated.class);
+                    .isInstanceOf(NotDraft.class);
         }
 
         @Test

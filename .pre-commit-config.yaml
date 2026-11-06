@@ -11,3 +11,9 @@ repos:
         language: system
         types: [java]
         pass_filenames: false
+      - id: openapi-lint
+        name: openapi lint
+        entry: npx --yes @redocly/cli@latest lint api/openapi.yaml
+        language: system
+        files: ^(api/openapi\.yaml|redocly\.yaml)$
+        pass_filenames: false

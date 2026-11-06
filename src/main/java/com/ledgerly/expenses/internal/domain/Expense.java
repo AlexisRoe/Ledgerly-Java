@@ -1,5 +1,6 @@
 package com.ledgerly.expenses.internal.domain;
 
+import com.ledgerly.expenses.ReceiptSummary;
 import com.ledgerly.shared.id.ExpenseId;
 import com.ledgerly.shared.id.TeamId;
 import com.ledgerly.shared.id.UserId;
@@ -137,11 +138,11 @@ public class Expense {
         requireDecider(actor, Role.APPROVER, Action.REJECT);
         requireStatus(ExpenseStatus.SUBMITTED, Action.REJECT);
         if (reason == null || reason.isBlank()) {
-            throw new RuleViolated("A rejection reason is required");
+            throw new InvalidInput("reason", "A rejection reason is required");
         }
         String trimmed = reason.strip();
         if (trimmed.length() > MAX_REASON) {
-            throw new RuleViolated("Rejection reason is longer than " + MAX_REASON);
+            throw new InvalidInput("reason", "Rejection reason is longer than " + MAX_REASON);
         }
         rejections.add(new Rejection(actor.id(), trimmed));
         status = ExpenseStatus.REJECTED;
@@ -173,7 +174,7 @@ public class Expense {
             throw new NotAllowed("Only the claimant may edit an expense");
         }
         if (status != ExpenseStatus.DRAFT) {
-            throw new RuleViolated("Only a draft can be edited, but the expense is " + status);
+            throw new NotDraft(status);
         }
         Objects.requireNonNull(money, "money");
         Objects.requireNonNull(category, "category");
@@ -190,6 +191,16 @@ public class Expense {
 
     public boolean canAddOrRemoveReceipts(Actor actor) {
         return isDraftOf(actor);
+    }
+
+    /** Throws unless the actor may delete this expense: the claimant, while it is a draft. */
+    public void requireDeletableBy(Actor actor) {
+        if (!actor.id().equals(claimantId)) {
+            throw new NotAllowed("Only the claimant may delete an expense");
+        }
+        if (status != ExpenseStatus.DRAFT) {
+            throw new NotDraft(status);
+        }
     }
 
     public boolean canDelete(Actor actor) {
@@ -275,11 +286,11 @@ public class Expense {
 
     private static String validMerchant(@Nullable String merchant) {
         if (merchant == null || merchant.isBlank()) {
-            throw new RuleViolated("Merchant is required");
+            throw new InvalidInput("merchant", "Merchant is required");
         }
         String trimmed = merchant.strip();
         if (trimmed.length() > MAX_MERCHANT) {
-            throw new RuleViolated("Merchant is longer than " + MAX_MERCHANT);
+            throw new InvalidInput("merchant", "Merchant is longer than " + MAX_MERCHANT);
         }
         return trimmed;
     }
@@ -289,14 +300,14 @@ public class Expense {
             return null;
         }
         if (note.length() > MAX_NOTE) {
-            throw new RuleViolated("Note is longer than " + MAX_NOTE);
+            throw new InvalidInput("note", "Note is longer than " + MAX_NOTE);
         }
         return note;
     }
 
     private static void validDate(LocalDate incurredOn, Clock clock) {
         if (incurredOn.isAfter(LocalDate.now(clock))) {
-            throw new RuleViolated("incurredOn must not be in the future");
+            throw new InvalidInput("incurredOn", "incurredOn must not be in the future");
         }
     }
 }

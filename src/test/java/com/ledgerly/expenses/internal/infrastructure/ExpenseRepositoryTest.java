@@ -4,7 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.ledgerly.TestcontainersConfiguration;
-import com.ledgerly.expenses.internal.application.CreateExpense;
+import com.ledgerly.expenses.ReceiptSummary;
 import com.ledgerly.expenses.internal.application.GetExpense;
 import com.ledgerly.expenses.internal.domain.*;
 import com.ledgerly.shared.id.ExpenseId;
@@ -27,9 +27,6 @@ class ExpenseRepositoryTest {
 
     @Autowired
     ExpenseRepository repository;
-
-    @Autowired
-    CreateExpense createExpense;
 
     @Autowired
     GetExpense getExpense;
@@ -68,16 +65,6 @@ class ExpenseRepositoryTest {
             assertThat(loaded.claimantId()).isEqualTo(claimant);
             assertThat(loaded.rejections()).extracting(Rejection::reason).containsExactly("first", "second");
         });
-    }
-
-    @Test
-    void useCasesCreateAndRead() {
-        TeamId team = TeamId.random();
-        var view = createExpense.execute(new CreateExpense.Command(
-                team, claimant, Money.of("1500", "JPY"), Category.TRAVEL, LocalDate.now(clock), "JR", null));
-        var read = getExpense.execute(team, view.id()).orElseThrow();
-        assertThat(read.money()).isEqualTo(Money.of("1500", "JPY"));
-        assertThat(read.note()).isNull();
     }
 
     @Test

@@ -1,6 +1,9 @@
 spring:
   application:
     name: ledgerly
+  jackson:
+    deserialization:
+      fail-on-unknown-properties: true
   jpa:
     open-in-view: false
     hibernate:

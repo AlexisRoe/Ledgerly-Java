@@ -1,4 +1,4 @@
-package com.ledgerly.expenses.internal.domain;
+package com.ledgerly.expenses;
 
 /** Receipt counts for one expense, supplied by the receipts module. */
 public record ReceiptSummary(int accepted, int pendingScan) {
