@@ -26,3 +26,13 @@
   - The app needs `SPRING_PROFILES_ACTIVE=local` (or `test`): the debug-header `CurrentUser` only exists there, and `prod` fails to start until M5.
 - **Gotchas:** Spring builds the `ProblemDetail` for framework errors inside `handleExceptionInternal`, so enrich the returned body, not the argument. Hibernate bumps `@Version` on flush, so the use case flushes before it returns the ETag. `ExpenseException` is sealed, which makes the mapping `switch` exhaustive.
 - **Explain it back (yours to write):** what you built, why sealed types and pattern-matching `switch` helped, one thing still unclear.
+
+## M4 · Paging and filtering
+
+- **Decisions:**
+  - `ExpenseRepository` declares `findAll(Specification, Pageable)` itself instead of extending `JpaSpecificationExecutor`, so the interface still has no inherited `findById`. `ListExpenses` always starts from `inTeam(teamId)`.
+  - The response mirrors Spring Data's `PagedModel` shape (`content` + `page`) as a generated DTO, so the spec stays the single source of truth.
+  - `sort` is parsed into a `SortField` enum; the id is added as a unique tie-breaker so pages never overlap.
+  - `shared.paging.Cursor` (Base64url JSON of `(Instant, UUID)`) and `KeysetPaging` are tested against `expenses` and get wired to `/audit-events` in M9.
+- **Gotchas:** the generated interface is `@Validated`, so parameter constraints throw `ConstraintViolationException` (not `HandlerMethodValidationException`) and need their own handler, or they become 500s. The spec's `maximum: 100` and `LedgerlyLimits.maxPageSize` are both checked.
+- **Explain it back (yours to write):** what you built, why keyset paging beats offset paging on a growing table, one thing still unclear.

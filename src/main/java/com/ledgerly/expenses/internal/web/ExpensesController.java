@@ -4,12 +4,16 @@ import com.ledgerly.expenses.internal.application.CreateExpense;
 import com.ledgerly.expenses.internal.application.DeleteExpense;
 import com.ledgerly.expenses.internal.application.ExpenseView;
 import com.ledgerly.expenses.internal.application.GetExpense;
+import com.ledgerly.expenses.internal.application.ListExpenses;
 import com.ledgerly.expenses.internal.application.TransitionExpense;
 import com.ledgerly.expenses.internal.application.UpdateExpense;
 import com.ledgerly.expenses.internal.domain.Action;
 import com.ledgerly.expenses.internal.web.generated.ExpensesApi;
+import com.ledgerly.expenses.internal.web.generated.model.Category;
 import com.ledgerly.expenses.internal.web.generated.model.CreateExpenseRequest;
+import com.ledgerly.expenses.internal.web.generated.model.ExpensePage;
 import com.ledgerly.expenses.internal.web.generated.model.ExpenseResponse;
+import com.ledgerly.expenses.internal.web.generated.model.ExpenseStatus;
 import com.ledgerly.expenses.internal.web.generated.model.RejectRequest;
 import com.ledgerly.expenses.internal.web.generated.model.UpdateExpenseRequest;
 import com.ledgerly.shared.error.PreconditionFailed;
@@ -18,6 +22,7 @@ import com.ledgerly.shared.id.TeamId;
 import com.ledgerly.shared.id.UserId;
 import com.ledgerly.shared.security.CurrentUser;
 import java.net.URI;
+import java.time.LocalDate;
 import java.util.UUID;
 import org.jspecify.annotations.Nullable;
 import org.springframework.http.ResponseEntity;
@@ -34,6 +39,7 @@ class ExpensesController implements ExpensesApi {
     private final UpdateExpense update;
     private final DeleteExpense delete;
     private final TransitionExpense transition;
+    private final ListExpenses list;
 
     ExpensesController(
             CurrentUser currentUser,
@@ -41,13 +47,15 @@ class ExpensesController implements ExpensesApi {
             GetExpense get,
             UpdateExpense update,
             DeleteExpense delete,
-            TransitionExpense transition) {
+            TransitionExpense transition,
+            ListExpenses list) {
         this.currentUser = currentUser;
         this.create = create;
         this.get = get;
         this.update = update;
         this.delete = delete;
         this.transition = transition;
+        this.list = list;
     }
 
     @Override
@@ -66,6 +74,33 @@ class ExpensesController implements ExpensesApi {
         ExpenseView view = result.view();
         URI location = URI.create("/api/v1/teams/" + teamId + "/expenses/" + view.id());
         return ResponseEntity.created(location).eTag(etag(view)).body(ExpenseMapper.toResponse(view));
+    }
+
+    @Override
+    public ResponseEntity<ExpensePage> listExpenses(
+            UUID teamId,
+            Integer page,
+            Integer size,
+            String sort,
+            @Nullable ExpenseStatus status,
+            @Nullable Category category,
+            @Nullable UUID claimantId,
+            @Nullable String currency,
+            @Nullable LocalDate incurredFrom,
+            @Nullable LocalDate incurredTo) {
+        var query = new ListExpenses.Query(
+                new TeamId(teamId),
+                currentUser.id(),
+                page,
+                size,
+                sort,
+                status == null ? null : com.ledgerly.expenses.internal.domain.ExpenseStatus.valueOf(status.name()),
+                category == null ? null : ExpenseMapper.toDomain(category),
+                claimantId == null ? null : new UserId(claimantId),
+                currency,
+                incurredFrom,
+                incurredTo);
+        return ResponseEntity.ok(ExpenseMapper.toPage(list.execute(query)));
     }
 
     @Override

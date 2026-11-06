@@ -1,5 +1,6 @@
 package com.ledgerly.shared.error;
 
+import jakarta.validation.ConstraintViolationException;
 import java.util.List;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
@@ -44,6 +45,15 @@ public class ProblemExceptionHandler extends ResponseEntityExceptionHandler {
     })
     ResponseEntity<Object> lostRace(Exception e) {
         return respond(problems.create(new PreconditionFailed()));
+    }
+
+    /** Constraints on controller parameters (@Min, @Pattern, ...) arrive through method validation. */
+    @ExceptionHandler(ConstraintViolationException.class)
+    ResponseEntity<Object> constraintViolations(ConstraintViolationException e) {
+        List<FieldViolation> violations = e.getConstraintViolations().stream()
+                .map(v -> new FieldViolation(lastSegment(v.getPropertyPath().toString()), v.getMessage()))
+                .toList();
+        return respond(problems.create(ErrorCatalogue.VALIDATION_FAILED, "Request validation failed", violations));
     }
 
     @ExceptionHandler(Exception.class)
@@ -107,6 +117,10 @@ public class ProblemExceptionHandler extends ResponseEntityExceptionHandler {
             problems.enrich(problem);
         }
         return response;
+    }
+
+    private static String lastSegment(String path) {
+        return path.substring(path.lastIndexOf('.') + 1);
     }
 
     private FieldViolation violation(FieldError error) {

@@ -4,6 +4,9 @@ import com.ledgerly.expenses.internal.domain.Expense;
 import com.ledgerly.shared.id.ExpenseId;
 import com.ledgerly.shared.id.TeamId;
 import java.util.Optional;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.repository.Repository;
 
 /**
@@ -17,4 +20,7 @@ public interface ExpenseRepository extends Repository<Expense, ExpenseId> {
     Expense save(Expense expense);
 
     void delete(Expense expense);
+
+    /** Always combine with {@link ExpenseSpecifications#inTeam}; the use case does. */
+    Page<Expense> findAll(Specification<Expense> spec, Pageable pageable);
 }

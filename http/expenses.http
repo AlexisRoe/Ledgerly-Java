@@ -63,3 +63,8 @@ Content-Type: application/json
 POST {{host}}/teams/{{team}}/expenses/{{expense}}:reimburse
 X-Debug-User-Id: {{owner}}
 X-Debug-Role: OWNER
+
+### List: filtered, sorted, paged (size max 100)
+GET {{host}}/teams/{{team}}/expenses?status=SUBMITTED&currency=EUR&sort=amount,asc&page=0&size=20
+X-Debug-User-Id: {{approver}}
+X-Debug-Role: APPROVER

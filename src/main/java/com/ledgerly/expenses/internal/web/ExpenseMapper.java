@@ -1,6 +1,7 @@
 package com.ledgerly.expenses.internal.web;
 
 import com.ledgerly.expenses.internal.application.ExpenseView;
+import com.ledgerly.expenses.internal.application.ListExpenses;
 import com.ledgerly.expenses.internal.domain.Category;
 import com.ledgerly.expenses.internal.web.generated.model.ExpenseResponse;
 import com.ledgerly.shared.error.InvalidRequest;
@@ -42,6 +43,13 @@ final class ExpenseMapper {
                                 view.status().name()),
                         view.rejectionReasons())
                 .note(view.note());
+    }
+
+    static com.ledgerly.expenses.internal.web.generated.model.ExpensePage toPage(ListExpenses.PageResult result) {
+        var meta = new com.ledgerly.expenses.internal.web.generated.model.PageMetadata(
+                result.size(), result.page(), result.totalElements(), result.totalPages());
+        return new com.ledgerly.expenses.internal.web.generated.model.ExpensePage(
+                result.items().stream().map(ExpenseMapper::toResponse).toList(), meta);
     }
 
     private static String safeMessage(IllegalArgumentException e) {

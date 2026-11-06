@@ -16,6 +16,58 @@ security:
 
 paths:
   /teams/{teamId}/expenses:
+    get:
+      tags: [expenses]
+      operationId: listExpenses
+      summary: List expenses, filtered, sorted and paged
+      description: >
+        Offset paging for UI tables. `size` is capped at 100 and anything larger is rejected with 400 (it is not
+        silently clamped). `sort` is `<field>,<asc|desc>` with field from `incurredOn`, `createdAt`, `amount`;
+        sorting by `amount` needs a `currency` filter, because amounts in different currencies cannot be
+        compared. A MEMBER always sees only their own expenses, whatever `claimantId` says.
+      parameters:
+        - $ref: "#/components/parameters/TeamId"
+        - name: page
+          in: query
+          schema: { type: integer, minimum: 0, default: 0 }
+        - name: size
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
+        - name: sort
+          in: query
+          schema:
+            type: string
+            default: incurredOn,desc
+            pattern: "^(incurredOn|createdAt|amount)(,(asc|desc))?$"
+        - name: status
+          in: query
+          schema: { $ref: "#/components/schemas/ExpenseStatus" }
+        - name: category
+          in: query
+          schema: { $ref: "#/components/schemas/Category" }
+        - name: claimantId
+          in: query
+          schema: { type: string, format: uuid }
+        - name: currency
+          in: query
+          schema: { type: string, pattern: "^[A-Z]{3}$" }
+        - name: incurredFrom
+          in: query
+          schema: { type: string, format: date }
+        - name: incurredTo
+          in: query
+          schema: { type: string, format: date }
+      responses:
+        "200":
+          description: One page of expenses
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExpensePage"
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "500": { $ref: "#/components/responses/InternalError" }
     post:
       tags: [expenses]
       operationId: createExpense
@@ -310,6 +362,23 @@ components:
         rejectionReasons:
           type: array
           items: { type: string }
+    PageMetadata:
+      type: object
+      description: Same shape as Spring Data's `PagedModel` page metadata.
+      required: [size, number, totalElements, totalPages]
+      properties:
+        size: { type: integer }
+        number: { type: integer }
+        totalElements: { type: integer, format: int64 }
+        totalPages: { type: integer }
+    ExpensePage:
+      type: object
+      required: [content, page]
+      properties:
+        content:
+          type: array
+          items: { $ref: "#/components/schemas/ExpenseResponse" }
+        page: { $ref: "#/components/schemas/PageMetadata" }
     FieldError:
       type: object
       required: [field, message]
