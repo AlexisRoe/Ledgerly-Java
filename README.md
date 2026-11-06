@@ -21,16 +21,35 @@ application with **security by design**, and to refresh that knowledge with work
 
 ### Requirements
 
-| Tool                     | Why                                                 | Notes                                              |
-| ------------------------ | --------------------------------------------------- | -------------------------------------------------- |
-| [mise](https://mise.jdx.dev) | Installs the exact JDK and Maven (see `mise.toml`) | Java 25 (Temurin), Maven 3.9; the repo ships `./mvnw` |
-| Docker with Compose      | Postgres, object store, ClamAV, Grafana; Testcontainers in tests | Must be running before you start or test |
-| Node.js (optional)       | Only for `make lint`, `make format`, `make api-test` | Tools are fetched on demand through `npx`          |
+| Tool                         | Why                                                              | Notes                                                 |
+| ---------------------------- | ---------------------------------------------------------------- | ----------------------------------------------------- |
+| [mise](https://mise.jdx.dev) | Installs the exact JDK and Maven (see `mise.toml`)               | Java 25 (Temurin), Maven 3.9; the repo ships `./mvnw` |
+| Docker with Compose          | Postgres, object store, ClamAV, Grafana; Testcontainers in tests | Must be running before you start or test              |
+| Node.js (optional)           | Only for `make lint`, `make format`, `make api-test`             | Tools are fetched on demand through `npx`             |
+
+Install the tools (macOS with [Homebrew](https://brew.sh); on Linux or Windows use the installers linked above):
 
 ```sh
-mise install            # JDK 25 and Maven from mise.toml
-eval "$(mise activate zsh)"   # or bash; once per shell, or add it to your shell profile
+brew install mise                       # JDK and Maven manager
+brew install --cask docker              # Docker Desktop; start it once afterwards
+brew install node                       # optional: lint, format and the Bruno API tests
 ```
+
+### Get the code and install
+
+```sh
+git clone https://github.com/AlexisRoe/Ledgerly-Java.git
+cd Ledgerly-Java
+
+mise trust                              # allow mise to read mise.toml in this folder
+mise install                            # JDK 25 (Temurin) and Maven 3.9
+eval "$(mise activate zsh)"             # once per shell (use bash instead of zsh if needed), or add it to ~/.zshrc
+
+java -version                           # should print 25
+./mvnw -B -DskipTests package           # downloads dependencies and checks that the build works
+```
+
+Prefer SSH? `git clone git@github.com:AlexisRoe/Ledgerly-Java.git`.
 
 ### Option A: everything in Docker (quickest)
 
@@ -60,12 +79,12 @@ Spring Boot's Docker Compose support starts Postgres, the object store, ClamAV a
 With the `local` profile an empty database is seeded with a demo team ("Acme Travel"). All passwords are
 `correct-horse-battery`.
 
-| User                | Role                                                          |
-| ------------------- | ------------------------------------------------------------- |
-| `alice@example.com` | OWNER                                                         |
-| `bob@example.com`   | APPROVER                                                      |
-| `carol@example.com` | MEMBER, with expenses in every status (one rejected)          |
-| `dave@example.com`  | not a member, email unverified, has a pending invitation      |
+| User                | Role                                                     |
+| ------------------- | -------------------------------------------------------- |
+| `alice@example.com` | OWNER                                                    |
+| `bob@example.com`   | APPROVER                                                 |
+| `carol@example.com` | MEMBER, with expenses in every status (one rejected)     |
+| `dave@example.com`  | not a member, email unverified, has a pending invitation |
 
 ```sh
 curl -s localhost:8080/api/v1/auth/login -H 'Content-Type: application/json' \
@@ -97,21 +116,21 @@ storage), plus architecture tests that fail when a module reaches into another m
 
 `make` lists every target. The ones you will use most:
 
-| Command                     | What it does                                                                 |
-| --------------------------- | ---------------------------------------------------------------------------- |
-| `make run` / `make debug`   | Run on the host (debug waits for a debugger on :5005)                        |
-| `make up` / `make down`     | Build the image and run everything in Docker / stop it, keep the data        |
-| `make reset`                | Stop and **delete** the data                                                 |
-| `make deps`                 | Start only Postgres, object store, ClamAV and Grafana                        |
-| `make logs` / `make ps`     | Follow the app's container logs / list containers                            |
-| `make test`                 | All tests                                                                    |
-| `make test-one T=<Class>`   | One test class                                                               |
-| `make verify`               | Tests plus all build checks (what CI runs)                                   |
-| `make lint`                 | Spotless (Java), Prettier (YAML/JSON), Redocly (OpenAPI)                     |
-| `make format`               | Fix formatting                                                               |
-| `make api-test`             | Run the Bruno collection against the running app (`make up` first)           |
-| `make image`                | Build the container image only                                               |
-| `make clean`                | Delete build output                                                          |
+| Command                   | What it does                                                          |
+| ------------------------- | --------------------------------------------------------------------- |
+| `make run` / `make debug` | Run on the host (debug waits for a debugger on :5005)                 |
+| `make up` / `make down`   | Build the image and run everything in Docker / stop it, keep the data |
+| `make reset`              | Stop and **delete** the data                                          |
+| `make deps`               | Start only Postgres, object store, ClamAV and Grafana                 |
+| `make logs` / `make ps`   | Follow the app's container logs / list containers                     |
+| `make test`               | All tests                                                             |
+| `make test-one T=<Class>` | One test class                                                        |
+| `make verify`             | Tests plus all build checks (what CI runs)                            |
+| `make lint`               | Spotless (Java), Prettier (YAML/JSON), Redocly (OpenAPI)              |
+| `make format`             | Fix formatting                                                        |
+| `make api-test`           | Run the Bruno collection against the running app (`make up` first)    |
+| `make image`              | Build the container image only                                        |
+| `make clean`              | Delete build output                                                   |
 
 ## Architecture and technology
 
@@ -173,32 +192,32 @@ documentation and PlantUML diagrams are generated into [`docs/modules/`](docs/mo
 
 ### Technology
 
-| Concern             | Choice                                                                            |
-| ------------------- | --------------------------------------------------------------------------------- |
-| Language            | Java 25 (LTS): records, sealed types, pattern matching, virtual threads           |
-| Framework           | Spring Boot 4.2 (Spring Framework 7, Jakarta EE 11), Spring MVC                   |
-| Build               | Maven with the wrapper, JDK and Maven versions managed by mise                    |
-| Database            | PostgreSQL 17, Spring Data JPA (Hibernate), Flyway migrations                     |
-| Modularity          | Spring Modulith (boundary verification, event outbox, generated docs)             |
-| Security            | Spring Security 7, OAuth2 resource server (JWT, ES256), Argon2id password hashing |
-| Files               | S3 API (SeaweedFS locally), Apache Tika type sniffing, ClamAV malware scan         |
-| Batch               | Spring Batch 6 for CSV import                                                     |
-| Rate limiting       | Bucket4j + Caffeine                                                               |
-| API contract        | Contract-first OpenAPI 3.1 in `api/openapi.yaml`, Swagger UI in the local profile |
-| Observability       | Structured JSON logs, Micrometer, OpenTelemetry, Grafana LGTM stack               |
-| Null safety         | JSpecify annotations + NullAway at compile time                                   |
-| Testing             | JUnit 5, AssertJ, Testcontainers, ArchUnit, Spring Modulith tests                 |
+| Concern                  | Choice                                                                                    |
+| ------------------------ | ----------------------------------------------------------------------------------------- |
+| Language                 | Java 25 (LTS): records, sealed types, pattern matching, virtual threads                   |
+| Framework                | Spring Boot 4.2 (Spring Framework 7, Jakarta EE 11), Spring MVC                           |
+| Build                    | Maven with the wrapper, JDK and Maven versions managed by mise                            |
+| Database                 | PostgreSQL 17, Spring Data JPA (Hibernate), Flyway migrations                             |
+| Modularity               | Spring Modulith (boundary verification, event outbox, generated docs)                     |
+| Security                 | Spring Security 7, OAuth2 resource server (JWT, ES256), Argon2id password hashing         |
+| Files                    | S3 API (SeaweedFS locally), Apache Tika type sniffing, ClamAV malware scan                |
+| Batch                    | Spring Batch 6 for CSV import                                                             |
+| Rate limiting            | Bucket4j + Caffeine                                                                       |
+| API contract             | Contract-first OpenAPI 3.1 in `api/openapi.yaml`, Swagger UI in the local profile         |
+| Observability            | Structured JSON logs, Micrometer, OpenTelemetry, Grafana LGTM stack                       |
+| Null safety              | JSpecify annotations + NullAway at compile time                                           |
+| Testing                  | JUnit 5, AssertJ, Testcontainers, ArchUnit, Spring Modulith tests                         |
 | Quality and supply chain | Spotless, Prettier, Redocly, gitleaks, Trivy, Renovate, Maven Enforcer, pinned CI actions |
-| Optional identity   | Keycloak instead of the built-in login (profile `keycloak`)                       |
+| Optional identity        | Keycloak instead of the built-in login (profile `keycloak`)                               |
 
 ### Profiles
 
-| Profile    | Purpose                                                                                    |
-| ---------- | ------------------------------------------------------------------------------------------ |
+| Profile    | Purpose                                                                                       |
+| ---------- | --------------------------------------------------------------------------------------------- |
 | `local`    | Development: readable logs, throwaway JWT key, Swagger UI, demo data. Never use in production |
-| `test`     | Automated tests (demo data is not loaded)                                                  |
-| `prod`     | Strict: refuses to start without keys, storage config and explicit CORS origins            |
-| `keycloak` | Validate tokens issued by Keycloak; Ledgerly creates its user on the first valid token     |
+| `test`     | Automated tests (demo data is not loaded)                                                     |
+| `prod`     | Strict: refuses to start without keys, storage config and explicit CORS origins               |
+| `keycloak` | Validate tokens issued by Keycloak; Ledgerly creates its user on the first valid token        |
 
 ## Security by design
 
@@ -328,15 +347,15 @@ Schema changes are Flyway migrations in `src/main/resources/db/migration/` (neve
 
 **Where to read first**
 
-| File                                         | What you get                                                        |
-| -------------------------------------------- | ------------------------------------------------------------------- |
-| [`CONCEPT.md`](CONCEPT.md)                   | The idea, the stack and why each piece was chosen                   |
-| [`GLOSSARY.md`](GLOSSARY.md)                 | The domain language (Team, Membership, Verified, ...); the glossary wins over other text |
-| [`docs/adr/`](docs/adr/)                     | Architecture decisions with reasons                                 |
-| [`docs/learning-log.md`](docs/learning-log.md) | What each milestone taught                                        |
-| [`docs/implementation-plan.md`](docs/implementation-plan.md) | The milestone-by-milestone build order (M0 to M11)   |
-| [`docs/deployment.md`](docs/deployment.md)   | Running outside your laptop, ports, Keycloak, demo data             |
-| [`docs/local-hardening.md`](docs/local-hardening.md) | How the dev setup is protected against supply-chain attacks and leaked secrets |
+| File                                                         | What you get                                                                             |
+| ------------------------------------------------------------ | ---------------------------------------------------------------------------------------- |
+| [`CONCEPT.md`](CONCEPT.md)                                   | The idea, the stack and why each piece was chosen                                        |
+| [`GLOSSARY.md`](GLOSSARY.md)                                 | The domain language (Team, Membership, Verified, ...); the glossary wins over other text |
+| [`docs/adr/`](docs/adr/)                                     | Architecture decisions with reasons                                                      |
+| [`docs/learning-log.md`](docs/learning-log.md)               | What each milestone taught                                                               |
+| [`docs/implementation-plan.md`](docs/implementation-plan.md) | The milestone-by-milestone build order (M0 to M11)                                       |
+| [`docs/deployment.md`](docs/deployment.md)                   | Running outside your laptop, ports, Keycloak, demo data                                  |
+| [`docs/local-hardening.md`](docs/local-hardening.md)         | How the dev setup is protected against supply-chain attacks and leaked secrets           |
 
 **A suggested way to learn from the code**
 

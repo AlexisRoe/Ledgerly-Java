@@ -5,7 +5,7 @@ info:
   description: Expense tracking and approval for small teams.
   license:
     name: See LICENSE
-    url: https://github.com/AlexisRoe/teach-me-java-backend/blob/main/LICENSE
+    url: https://github.com/AlexisRoe/Ledgerly-Java/blob/main/LICENSE
 servers:
   - url: /api/v1
 tags:

@@ -242,7 +242,7 @@ One Git repository, one Maven project, one `compose.yaml`: starting the app from
 | Bruno or IntelliJ's HTTP client | Request collections committed to the repo |
 
 ```text
-teach-me-java-backend/          the Maven project lives at the repository root
+Ledgerly-Java/                  the Maven project lives at the repository root
 ├── .github/workflows/ci.yml     build, tests, spec lint, gitleaks, Trivy
 ├── .mvn/, mvnw, mvnw.cmd        Maven wrapper: no global Maven needed
 ├── api/openapi.yaml             the contract, edited before any code
