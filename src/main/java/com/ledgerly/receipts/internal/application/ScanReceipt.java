@@ -7,6 +7,7 @@ import com.ledgerly.receipts.internal.infrastructure.ReceiptRepository;
 import com.ledgerly.shared.id.ExpenseId;
 import com.ledgerly.shared.id.TeamId;
 import com.ledgerly.shared.storage.ObjectStorage;
+import io.micrometer.core.instrument.MeterRegistry;
 import java.io.InputStream;
 import java.time.Clock;
 import java.util.Optional;
@@ -38,6 +39,7 @@ public class ScanReceipt {
     private final ApplicationEventPublisher events;
     private final TransactionTemplate tx;
     private final Clock clock;
+    private final MeterRegistry metrics;
 
     ScanReceipt(
             ReceiptRepository receipts,
@@ -45,13 +47,15 @@ public class ScanReceipt {
             MalwareScanner scanner,
             ApplicationEventPublisher events,
             TransactionTemplate tx,
-            Clock clock) {
+            Clock clock,
+            MeterRegistry metrics) {
         this.receipts = receipts;
         this.storage = storage;
         this.scanner = scanner;
         this.events = events;
         this.tx = tx;
         this.clock = clock;
+        this.metrics = metrics;
     }
 
     @Async
@@ -110,6 +114,7 @@ public class ScanReceipt {
             events.publishEvent(new ReceiptEvent.Quarantined(
                     new TeamId(receipt.teamId()), new ExpenseId(receipt.expenseId()), receipt.id(), clock.instant()));
         });
+        metrics.counter("ledgerly.receipts.quarantined").increment();
         log.warn("Receipt {} quarantined: scanner reported {}", scanned.id(), signature);
         storage.move(originalKey, quarantineKey);
     }

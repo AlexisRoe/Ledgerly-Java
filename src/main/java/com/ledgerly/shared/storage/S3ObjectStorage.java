@@ -1,5 +1,7 @@
 package com.ledgerly.shared.storage;
 
+import io.micrometer.observation.Observation;
+import io.micrometer.observation.ObservationRegistry;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import java.io.IOException;
@@ -9,6 +11,7 @@ import java.nio.file.Path;
 import java.time.Duration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
@@ -38,8 +41,15 @@ public class S3ObjectStorage implements ObjectStorage {
     private final String bucket;
     private final S3Client s3;
     private final S3Presigner presigner;
+    private final ObservationRegistry observations;
 
     public S3ObjectStorage(StorageProperties props) {
+        this(props, ObservationRegistry.NOOP);
+    }
+
+    @Autowired
+    public S3ObjectStorage(StorageProperties props, ObservationRegistry observations) {
+        this.observations = observations;
         var s3Props = props.s3();
         this.bucket = s3Props.bucket();
         var credentials =
@@ -86,34 +96,45 @@ public class S3ObjectStorage implements ObjectStorage {
 
     @Override
     public void put(String key, Path file, String contentType) throws IOException {
-        s3.putObject(
-                PutObjectRequest.builder()
-                        .bucket(bucket)
-                        .key(key)
-                        .contentType(contentType)
-                        .build(),
-                RequestBody.fromFile(file));
+        observe(
+                "put",
+                () -> s3.putObject(
+                        PutObjectRequest.builder()
+                                .bucket(bucket)
+                                .key(key)
+                                .contentType(contentType)
+                                .build(),
+                        RequestBody.fromFile(file)));
     }
 
     @Override
     public InputStream open(String key) throws IOException {
-        return s3.getObject(GetObjectRequest.builder().bucket(bucket).key(key).build());
+        return observe(
+                "open",
+                () -> s3.getObject(
+                        GetObjectRequest.builder().bucket(bucket).key(key).build()));
     }
 
     @Override
     public void delete(String key) {
-        s3.deleteObject(DeleteObjectRequest.builder().bucket(bucket).key(key).build());
+        observe(
+                "delete",
+                () -> s3.deleteObject(
+                        DeleteObjectRequest.builder().bucket(bucket).key(key).build()));
     }
 
     @Override
     public void move(String fromKey, String toKey) {
-        s3.copyObject(CopyObjectRequest.builder()
-                .sourceBucket(bucket)
-                .sourceKey(fromKey)
-                .destinationBucket(bucket)
-                .destinationKey(toKey)
-                .build());
-        delete(fromKey);
+        observe("move", () -> {
+            s3.copyObject(CopyObjectRequest.builder()
+                    .sourceBucket(bucket)
+                    .sourceKey(fromKey)
+                    .destinationBucket(bucket)
+                    .destinationKey(toKey)
+                    .build());
+            s3.deleteObject(
+                    DeleteObjectRequest.builder().bucket(bucket).key(fromKey).build());
+        });
     }
 
     @Override
@@ -124,14 +145,35 @@ public class S3ObjectStorage implements ObjectStorage {
                 .responseContentDisposition("attachment; filename=\"" + downloadName + "\"")
                 .responseContentType(contentType)
                 .build();
-        var presigned = presigner.presignGetObject(GetObjectPresignRequest.builder()
-                .signatureDuration(ttl)
-                .getObjectRequest(get)
-                .build());
+        var presigned = observe(
+                "presign",
+                () -> presigner.presignGetObject(GetObjectPresignRequest.builder()
+                        .signatureDuration(ttl)
+                        .getObjectRequest(get)
+                        .build()));
         try {
             return presigned.url().toURI();
         } catch (java.net.URISyntaxException e) {
             throw new IllegalStateException(e);
         }
+    }
+
+    /**
+     * Every call to the object store is an observation: Micrometer records a timer ({@code ledgerly.s3}, tagged with
+     * the operation) and, with tracing on, a span in the trace of the request that caused it. Keys and file names are
+     * deliberately not tags: they are high-cardinality and may be personal.
+     */
+    private <T> T observe(String operation, java.util.function.Supplier<T> call) {
+        return Observation.createNotStarted("ledgerly.s3", observations)
+                .contextualName("s3 " + operation)
+                .lowCardinalityKeyValue("operation", operation)
+                .observe(call);
+    }
+
+    private void observe(String operation, Runnable call) {
+        observe(operation, () -> {
+            call.run();
+            return null;
+        });
     }
 }

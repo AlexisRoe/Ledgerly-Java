@@ -20,6 +20,8 @@
     <java.version>25</java.version>
     <awssdk.version>2.57.10</awssdk.version>
     <tika.version>4.2.0</tika.version>
+    <bucket4j.version>8.22.0</bucket4j.version>
+    <archunit.version>1.5.1</archunit.version>
     <errorprone.version>2.52.0</errorprone.version>
     <nullaway.version>0.14.3</nullaway.version>
     <spotless.version>3.11.0</spotless.version>
@@ -103,6 +105,19 @@
       <artifactId>url-connection-client</artifactId>
     </dependency>
     <dependency>
+      <groupId>com.bucket4j</groupId>
+      <artifactId>bucket4j_jdk17-core</artifactId>
+      <version>${bucket4j.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.github.ben-manes.caffeine</groupId>
+      <artifactId>caffeine</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>io.micrometer</groupId>
+      <artifactId>micrometer-registry-prometheus</artifactId>
+    </dependency>
+    <dependency>
       <groupId>org.bouncycastle</groupId>
       <artifactId>bcprov-jdk18on</artifactId>
       <version>1.86</version>
@@ -161,6 +176,17 @@
     <dependency>
       <groupId>org.assertj</groupId>
       <artifactId>assertj-core</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.tngtech.archunit</groupId>
+      <artifactId>archunit-junit5</artifactId>
+      <version>${archunit.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>io.micrometer</groupId>
+      <artifactId>micrometer-observation-test</artifactId>
       <scope>test</scope>
     </dependency>
     <dependency>

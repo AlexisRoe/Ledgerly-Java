@@ -4,11 +4,9 @@ import com.ledgerly.shared.id.UserId;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
-import java.time.Duration;
 import java.time.Instant;
 import java.util.Locale;
 import java.util.UUID;
-import org.jspecify.annotations.Nullable;
 
 @Entity
 @Table(name = "users")
@@ -20,8 +18,6 @@ public class User {
     private String email;
     private String passwordHash;
     private boolean verified;
-    private int failedAttempts;
-    private @Nullable Instant lockedUntil;
     private Instant createdAt;
 
     /** For JPA only. */
@@ -44,24 +40,6 @@ public class User {
         return email.strip().toLowerCase(Locale.ROOT);
     }
 
-    public boolean isLocked(Instant now) {
-        return lockedUntil != null && lockedUntil.isAfter(now);
-    }
-
-    /** Counts a failure and locks the account for {@code lock} once {@code maxFailures} is reached. */
-    public void recordFailedLogin(Instant now, int maxFailures, Duration lock) {
-        failedAttempts++;
-        if (failedAttempts >= maxFailures) {
-            lockedUntil = now.plus(lock);
-            failedAttempts = 0;
-        }
-    }
-
-    public void recordSuccessfulLogin() {
-        failedAttempts = 0;
-        lockedUntil = null;
-    }
-
     public void markVerified() {
         verified = true;
     }
@@ -80,13 +58,5 @@ public class User {
 
     public boolean verified() {
         return verified;
-    }
-
-    public int failedAttempts() {
-        return failedAttempts;
-    }
-
-    public @Nullable Instant lockedUntil() {
-        return lockedUntil;
     }
 }

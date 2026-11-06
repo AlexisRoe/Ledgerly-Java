@@ -16,4 +16,6 @@ public record LedgerlyLimits(
         @DefaultValue("10000") @Positive int maxImportRows,
         @DefaultValue("5") @Positive int maxImportsPerDay,
         @DefaultValue("1MB") DataSize maxJsonBodySize,
-        @DefaultValue("10000") @Positive int maxExportRows) {}
+        @DefaultValue("10000") @Positive int maxExportRows,
+        @DefaultValue("600") @Positive int requestsPerMinute,
+        @DefaultValue("60") @Positive int authRequestsPerMinute) {}

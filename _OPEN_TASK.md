@@ -31,3 +31,7 @@ About testing, see if you can make testing better. Tests should never test java 
 ## Task 8
 
 If not already existing, does a /docs endpoint exists for the OpenApiSpecs?
+
+## Task 9
+
+Its about hardening the local setup of supply-chain-attacks, secrets and such

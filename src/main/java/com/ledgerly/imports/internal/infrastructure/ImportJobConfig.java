@@ -9,6 +9,7 @@ import com.ledgerly.shared.config.LedgerlyLimits;
 import com.ledgerly.shared.id.TeamId;
 import com.ledgerly.shared.id.UserId;
 import com.ledgerly.shared.storage.ObjectStorage;
+import io.micrometer.core.instrument.MeterRegistry;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.UUID;
@@ -112,7 +113,9 @@ class ImportJobConfig {
     @Bean
     @StepScope
     ImportSkipListener importSkipListener(
-            ImportJobs jobs, @Value("#{jobParameters['" + PARAM_IMPORT_ID + "']}") String importId) {
-        return new ImportSkipListener(UUID.fromString(importId), jobs);
+            ImportJobs jobs,
+            MeterRegistry metrics,
+            @Value("#{jobParameters['" + PARAM_IMPORT_ID + "']}") String importId) {
+        return new ImportSkipListener(UUID.fromString(importId), jobs, metrics);
     }
 }

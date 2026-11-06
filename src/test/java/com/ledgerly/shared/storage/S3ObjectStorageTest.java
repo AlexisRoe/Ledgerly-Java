@@ -24,6 +24,7 @@ class S3ObjectStorageTest {
 
     static GenericContainer<?> seaweed;
     static S3ObjectStorage storage;
+    static StorageProperties props;
 
     @BeforeAll
     static void start() {
@@ -32,7 +33,7 @@ class S3ObjectStorageTest {
                 .withExposedPorts(8333)
                 .waitingFor(Wait.forListeningPort().withStartupTimeout(Duration.ofMinutes(2)));
         seaweed.start();
-        var props = new StorageProperties(new StorageProperties.S3(
+        props = new StorageProperties(new StorageProperties.S3(
                 "http://" + seaweed.getHost() + ":" + seaweed.getMappedPort(8333),
                 "us-east-1",
                 "test-receipts",
@@ -98,5 +99,47 @@ class S3ObjectStorageTest {
         assertThat(response.headers().firstValue("Content-Disposition").orElse(""))
                 .contains("attachment")
                 .contains("lunch.pdf");
+    }
+
+    // --- observability: every call to the object store is a timer and a span ----------------------------------------
+
+    @Test
+    void everyOperationIsAnObservationTaggedWithTheOperationButNeverTheKey() throws Exception {
+        var observedOps = new java.util.LinkedHashMap<String, java.util.function.Consumer<S3ObjectStorage>>();
+        observedOps.put("put", s -> {
+            try {
+                s.put("receipts/observed", tempFile("x"), "application/pdf");
+            } catch (Exception e) {
+                throw new IllegalStateException(e);
+            }
+        });
+        observedOps.put("open", s -> {
+            try (var in = s.open("receipts/observed")) {
+                in.readAllBytes();
+            } catch (Exception e) {
+                throw new IllegalStateException(e);
+            }
+        });
+        observedOps.put(
+                "presign", s -> s.presignGet("receipts/observed", "r.pdf", "application/pdf", Duration.ofMinutes(5)));
+        observedOps.put("move", s -> s.move("receipts/observed", "quarantine/observed"));
+        observedOps.put("delete", s -> s.delete("quarantine/observed"));
+
+        for (var entry : observedOps.entrySet()) {
+            var registry = io.micrometer.observation.tck.TestObservationRegistry.create();
+            var observed = new S3ObjectStorage(props, registry);
+            try {
+                entry.getValue().accept(observed);
+            } finally {
+                observed.close();
+            }
+            io.micrometer.observation.tck.TestObservationRegistryAssert.assertThat(registry)
+                    .hasSingleObservationThat()
+                    .hasNameEqualTo("ledgerly.s3")
+                    .hasLowCardinalityKeyValue("operation", entry.getKey())
+                    .doesNotHaveLowCardinalityKeyValueWithKey("key")
+                    .doesNotHaveHighCardinalityKeyValueWithKey("key")
+                    .hasBeenStopped();
+        }
     }
 }

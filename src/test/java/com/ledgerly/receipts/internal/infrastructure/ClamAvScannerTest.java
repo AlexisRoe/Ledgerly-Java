@@ -92,4 +92,60 @@ class ClamAvScannerTest {
         assertThatThrownBy(() -> scannerFor(closedPort).scan(new ByteArrayInputStream(new byte[] {1})))
                 .isInstanceOf(IOException.class);
     }
+
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.ValueSource(
+            strings = {
+                "",
+                "OK",
+                "stream: OK extra",
+                "stream: Evil OK",
+                "stream: Eicar FOUND OK",
+                "stream: FOUND",
+                "stream:  FOUND",
+                "stream: bad name FOUND",
+                "INSTREAM size limit exceeded. ERROR",
+                "<html>not clamd</html>",
+                "stream: ok"
+            })
+    void anythingButTheTwoExactRepliesIsAnErrorNeverClean(String reply) {
+        assertThatThrownBy(() -> ClamAvScanner.parse(reply)).isInstanceOf(IOException.class);
+    }
+
+    @Test
+    void theTwoExactRepliesAreUnderstood() throws Exception {
+        assertThat(ClamAvScanner.parse("stream: OK")).isInstanceOf(MalwareScanner.Result.Clean.class);
+        assertThat(ClamAvScanner.parse("stream: Win.Test.EICAR_HDB-1 FOUND"))
+                .isEqualTo(new MalwareScanner.Result.Infected("Win.Test.EICAR_HDB-1"));
+    }
+
+    @Test
+    void everyAttemptIsAnObservationTaggedWithTheOutcome() throws Exception {
+        var registry = io.micrometer.observation.tck.TestObservationRegistry.create();
+        try (var server = new ServerSocket(0)) {
+            fakeClamd(server, "stream: Eicar-Test-Signature FOUND");
+            var props = new ReceiptsProperties(new ReceiptsProperties.ClamAv(
+                    "localhost", server.getLocalPort(), Duration.ofSeconds(2), Duration.ofSeconds(5)));
+            new ClamAvScanner(props, registry).scan(new ByteArrayInputStream(new byte[] {1, 2, 3}));
+        }
+        io.micrometer.observation.tck.TestObservationRegistryAssert.assertThat(registry)
+                .hasSingleObservationThat()
+                .hasNameEqualTo("ledgerly.clamav.scan")
+                .hasLowCardinalityKeyValue("outcome", "infected")
+                .hasBeenStopped();
+    }
+
+    @Test
+    void anUnreachableScannerIsAnObservedError() {
+        var registry = io.micrometer.observation.tck.TestObservationRegistry.create();
+        var props = new ReceiptsProperties(
+                new ReceiptsProperties.ClamAv("localhost", 1, Duration.ofMillis(300), Duration.ofSeconds(1)));
+        assertThatThrownBy(() -> new ClamAvScanner(props, registry).scan(new ByteArrayInputStream(new byte[] {1})))
+                .isInstanceOf(IOException.class);
+        io.micrometer.observation.tck.TestObservationRegistryAssert.assertThat(registry)
+                .hasSingleObservationThat()
+                .hasLowCardinalityKeyValue("outcome", "error")
+                .assertThatError()
+                .isInstanceOf(IOException.class);
+    }
 }

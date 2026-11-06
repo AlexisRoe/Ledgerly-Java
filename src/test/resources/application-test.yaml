@@ -3,3 +3,7 @@ ledgerly:
   events:
     # Tests decide themselves when an incomplete event is delivered again.
     resubmit-enabled: false
+  limits:
+    # Generous, so ordinary tests never meet a rate limit; the tests about rate limits set their own.
+    requests-per-minute: 100000
+    auth-requests-per-minute: 100000

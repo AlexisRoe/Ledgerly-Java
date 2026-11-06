@@ -25,8 +25,8 @@ public final class TestUsers {
         UUID id = UUID.randomUUID();
         String email = "user-" + id + "@example.com";
         jdbc.sql("""
-                        insert into users (id, email, password_hash, verified, failed_attempts, created_at)
-                        values (:id, :email, 'not-a-real-hash', :verified, 0, now())
+                        insert into users (id, email, password_hash, verified, created_at)
+                        values (:id, :email, 'not-a-real-hash', :verified, now())
                         """)
                 .param("id", id)
                 .param("email", email)

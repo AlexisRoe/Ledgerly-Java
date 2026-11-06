@@ -8,8 +8,10 @@ import com.ledgerly.expenses.internal.domain.Expense;
 import com.ledgerly.shared.id.ExpenseId;
 import com.ledgerly.shared.id.TeamId;
 import com.ledgerly.shared.id.UserId;
+import io.micrometer.core.instrument.MeterRegistry;
 import java.time.Clock;
 import java.time.Instant;
+import java.util.Locale;
 import org.jspecify.annotations.Nullable;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
@@ -23,12 +25,19 @@ public class TransitionExpense {
     private final ReceiptChecks receipts;
     private final ApplicationEventPublisher events;
     private final Clock clock;
+    private final MeterRegistry metrics;
 
-    TransitionExpense(ExpenseAccess access, ReceiptChecks receipts, ApplicationEventPublisher events, Clock clock) {
+    TransitionExpense(
+            ExpenseAccess access,
+            ReceiptChecks receipts,
+            ApplicationEventPublisher events,
+            Clock clock,
+            MeterRegistry metrics) {
         this.access = access;
         this.receipts = receipts;
         this.events = events;
         this.clock = clock;
+        this.metrics = metrics;
     }
 
     /** @param reason only used by {@link Action#REJECT} */
@@ -55,6 +64,9 @@ public class TransitionExpense {
                     case REOPEN -> new ExpenseEvent.Reopened(teamId, id, caller, now);
                     case REIMBURSE -> new ExpenseEvent.Reimbursed(teamId, id, caller, now);
                 });
+        // Counted per action. Only transitions that succeeded get here: a refusal throws above.
+        metrics.counter("ledgerly.expenses.transitions", "action", action.name().toLowerCase(Locale.ROOT))
+                .increment();
         return access.flushed(e);
     }
 }

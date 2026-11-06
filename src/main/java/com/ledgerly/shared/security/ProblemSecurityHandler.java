@@ -5,6 +5,7 @@ import com.ledgerly.shared.error.ProblemFactory;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.time.Duration;
 import java.util.List;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -41,6 +42,13 @@ public class ProblemSecurityHandler implements AuthenticationEntryPoint, AccessD
             HttpServletRequest request, HttpServletResponse response, AccessDeniedException accessDeniedException)
             throws IOException {
         write(request, response, ErrorCatalogue.FORBIDDEN, "Access denied");
+    }
+
+    /** 429 with {@code Retry-After}, as the same problem body the controllers use. */
+    public void rateLimited(HttpServletRequest request, HttpServletResponse response, Duration retryAfter)
+            throws IOException {
+        response.setHeader(HttpHeaders.RETRY_AFTER, String.valueOf(Math.max(1, (retryAfter.toMillis() + 999) / 1000)));
+        write(request, response, ErrorCatalogue.RATE_LIMITED, "Too many requests; slow down");
     }
 
     private void write(HttpServletRequest request, HttpServletResponse response, ErrorCatalogue error, String detail)
